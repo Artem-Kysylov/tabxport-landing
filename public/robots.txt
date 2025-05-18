@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+Allow: /sitemap.xml
+
+# Разрешаем индексацию всех страниц
+Disallow: /api/
+Disallow: /_next/
+Disallow: /404
+Disallow: /500
+
+# Указываем расположение карты сайта
+Sitemap: https://tabxport.com/sitemap.xml
+
+# Устанавливаем рекомендуемую задержку между запросами
+Crawl-delay: 1 
