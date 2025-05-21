@@ -5,16 +5,28 @@ import Faq from "@/components/sections/faq/Faq";
 import Cta from "@/components/sections/cta/Cta";
 import Demo from "@/components/sections/demo/Demo";
 import Storytelling from "@/components/sections/storytelling/Storytelling";
+import Image from 'next/image'
 
 export default function Home() {
   return (
-    <div>
-      <Hero />  
+    <main className='relative min-h-screen'>
+      <div className='absolute top-0 left-0 w-full h-[700px] -z-10'>
+        <Image 
+          src="/bg.png"
+          alt="background"
+          fill
+          priority
+          className='object-cover object-top'
+          sizes="100vw"
+          quality={90}
+        />
+      </div>
+      <Hero />
       <Features />
       <Storytelling />
       <Demo />
       <Faq />
       <Cta />
-    </div>
+    </main>
   );
 }

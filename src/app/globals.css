@@ -70,3 +70,64 @@
     @apply mx-auto box-content max-w-[1200px] px-5 w-full;
   }
 }
+
+/* Features Section Styles */
+.features-section {
+  background-color: var(--primary-light);
+  padding-top: 150px;
+  padding-bottom: 50px;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+  width: 100%;
+}
+
+.feature-card {
+  background-color: white;
+  border-radius: 10px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.feature-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: var(--primary-light);
+}
+
+.feature-title {
+  font-size: 25px;
+  font-weight: 600;
+}
+
+.text-primary {
+  color: var(--primary);
+}
+
+.text-center {
+  text-align: center;
+}
+
+.flex-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.mb-30 {
+  margin-bottom: 30px;
+}
+
+.max-w-535 {
+  max-width: 535px;
+}
