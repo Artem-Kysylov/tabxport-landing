@@ -4,13 +4,14 @@ import Features from "@/components/sections/features/Features";
 import Faq from "@/components/sections/faq/Faq";
 import Cta from "@/components/sections/cta/Cta";
 import Demo from "@/components/sections/demo/Demo";
-import Storytelling from "@/components/sections/storytelling/Storytelling";
+import PricePlans from "@/components/sections/price-plans/PricePlans";
+
 import Image from 'next/image'
 
 export default function Home() {
   return (
     <main className='relative min-h-screen'>
-      <div className='absolute top-0 left-0 w-full h-[700px] -z-10'>
+      <div className='absolute -top-20 left-0 w-full h-[700px] -z-10'>
         <Image 
           src="/bg.png"
           alt="background"
@@ -23,8 +24,8 @@ export default function Home() {
       </div>
       <Hero />
       <Features />
-      <Storytelling />
       <Demo />
+      <PricePlans />
       <Faq />
       <Cta />
     </main>

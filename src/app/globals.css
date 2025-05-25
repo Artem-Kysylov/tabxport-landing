@@ -32,10 +32,10 @@
   --radius: 0.625rem;
   
   /* Основные цвета */
-  --primary: #6CBB4C; /* primary-green */
-  --primary-light: #E0F3D9; /* primary-light-green */
-  --secondary: #02150E; /* secondary-dark */
-  --secondary-transparent: rgba(2, 21, 14, 0.2); /* secondary-dark с opacity 0.2 */
+  --primary: #1B9358; /* primary-green */
+  --primary-light: #D2F2E2; /* primary-light-green */
+  --secondary: #062013; /* secondary-dark */
+  --secondary-transparent: rgba(6, 32, 19, 0.2); /* secondary-dark с opacity 0.2 */
   
   /* Системные цвета */
   --background: #FFFFFF;
@@ -71,63 +71,4 @@
   }
 }
 
-/* Features Section Styles */
-.features-section {
-  background-color: var(--primary-light);
-  padding-top: 150px;
-  padding-bottom: 50px;
-}
-
-.features-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 30px;
-  width: 100%;
-}
-
-.feature-card {
-  background-color: white;
-  border-radius: 10px;
-  padding: 15px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 15px;
-}
-
-.feature-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background-color: var(--primary-light);
-}
-
-.feature-title {
-  font-size: 25px;
-  font-weight: 600;
-}
-
-.text-primary {
-  color: var(--primary);
-}
-
-.text-center {
-  text-align: center;
-}
-
-.flex-col {
-  display: flex;
-  flex-direction: column;
-}
-
-.items-center {
-  align-items: center;
-}
-
-.mb-30 {
-  margin-bottom: 30px;
-}
-
-.max-w-535 {
-  max-width: 535px;
-}
+/* Remove all feature-related styles since they're now in the component */
