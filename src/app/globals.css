@@ -32,10 +32,10 @@
   --radius: 0.625rem;
   
   /* Основные цвета */
-  --primary: #6CBB4C; /* primary-green */
-  --primary-light: #E0F3D9; /* primary-light-green */
-  --secondary: #02150E; /* secondary-dark */
-  --secondary-transparent: rgba(2, 21, 14, 0.2); /* secondary-dark с opacity 0.2 */
+  --primary: #1B9358; /* primary-green */
+  --primary-light: #D2F2E2; /* primary-light-green */
+  --secondary: #062013; /* secondary-dark */
+  --secondary-transparent: rgba(6, 32, 19, 0.2); /* secondary-dark с opacity 0.2 */
   
   /* Системные цвета */
   --background: #FFFFFF;
@@ -60,6 +60,9 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html, body {
+    @apply overflow-x-hidden;
+  }
   body {
     @apply bg-background text-foreground text-[1.125rem];
   }
@@ -67,67 +70,87 @@
 
 @layer components {
   .container-custom {
-    @apply mx-auto box-content max-w-[1200px] px-5 w-full;
+    @apply mx-auto w-full max-w-[1200px] px-5;
   }
 }
 
-/* Features Section Styles */
-.features-section {
-  background-color: var(--primary-light);
-  padding-top: 150px;
-  padding-bottom: 50px;
-}
+/* Remove all feature-related styles since they're now in the component */
 
-.features-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 30px;
-  width: 100%;
-}
+/* @tailwind base;
+@tailwind components; */
+@tailwind utilities;
 
-.feature-card {
-  background-color: white;
-  border-radius: 10px;
-  padding: 15px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 15px;
-}
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
 
-.feature-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background-color: var(--primary-light);
-}
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+ 
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+ 
+    --primary: 142.1 76.2% 36.3%;
+    --primary-foreground: 355.7 100% 97.3%;
+ 
+    --secondary: 162 95% 7%;
+    --secondary-foreground: 355.7 100% 97.3%;
+ 
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+ 
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+ 
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
 
-.feature-title {
-  font-size: 25px;
-  font-weight: 600;
-}
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+ 
+    --radius: 0.5rem;
+  }
+ 
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+ 
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+ 
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+ 
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+ 
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+ 
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+ 
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+ 
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+ 
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+  }
 
-.text-primary {
-  color: var(--primary);
-}
-
-.text-center {
-  text-align: center;
-}
-
-.flex-col {
-  display: flex;
-  flex-direction: column;
-}
-
-.items-center {
-  align-items: center;
-}
-
-.mb-30 {
-  margin-bottom: 30px;
-}
-
-.max-w-535 {
-  max-width: 535px;
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }
