@@ -12,22 +12,22 @@ interface FeatureCardProps {
 
 const FeatureCard: React.FC<FeatureCardProps> = ({ title, description, icon }) => {
   return (
-    <div className="bg-white rounded-[10px] p-[15px] flex flex-col items-center justify-center gap-[15px] h-[204px]">
+    <div className="bg-white rounded-[10px] p-[30px] md:p-[15px] flex flex-col items-center justify-center gap-[15px] md:h-[204px]">
       <div className="w-[44px] h-[44px] rounded-full bg-[#D2F2E2] flex items-center justify-center">
         {icon}
       </div>
-      <h3 className="text-[25px] font-semibold">{title}</h3>
-      <p>{description}</p>
+      <h3 className="text-[25px] font-semibold text-center">{title}</h3>
+      <p className="text-center">{description}</p>
     </div>
   )
 }
 
 const Features = () => {
   return (
-    <section className="bg-[#D2F2E2] p-[50px] mt-[100px]">
+    <section id="features" className="bg-[#D2F2E2] py-[50px] px-5 md:p-[50px] mt-[200px]">
       <div className="container-custom">
         <div className="flex flex-col items-center">
-          <h2 className="text-[55px] font-semibold text-center mb-[30px]">
+          <h2 className="text-[40px] md:text-[55px] font-semibold text-center mb-[30px]">
             Why <span className="text-primary">TabXport?</span>
           </h2>
           <p className="text-center mb-[30px] max-w-[535px]">
@@ -35,7 +35,7 @@ const Features = () => {
             with manual data transfers from AI chats, I created TabXport -
             the one-click solution they desperately needed.
           </p>
-          <div className="grid grid-cols-3 gap-[30px] w-full">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-[30px] w-full">
             <FeatureCard
               icon={<HiRocketLaunch size={24} className="text-primary" />}
               title="One-click"

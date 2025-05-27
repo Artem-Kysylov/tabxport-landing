@@ -11,7 +11,7 @@ import Image from 'next/image'
 export default function Home() {
   return (
     <main className='relative min-h-screen'>
-      <div className='absolute -top-20 left-0 w-full h-[700px] -z-10'>
+      <div className='absolute -top-20 left-0 w-full h-[800px] -z-10'>
         <Image 
           src="/bg.png"
           alt="background"

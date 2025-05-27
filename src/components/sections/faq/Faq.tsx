@@ -10,7 +10,7 @@ import { FiPlus } from 'react-icons/fi'
 
 const Faq = () => {
   return (
-    <section>
+    <section id="faq">
       <div className='container-custom'>
         <h2 className='text-[3.4375rem] font-semibold text-center mb-[3.125rem]'>
           Frequently <span className='text-primary'>Asked Questions</span>

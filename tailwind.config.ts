@@ -9,7 +9,11 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        inter: ['var(--font-inter)', 'sans-serif'],
+        inter: ['var(--font-inter)'],
+      },
+      colors: {
+        primary: 'var(--primary)',
+        secondary: 'var(--secondary)',
       },
     },
   },

@@ -80,7 +80,7 @@ const PricePlans = () => {
   ]
 
   return (
-    <section className="py-[50px] md:py-[100px]">
+    <section id="price-plans" className="py-[50px] md:py-[100px]">
       <div className='container-custom'>
         <h2 className='text-[40px] md:text-[55px] font-semibold text-center mb-[30px]'>
           Unlock <span className='text-primary'>Productivity</span>
