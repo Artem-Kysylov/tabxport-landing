@@ -2,38 +2,43 @@
 
 // Imports
 import React, { useState } from 'react'
-import Image from 'next/image'
 
 interface TabItem {
   value: string;
   label: string;
   placeholderColor: string;
-  icon: string;
 }
 
 const tabItems: TabItem[] = [
   {
-    value: 'chatgpt',
-    label: 'Chat GPT',
+    value: 'regularexport',
+    label: 'Regular Export (Excel)',
     placeholderColor: 'bg-red-500',
-    icon: '/icon-chatgpt.svg'
   },
   {
-    value: 'claude',
-    label: 'Claude',
+    value: 'batchexport',
+    label: 'Batch Export (ZIP / Combined)',
     placeholderColor: 'bg-green-500',
-    icon: '/icon-claude.svg'
   },
   {
-    value: 'gemini',
-    label: 'Gemini',
+    value: 'remembermyformat',
+    label: 'Remember My Format',
     placeholderColor: 'bg-orange-500',
-    icon: '/icon-gemini.svg'
-  }
+  },
+  {
+    value: 'datasummary',
+    label: 'Data Summary & Analysis',
+    placeholderColor: 'bg-red-500',
+  },
+  {
+    value: 'googlesheets',
+    label: 'Google Sheets on Drive',
+    placeholderColor: 'bg-orange-500',
+  },
 ];
 
 const Demo = () => {
-  const [activeTab, setActiveTab] = useState('chatgpt')
+  const [activeTab, setActiveTab] = useState('regularexport')
 
   return (
     <section id="demo" className='py-[50px] md:py-[100px]'>
@@ -42,11 +47,11 @@ const Demo = () => {
           See TabXport <span className='text-primary'>in Action</span>
         </h2>
 
-        <p className='text-center mb-[50px]'>No coding needed. Works directly in your AI chat.</p>
+        <p className='text-center mb-[50px]'>From single-table exports to batch operations and Google Drive sync — watch it work in seconds.</p>
 
         <div className='flex flex-col md:flex-row justify-between items-start gap-[1.875rem]'>
           {/* Tabs Navigation */}
-          <div className='w-full md:w-[36.5rem] flex flex-col gap-[1.875rem]'>
+          <div className='w-full md:w-[36.5rem] flex flex-col gap-[1.25rem]'>
             {tabItems.map((tab) => (
               <button
                 key={tab.value}
@@ -57,13 +62,6 @@ const Demo = () => {
                     : 'bg-white text-secondary border-[rgba(6,32,19,0.2)] hover:bg-secondary/5'
                   }`}
               >
-                <Image 
-                  src={tab.icon} 
-                  alt={`${tab.label} icon`}
-                  width={24}
-                  height={24}
-                  className="transition-all"
-                />
                 {tab.label}
               </button>
             ))}

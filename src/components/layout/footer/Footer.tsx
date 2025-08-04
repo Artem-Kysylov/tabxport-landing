@@ -57,7 +57,10 @@ const Footer = () => {
 
           {/* Bottom Links */}
           <div className='flex flex-col md:flex-row items-center gap-4 md:gap-0 md:justify-between text-white text-sm font-normal w-full'>
-            <Link href='/privacy' className='transition-colors duration-300 ease-in-out hover:text-primary'>Privacy policy</Link>
+            <div className='flex items-center gap-5'>
+              <Link href='/privacy' className='transition-colors duration-300 ease-in-out hover:text-primary'>Privacy policy</Link>
+              <Link href='https://tablexport.gitbook.io/tablexport-docs/wkbciB0ogW3EFOM5Gwhg/' target='_blank' className='transition-colors duration-300 ease-in-out hover:text-primary'>Documentation</Link>
+            </div>
             <span>Proudly Indie-Built</span>
           </div>
         </div>

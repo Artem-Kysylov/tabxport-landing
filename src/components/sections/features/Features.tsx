@@ -31,25 +31,24 @@ const Features = () => {
             Why <span className="text-primary">TabXport?</span>
           </h2>
           <p className="text-center mb-[30px] max-w-[535px]">
-            After watching my colleagues in analytics struggle for hours
-            with manual data transfers from AI chats, I created TabXport -
-            the one-click solution they desperately needed.
+            I built TableXport after watching analysts waste hours copy-pasting from AI chats.
+            Now, it’s the one-click tool that handles everything for you.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-[30px] w-full">
             <FeatureCard
               icon={<HiRocketLaunch size={24} className="text-primary" />}
-              title="One-click"
-              description="No manual copy-pasting"
+              title="One-click Export"
+              description="Any AI table, any format — Excel, CSV, PDF, DOCX."
             />
             <FeatureCard
               icon={<HiSparkles size={24} className="text-primary" />}
-              title="Fixes messy tables"
-              description="Repairs broken layouts"
+              title="Batch & Smart Fix"
+              description="Export multiple tables at once, auto-fix broken layouts."
             />
             <FeatureCard
               icon={<HiDocumentCheck size={24} className="text-primary" />}
               title="Save Anywhere"
-              description="Local files or Google Drive"
+              description="Local files or Google Drive. “Remember my format” for instant saves."
             />
           </div>
         </div>

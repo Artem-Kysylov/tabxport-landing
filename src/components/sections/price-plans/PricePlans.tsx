@@ -1,6 +1,7 @@
 import React from 'react'
 import { Button } from '@/components/ui/button'
 import { HiCheck, HiX } from 'react-icons/hi'
+import Link from 'next/link'
 
 interface PriceFeature {
   text: string
@@ -44,9 +45,11 @@ const PriceCard: React.FC<PriceCardProps> = ({
         ))}
       </div>
       <div className="flex flex-col items-center gap-2">
-        <Button variant={isPro ? 'default' : 'outline'} className="w-full">
-          {buttonText}
-        </Button>
+        <Link href={isPro ? '/payment' : 'https://www.google.com/webhp?hl=ru&sa=X&ved=0ahUKEwjUssv37ubrAhVvx4sKHR5fBywQPAgI'} target='_blank' className="w-full">
+          <Button variant={isPro ? 'default' : 'outline'} className="w-full">
+            {buttonText}
+          </Button>
+        </Link>
         <span className="text-sm text-secondary/60">{subText}</span>
       </div>
     </div>
@@ -59,8 +62,8 @@ const PricePlans = () => {
       title: 'Free',
       features: [
         { text: '10 exports/day', included: true },
-        { text: 'Basic formats', included: true },
-        { text: 'No support', included: false }
+        { text: ' Excel, CSV, PDF', included: true },
+        { text: 'Google Drive', included: false }
       ],
       buttonText: 'Get Started',
       subText: 'No credit card needed'
@@ -70,11 +73,11 @@ const PricePlans = () => {
       price: '($5/Month)',
       features: [
         { text: 'Unlimited exports', included: true },
-        { text: 'Google Drive Sync', included: true },
+        { text: 'Google Sheets on Drive', included: true },
         { text: 'Priority Help', included: true }
       ],
-      buttonText: 'Start Free Trial',
-      subText: '7 days free • Cancel anytime',
+      buttonText: 'Upgrade Now',
+      subText: 'Cancel anytime',
       isPro: true
     }
   ]

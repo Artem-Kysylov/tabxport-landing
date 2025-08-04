@@ -23,7 +23,7 @@ const Faq = () => {
               <FiPlus className='w-[34px] h-[34px] shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-45 text-primary' />
             </AccordionTrigger>
             <AccordionContent className='text-[1.125rem] pt-4'>
-              Works with ChatGPT, Claude, Gemini, and Perplexity
+              Works with ChatGPT, Claude, Gemini, and Deepseek.
             </AccordionContent>
           </AccordionItem>
 
@@ -31,11 +31,11 @@ const Faq = () => {
 
           <AccordionItem value="item-2" className='border-none'>
             <AccordionTrigger className='text-[1.5625rem] font-semibold hover:no-underline data-[state=open]:text-primary group [&>svg:last-child]:hidden cursor-pointer'>
-              How to export to Google Sheets?
+              How do I export to Google Sheets?
               <FiPlus className='w-[34px] h-[34px] shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-45 text-primary' />
             </AccordionTrigger>
             <AccordionContent className='text-[1.125rem] pt-4'>
-              Pro feature: Click the Google Drive icon when saving.
+              Available in Pro. Click the Drive icon when saving.
             </AccordionContent>
           </AccordionItem>
 
@@ -43,11 +43,35 @@ const Faq = () => {
 
           <AccordionItem value="item-3" className='border-none'>
             <AccordionTrigger className='text-[1.5625rem] font-semibold hover:no-underline data-[state=open]:text-primary group [&>svg:last-child]:hidden cursor-pointer'>
+              Can I export multiple tables at once?
+              <FiPlus className='w-[34px] h-[34px] shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-45 text-primary' />
+            </AccordionTrigger>
+            <AccordionContent className='text-[1.125rem] pt-4'>
+              Yes! Pro users can batch export as ZIP or combined Excel.
+            </AccordionContent>
+          </AccordionItem>
+
+          <div className='h-[1px] bg-secondary/10'></div>
+
+          <AccordionItem value="item-4" className='border-none'>
+            <AccordionTrigger className='text-[1.5625rem] font-semibold hover:no-underline data-[state=open]:text-primary group [&>svg:last-child]:hidden cursor-pointer'>
               What if my table isn't detected?
               <FiPlus className='w-[34px] h-[34px] shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-45 text-primary' />
             </AccordionTrigger>
             <AccordionContent className='text-[1.125rem] pt-4'>
-              Use Manual Select → highlight the table → TabXport will fix the rest.
+              Use Manual Select, highlight the table — TableXport will fix the rest.
+            </AccordionContent>
+          </AccordionItem>
+
+          <div className='h-[1px] bg-secondary/10'></div>
+
+          <AccordionItem value="item-5" className='border-none'>
+            <AccordionTrigger className='text-[1.5625rem] font-semibold hover:no-underline data-[state=open]:text-primary group [&>svg:last-child]:hidden cursor-pointer'>
+              Need more details?
+              <FiPlus className='w-[34px] h-[34px] shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-45 text-primary' />
+            </AccordionTrigger>
+            <AccordionContent className='text-[1.125rem] pt-4'>
+              Check our full documentation → <a href="https://tablexport.gitbook.io/tablexport-docs/wkbciB0ogW3EFOM5Gwhg/" target='_blank' className='text-primary'>Documentation</a>
             </AccordionContent>
           </AccordionItem>
         </Accordion>
