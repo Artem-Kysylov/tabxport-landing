@@ -5,6 +5,7 @@ import Faq from "@/components/sections/faq/Faq";
 import Cta from "@/components/sections/cta/Cta";
 import Demo from "@/components/sections/demo/Demo";
 import PricePlans from "@/components/sections/price-plans/PricePlans";
+import About from "@/components/sections/about/About";
 
 import Image from 'next/image'
 
@@ -27,6 +28,7 @@ export default function Home() {
       <Demo />
       <PricePlans />
       <Faq />
+      <About />
       <Cta />
     </main>
   );
