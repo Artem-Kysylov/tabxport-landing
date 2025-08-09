@@ -1,8 +1,7 @@
 import React from 'react'
-import { Button } from '@/components/ui/button'
 import Image from 'next/image'
-import { HiDownload } from "react-icons/hi"
 import { AnimatedSection, FadeInUp } from '@/components/animations'
+import ChromeStoreButton from '@/components/ui/chrome-store-button'
 
 const Cta = () => {
   return (
@@ -27,10 +26,9 @@ const Cta = () => {
         
         <FadeInUp delay={0.3}>
           <div className='flex flex-col items-center gap-4'>
-            <Button className="w-[259px] flex items-center gap-2 hover:scale-105 transition-transform duration-200">
-              <HiDownload size={20} />
+            <ChromeStoreButton className="w-[260px] flex items-center gap-2 hover:scale-105 transition-transform duration-200">
               Install TableXport – Free
-            </Button>
+            </ChromeStoreButton>
             <span className='text-sm'>30-second install. Trusted by analysts & marketers.</span>
           </div>
         </FadeInUp>

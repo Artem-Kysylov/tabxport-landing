@@ -1,6 +1,6 @@
 import React from 'react'
-import { Button } from '@/components/ui/button'
 import { AnimatedSection, FadeInUp } from '@/components/animations'
+import ChromeStoreButton from '@/components/ui/chrome-store-button'
 
 const Hero = () => {
   return (
@@ -22,9 +22,9 @@ const Hero = () => {
             </FadeInUp>
             
             <FadeInUp delay={0.6}>
-              <Button className="hover:scale-105 transition-transform duration-200">
-                Add to Chrome - It`s free
-              </Button>
+              <ChromeStoreButton className="hover:scale-105 transition-transform duration-200">
+                Add to Chrome - It's free
+              </ChromeStoreButton>
             </FadeInUp>
           </div>
         </div>
