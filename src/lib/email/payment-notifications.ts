@@ -15,7 +15,7 @@ export class PaymentNotifications {
   ): Promise<void> {
     try {
       await resend.emails.send({
-        from: 'noreply@tabxport.com',
+        from: 'onboarding@resend.dev',
         to: userEmail,
         replyTo: process.env.RESEND_REPLY_TO || 'tabxport@gmail.com',
         subject: 'Payment processed successfully - TabXport Pro',
@@ -36,7 +36,7 @@ export class PaymentNotifications {
   ): Promise<void> {
     try {
       await resend.emails.send({
-        from: 'noreply@tabxport.com',
+        from: 'onboarding@resend.dev',
         to: userEmail,
         replyTo: process.env.RESEND_REPLY_TO || 'tabxport@gmail.com',
         subject: 'Your TabXport Pro subscription is active',
@@ -67,13 +67,13 @@ export class PaymentNotifications {
   ): Promise<void> {
     try {
       await resend.emails.send({
-        from: 'noreply@tabxport.com',
+        from: 'onboarding@resend.dev',
         to: userEmail,
         replyTo: process.env.RESEND_REPLY_TO || 'tabxport@gmail.com',
         subject: 'There was a problem with your payment - TabXport Pro',
         html: `
           <h1>Payment Issue</h1>
-          <p>Unfortunately, we couldn’t process your payment:</p>
+          <p>Unfortunately, we couldn't process your payment:</p>
           <ul>
             <li>Amount: ${errorData.amount} ${errorData.currency}</li>
             <li>Order ID: ${errorData.orderId}</li>
@@ -100,7 +100,7 @@ export class PaymentNotifications {
   ): Promise<void> {
     try {
       await resend.emails.send({
-        from: 'alerts@tabxport.com',
+        from: 'onboarding@resend.dev',
         to: adminEmail,
         replyTo: process.env.RESEND_REPLY_TO || 'tabxport@gmail.com',
         subject: `💰 Successful payment ${data.amount} ${data.currency}`,
@@ -134,7 +134,7 @@ export class PaymentNotifications {
   ): Promise<void> {
     try {
       await resend.emails.send({
-        from: 'alerts@tabxport.com',
+        from: 'onboarding@resend.dev',
         to: adminEmail,
         replyTo: process.env.RESEND_REPLY_TO || 'tabxport@gmail.com',
         subject: `❌ Payment failed ${data.amount ? `${data.amount} ${data.currency}` : ''}`,

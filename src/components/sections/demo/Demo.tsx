@@ -8,34 +8,34 @@ import { motion, AnimatePresence } from 'framer-motion'
 interface TabItem {
   value: string;
   label: string;
-  placeholderColor: string;
+  videoSrc: string;
 }
 
 const tabItems: TabItem[] = [
   {
     value: 'regularexport',
     label: 'Regular Export (Excel)',
-    placeholderColor: 'bg-red-500',
+    videoSrc: '/demo-videos/export excel.mp4',
   },
   {
     value: 'batchexport',
     label: 'Batch Export (ZIP / Combined)',
-    placeholderColor: 'bg-green-500',
+    videoSrc: '/demo-videos/batch export.mp4',
   },
   {
     value: 'remembermyformat',
     label: 'Remember My Format',
-    placeholderColor: 'bg-orange-500',
+    videoSrc: '/demo-videos/remember my format.mp4',
   },
   {
     value: 'datasummary',
     label: 'Data Summary & Analysis',
-    placeholderColor: 'bg-red-500',
+    videoSrc: '/demo-videos/analytics .mp4',
   },
   {
     value: 'googlesheets',
     label: 'Google Sheets on Drive',
-    placeholderColor: 'bg-orange-500',
+    videoSrc: '/demo-videos/google sheets export.mp4',
   },
 ];
 
@@ -92,8 +92,21 @@ const Demo = () => {
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.95 }}
                         transition={{ duration: 0.3 }}
+                        className="w-full h-[20rem] rounded-[10px] overflow-hidden bg-gray-100"
                       >
-                        <div className={`w-full h-[20rem] rounded-[10px] ${tab.placeholderColor}`} />
+                        <video
+                          key={tab.value} // Принудительная перезагрузка при смене таба
+                          className="w-full h-full object-cover rounded-[10px]"
+                          autoPlay
+                          muted
+                          loop
+                          playsInline
+                        >
+                          <source src={tab.videoSrc} type="video/mp4" />
+                          <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                            <p className="text-gray-500">Video not supported</p>
+                          </div>
+                        </video>
                       </motion.div>
                     )
                   ))}
