@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createClientBrowser } from '@/lib/supabase/client'
-import type { Database } from '@/types/database'
 
 type SubscriptionStatus = 'free' | 'pro' | 'expired' | 'cancelled'
 

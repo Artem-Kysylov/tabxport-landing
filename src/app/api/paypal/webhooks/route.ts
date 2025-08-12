@@ -119,7 +119,9 @@ export async function POST(request: NextRequest) {
 async function handlePaymentCompleted(event: PayPalWebhookEvent): Promise<boolean> {
   try {
     const paymentId = event.resource.id
-    const orderId = event.resource.supplementary_data?.related_ids?.order_id
+    // Безопасный доступ к вложенным свойствам
+    const supplementaryData = event.resource.supplementary_data as { related_ids?: { order_id?: string } } | undefined
+    const orderId = supplementaryData?.related_ids?.order_id
 
     // Обновляем статус платежа
     const { error: paymentError } = await supabaseAdmin
@@ -158,35 +160,35 @@ async function handlePaymentCompleted(event: PayPalWebhookEvent): Promise<boolea
     
     // Получаем email пользователя
     const { data: userData } = await supabaseAdmin
-    .from('auth.users')
-    .select('email')
-    .eq('id', payment.user_id)
-    .single()
+      .from('auth.users')
+      .select('email')
+      .eq('id', payment.user_id)
+      .single()
     
-    if (userData?.email) {
-    await PaymentNotifications.sendPaymentConfirmation(
-    userData.email,
-    {
-    amount: payment.amount,
-    currency: payment.currency,
-    plan: payment.plan_type,
-    orderId: orderId,
-    date: new Date()
-    }
-    )
-    
-    // Уведомляем администратора
-    await PaymentNotifications.sendAdminPaymentSuccess(
-    'tabxport@gmail.com',
-    {
-    userEmail: userData.email,
-    amount: payment.amount,
-    currency: payment.currency,
-    plan: payment.plan_type,
-    orderId,
-    paymentId
-    }
-    )
+    if (userData?.email && orderId) {
+      await PaymentNotifications.sendPaymentConfirmation(
+        userData.email,
+        {
+          amount: payment.amount,
+          currency: payment.currency,
+          plan: payment.plan_type,
+          orderId: orderId,
+          date: new Date()
+        }
+      )
+      
+      // Уведомляем администратора
+      await PaymentNotifications.sendAdminPaymentSuccess(
+        'tabxport@gmail.com',
+        {
+          userEmail: userData.email,
+          amount: payment.amount,
+          currency: payment.currency,
+          plan: payment.plan_type,
+          orderId,
+          paymentId
+        }
+      )
     }
     }
 
@@ -201,7 +203,9 @@ async function handlePaymentCompleted(event: PayPalWebhookEvent): Promise<boolea
 async function handlePaymentFailed(event: PayPalWebhookEvent): Promise<boolean> {
   try {
     const paymentId = event.resource.id
-    const orderId = event.resource.supplementary_data?.related_ids?.order_id
+    // Безопасный доступ к вложенным свойствам
+    const supplementaryData = event.resource.supplementary_data as { related_ids?: { order_id?: string } } | undefined
+    const orderId = supplementaryData?.related_ids?.order_id
 
     // Обновляем статус платежа
     const { error } = await supabaseAdmin
