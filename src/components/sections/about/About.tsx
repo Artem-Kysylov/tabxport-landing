@@ -11,7 +11,7 @@ const About = () => {
               <div className='md:w-[50%]'>
                   <FadeInUp>
                     <h2 className='text-[40px] md:text-[55px] font-semibold mb-[30px]'>
-                    Hi, I'm Artem — <span className='text-primary'>Creator of TableXport</span>
+                    Hi, I&apos;m Artem — <span className='text-primary'>Creator of TableXport</span>
                     </h2>
                   </FadeInUp>
                   

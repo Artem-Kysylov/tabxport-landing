@@ -20,20 +20,17 @@ export default function AnimatedSection({
   y = 30,
   scale,
 }: AnimatedSectionProps) {
-  const initialProps: any = {
+  const initialProps = {
     opacity: 0,
     y: y,
+    ...(scale && { scale }),
   };
 
-  const animateProps: any = {
+  const animateProps = {
     opacity: 1,
     y: 0,
+    ...(scale && { scale: 1 }),
   };
-
-  if (scale) {
-    initialProps.scale = scale;
-    animateProps.scale = 1;
-  }
 
   return (
     <motion.div

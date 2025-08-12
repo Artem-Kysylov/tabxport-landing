@@ -42,7 +42,7 @@ export interface PayPalWebhookEvent {
   resource_type: string;
   resource: {
     id: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   create_time: string;
 }

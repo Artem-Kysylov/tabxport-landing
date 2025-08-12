@@ -40,7 +40,7 @@ export interface Payment {
   provider: PaymentProvider;
   paypal_order_id: string | null;
   paypal_payment_id: string | null;
-  provider_data: Record<string, any> | null;
+  provider_data: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
 }
@@ -52,29 +52,18 @@ export interface PaypalWebhook {
   resource_type: string;
   resource_id: string;
   processed: boolean;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   created_at: string;
 }
 
 export interface ExportHistory {
   id: string;
   user_id: string;
-  table_data: Record<string, any>;
+  table_data: Record<string, unknown>;
   export_format: string;
   destination: ExportDestination;
   file_size: number | null;
   created_at: string;
-}
-
-export interface UsageQuota {
-  id: string;
-  user_id: string;
-  exports_used: number;
-  exports_limit: number;
-  exports_today: number;
-  last_reset_date: string;
-  created_at: string;
-  updated_at: string;
 }
 
 export interface SavedTemplate {
@@ -82,7 +71,7 @@ export interface SavedTemplate {
   user_id: string;
   name: string;
   description: string | null;
-  template_data: Record<string, any>;
+  template_data: Record<string, unknown>;
   is_public: boolean;
   created_at: string;
   updated_at: string;
@@ -91,11 +80,21 @@ export interface SavedTemplate {
 export interface SharedTable {
   id: string;
   user_id: string;
-  table_data: Record<string, any>;
+  table_data: Record<string, unknown>;
   share_token: string;
   expires_at: string | null;
   view_count: number;
   created_at: string;
+}
+
+export interface UsageQuota {
+  id: string;
+  user_id: string;
+  exports_this_month: number;
+  storage_used_mb: number;
+  shared_tables_count: number;
+  reset_date: string;
+  updated_at: string;
 }
 
 // Database типы для Supabase
