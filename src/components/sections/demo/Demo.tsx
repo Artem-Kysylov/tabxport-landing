@@ -48,7 +48,7 @@ const Demo = () => {
         <div className='container-custom'>
           <FadeInUp>
             <h2 className='text-[40px] md:text-[55px] font-semibold text-center mb-[30px]'>
-              See TabXport <span className='text-primary'>in Action</span>
+              See TableXport <span className='text-primary'>in Action</span>
             </h2>
           </FadeInUp>
 

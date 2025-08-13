@@ -49,7 +49,7 @@ const Features = () => {
           <div className="flex flex-col items-center">
             <FadeInUp>
               <h2 className="text-[40px] md:text-[55px] font-semibold text-center mb-[30px]">
-                Why <span className="text-primary">TabXport?</span>
+                Why <span className="text-primary">TableXport?</span>
               </h2>
             </FadeInUp>
             

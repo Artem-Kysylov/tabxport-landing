@@ -26,10 +26,10 @@ const Footer = () => {
             <nav className='w-full md:w-auto'>
               <ul className='flex flex-col md:flex-row items-center gap-6 md:gap-10 text-white'>
                 <li>
-                  <Link href='/#why-tabxport' className='transition-colors duration-300 ease-in-out hover:text-primary'>Why TabXport?</Link>
+                  <Link href='/#why-tabxport' className='transition-colors duration-300 ease-in-out hover:text-primary'>Why TableXport?</Link>
                 </li>
                 <li>
-                  <Link href='/#demo' className='transition-colors duration-300 ease-in-out hover:text-primary'>See TabXport in action</Link>
+                  <Link href='/#demo' className='transition-colors duration-300 ease-in-out hover:text-primary'>See TableXport in action</Link>
                 </li>
                 <li>
                   <Link href='/#features' className='transition-colors duration-300 ease-in-out hover:text-primary'>Unlock Productivity</Link>

@@ -37,10 +37,10 @@ const Navbar = () => {
             <nav className='hidden md:block'>
               <ul className='flex items-center gap-10'>
                 <li>
-                  <Link href='/#features' className='transition-colors duration-300 ease-in-out hover:text-primary'>Why TabXport?</Link>
+                  <Link href='/#features' className='transition-colors duration-300 ease-in-out hover:text-primary'>Why TableXport?</Link>
                 </li>
                 <li>
-                  <Link href='/#demo' className='transition-colors duration-300 ease-in-out hover:text-primary'>See TabXport in action</Link>
+                  <Link href='/#demo' className='transition-colors duration-300 ease-in-out hover:text-primary'>See TableXport in action</Link>
                 </li>
                 <li>
                   <Link href='/#price-plans' className='transition-colors duration-300 ease-in-out hover:text-primary'>Unlock Productivity</Link>
