@@ -74,7 +74,7 @@ const PriceCard: React.FC<PriceCardProps> = ({
           <GoogleAuthButton 
             variant="default"
             className="w-full hover:scale-105 transition-transform duration-200"
-            redirectTo="/payment?source=landing"
+            redirectTo="/success?source=landing"
           >
             {buttonText}
           </GoogleAuthButton>
