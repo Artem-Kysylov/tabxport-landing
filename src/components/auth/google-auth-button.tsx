@@ -33,6 +33,7 @@ export default function GoogleAuthButton({
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
+            redirect_uri: `${window.location.origin}/auth/callback` // Принудительно указываем
           }
         }
       })

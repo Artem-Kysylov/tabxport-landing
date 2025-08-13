@@ -6,16 +6,31 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code')
   const next = searchParams.get('next') ?? '/payment?source=landing'
 
+  // Логирование для отладки
+  console.log('Auth callback called:', {
+    hasCode: !!code,
+    next,
+    origin,
+    allParams: Object.fromEntries(searchParams.entries()),
+    fullUrl: request.url
+  })
+
   if (code) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     
+    console.log('OAuth exchange result:', { 
+      success: !error, 
+      error: error?.message 
+    })
+    
     if (!error) {
-      // Успешная авторизация - перенаправляем на нужную страницу
-      return NextResponse.redirect(`${origin}${next}`)
+      const redirectUrl = `${origin}${next}`
+      console.log('Redirecting to:', redirectUrl)
+      return NextResponse.redirect(redirectUrl)
     }
   }
 
-  // Если что-то пошло не так, перенаправляем на главную
+  console.log('No code parameter - redirecting to home')
   return NextResponse.redirect(`${origin}/`)
 }
