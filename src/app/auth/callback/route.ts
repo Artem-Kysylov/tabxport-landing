@@ -6,9 +6,10 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code')
   const next = searchParams.get('next') ?? '/payment?source=landing'
 
-  // Логирование для отладки
+  // Детальное логирование для отладки
   console.log('Auth callback called:', {
     hasCode: !!code,
+    code: code ? `${code.substring(0, 10)}...` : null,
     next,
     origin,
     allParams: Object.fromEntries(searchParams.entries()),
@@ -16,21 +17,33 @@ export async function GET(request: NextRequest) {
   })
 
   if (code) {
-    const supabase = await createClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    
-    console.log('OAuth exchange result:', { 
-      success: !error, 
-      error: error?.message 
-    })
-    
-    if (!error) {
-      const redirectUrl = `${origin}${next}`
-      console.log('Redirecting to:', redirectUrl)
-      return NextResponse.redirect(redirectUrl)
+    try {
+      const supabase = await createClient()
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+      
+      console.log('OAuth exchange result:', { 
+        success: !error,
+        hasSession: !!data?.session,
+        hasUser: !!data?.user,
+        error: error?.message,
+        errorDetails: error
+      })
+      
+      if (!error && data?.session) {
+        const redirectUrl = `${origin}${next}`
+        console.log('SUCCESS: Redirecting to:', redirectUrl)
+        return NextResponse.redirect(redirectUrl)
+      } else {
+        console.log('FAILED: Exchange failed, redirecting to home')
+        console.log('Error details:', error)
+      }
+    } catch (exception) {
+      console.error('EXCEPTION in exchange:', exception)
     }
+  } else {
+    console.log('No code parameter - redirecting to home')
   }
 
-  console.log('No code parameter - redirecting to home')
+  console.log('FALLBACK: Redirecting to home')
   return NextResponse.redirect(`${origin}/`)
 }
