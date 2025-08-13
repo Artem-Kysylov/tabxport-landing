@@ -26,24 +26,31 @@ export default function GoogleAuthButton({
     try {
       setIsLoading(true)
       
+      const redirectUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`
+      
+      console.log('Google Auth Config:', {
+        redirectTo: redirectUrl,
+        origin: window.location.origin,
+        location: window.location.href,
+        hostname: window.location.hostname,
+      })
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
+          redirectTo: redirectUrl,
           queryParams: {
             access_type: 'offline',
-            prompt: 'consent',
-            redirect_uri: `${window.location.origin}/auth/callback` // Принудительно указываем
+            prompt: 'consent'
           }
         }
       })
 
       if (error) {
         console.error('Auth error:', error)
-        // Можно добавить toast уведомление об ошибке
       }
     } catch (error) {
-      console.error('Unexpected error:', error)
+      console.error('Auth exception:', error)
     } finally {
       setIsLoading(false)
     }
