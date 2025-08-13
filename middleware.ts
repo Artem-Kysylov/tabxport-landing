@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 
 // Защищенные роуты, требующие аутентификации
 const protectedRoutes = [
-  '/payment',
+  // '/payment', // Убираем отсюда - у payment своя логика
   '/success',
   '/api/subscription',
   '/api/paypal/create-order',
@@ -176,32 +176,29 @@ async function handlePaymentPageAccess(request: NextRequest) {
   const { searchParams } = request.nextUrl
   const source = searchParams.get('source')
 
-  // Если пользователь пришел из расширения, проверяем аутентификацию
-  if (source === 'extension') {
-    try {
-      const supabase = await createClient()
-      const { data: { user }, error } = await supabase.auth.getUser()
+  // Проверяем аутентификацию для всех источников
+  try {
+    const supabase = await createClient()
+    const { data: { user }, error } = await supabase.auth.getUser()
 
-      if (error || !user) {
-        // Перенаправляем на авторизацию с сохранением source
-        const redirectUrl = new URL('/', request.url)
-        redirectUrl.searchParams.set('auth', 'required')
-        redirectUrl.searchParams.set('source', 'extension')
-        redirectUrl.searchParams.set('redirect', '/payment')
-        return NextResponse.redirect(redirectUrl)
-      }
-
-      // Проверяем, не является ли пользователь уже Pro
-      const subscriptionCheck = await checkUserSubscription(user.id)
-      if (subscriptionCheck.isPro) {
-        // Перенаправляем на success страницу
-        const redirectUrl = new URL('/success', request.url)
-        redirectUrl.searchParams.set('already_pro', 'true')
-        return NextResponse.redirect(redirectUrl)
-      }
-    } catch (error) {
-      console.error('Error in payment page access check:', error)
+    if (error || !user) {
+      // Перенаправляем на авторизацию с сохранением source
+      const redirectUrl = new URL('/', request.url)
+      redirectUrl.searchParams.set('auth', 'required')
+      if (source) redirectUrl.searchParams.set('source', source)
+      redirectUrl.searchParams.set('redirect', '/payment')
+      return NextResponse.redirect(redirectUrl)
     }
+
+    // Проверяем, не является ли пользователь уже Pro
+    const subscriptionCheck = await checkUserSubscription(user.id)
+    if (subscriptionCheck.isPro) {
+      const redirectUrl = new URL('/success', request.url)
+      redirectUrl.searchParams.set('already_pro', 'true')
+      return NextResponse.redirect(redirectUrl)
+    }
+  } catch (error) {
+    console.error('Error in payment page access check:', error)
   }
 
   return NextResponse.next()
