@@ -87,6 +87,12 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(redirectUrl)
       }
 
+      // НОВАЯ ЛОГИКА: Если пользователь авторизован и пытается попасть на success page
+      if (pathname === '/success' && user) {
+        // Разрешаем доступ для всех авторизованных пользователей
+        return NextResponse.next()
+      }
+
       // Для Pro-only роутов проверяем подписку
       if (isProOnlyRoute) {
         const subscriptionCheck = await checkUserSubscription(user.id)
