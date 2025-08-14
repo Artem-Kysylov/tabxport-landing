@@ -55,7 +55,7 @@ const Footer = () => {
               </Link>
             </div>
 
-            <a href="mailto:tabxport@gmail.com" className='text-primary font-semibold text-[1.5625rem] cursor-pointer order-1 md:order-2 hover:text-white transition-colors duration-300 ease-in-out'>tabxport@gmail.com</a>
+            <a href="mailto:tabxport@gmail.com" className='text-primary font-semibold text-[1.5625rem] cursor-pointer order-1 md:order-2 hover:text-white transition-colors duration-300 ease-in-out'>hello@tablexport.com</a>
           </div>
 
           {/* Bottom Links */}
