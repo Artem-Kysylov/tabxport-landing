@@ -79,8 +79,8 @@ export async function GET(request: NextRequest) {
       
       if (!error && data?.session) {
         const redirectUrl = `${origin}${next}`
-        console.log('✅ SUCCESS: Redirecting to:', redirectUrl)
-        return NextResponse.redirect(redirectUrl)
+        // КРИТИЧЕСКОЕ ИЗМЕНЕНИЕ: переносим Set-Cookie заголовки в редирект
+        return NextResponse.redirect(redirectUrl, { headers: response.headers })
       } else {
         console.log('❌ FAILED: Exchange failed')
         return renderDebug('OAuth exchange failed', {
