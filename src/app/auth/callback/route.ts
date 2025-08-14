@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
@@ -6,15 +6,27 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code')
   const next = searchParams.get('next') ?? '/payment?source=landing'
 
-  // Детальное логирование для отладки
-  console.log('Auth callback called:', {
-    hasCode: !!code,
-    code: code ? `${code.substring(0, 10)}...` : null,
-    next,
-    origin,
-    allParams: Object.fromEntries(searchParams.entries()),
-    fullUrl: request.url
-  })
+  console.log('🔄 Auth callback started')
+
+  // Создаем supabase клиент правильно для Route Handler
+  const response = NextResponse.next()
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options = {} }) => {
+            request.cookies.set(name, value)
+            response.cookies.set(name, value, options)
+          })
+        },
+      },
+    }
+  )
 
   // Вспомогательный рендер для вывода отладочной страницы в браузере
   const renderDebug = (title: string, details: Record<string, unknown>) => {
@@ -45,33 +57,39 @@ export async function GET(request: NextRequest) {
     return new NextResponse(html, { headers: { 'content-type': 'text/html; charset=utf-8' } })
   }
 
+  console.log('🔍 Callback details:', {
+    hasCode: !!code,
+    code: code ? `${code.substring(0, 10)}...` : null,
+    next,
+    origin,
+    allParams: Object.fromEntries(searchParams.entries())
+  })
+
   if (code) {
     try {
-      const supabase = await createClient()
+      console.log('🔑 Starting OAuth exchange...')
       const { data, error } = await supabase.auth.exchangeCodeForSession(code)
       
-      console.log('OAuth exchange result:', { 
+      console.log('📊 OAuth exchange result:', { 
         success: !error,
         hasSession: !!data?.session,
         hasUser: !!data?.user,
-        error: error?.message,
-        errorDetails: error
+        error: error?.message
       })
       
       if (!error && data?.session) {
         const redirectUrl = `${origin}${next}`
-        console.log('SUCCESS: Redirecting to:', redirectUrl)
+        console.log('✅ SUCCESS: Redirecting to:', redirectUrl)
         return NextResponse.redirect(redirectUrl)
       } else {
-        console.log('FAILED: Exchange failed, showing debug page')
+        console.log('❌ FAILED: Exchange failed')
         return renderDebug('OAuth exchange failed', {
           request: {
             origin,
             next,
             hasCode: true,
             codeMasked: `${code.substring(0, 10)}...`,
-            allParams: Object.fromEntries(searchParams.entries()),
-            fullUrl: request.url
+            allParams: Object.fromEntries(searchParams.entries())
           },
           exchange: {
             success: !error,
@@ -83,21 +101,19 @@ export async function GET(request: NextRequest) {
         })
       }
     } catch (exception) {
-      console.error('EXCEPTION in exchange:', exception)
+      console.error('💥 EXCEPTION in exchange:', exception)
       return renderDebug('Exception during OAuth exchange', {
         request: {
           origin,
           next,
           hasCode: true,
-          codeMasked: `${code.substring(0, 10)}...`,
-          allParams: Object.fromEntries(searchParams.entries()),
-          fullUrl: request.url
+          codeMasked: `${code.substring(0, 10)}...`
         },
-        exception
+        exception: exception instanceof Error ? exception.message : String(exception)
       })
     }
   } else {
-    console.log('No code parameter - showing debug page')
+    console.log('⚠️ No code parameter')
     return renderDebug('No code parameter', {
       request: {
         origin,
@@ -108,13 +124,4 @@ export async function GET(request: NextRequest) {
       }
     })
   }
-
-  // На всякий случай общий фоллбек — тоже в виде отладочной страницы
-  return renderDebug('Fallback reached', {
-    info: 'Unexpected path reached in auth callback',
-    origin,
-    next,
-    fullUrl: request.url
-  })
-  return NextResponse.redirect(`${origin}/`)
 }
