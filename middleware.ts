@@ -176,6 +176,12 @@ async function handlePaymentPageAccess(request: NextRequest) {
   const { searchParams } = request.nextUrl
   const source = searchParams.get('source')
 
+  // НОВОЕ: Пропускаем проверку middleware для OAuth callback
+  if (source === 'landing') {
+    // Позволяем странице самой проверить авторизацию
+    return NextResponse.next()
+  }
+
   // Проверяем аутентификацию для всех источников
   try {
     const supabase = await createClient()
