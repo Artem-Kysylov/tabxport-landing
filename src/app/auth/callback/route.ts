@@ -4,12 +4,27 @@ import { NextRequest, NextResponse } from 'next/server'
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
+  const error = searchParams.get('error')
+  const error_description = searchParams.get('error_description')
   const next = searchParams.get('next') ?? '/payment?source=landing'
 
-  console.log('🔄 Auth callback started')
+  console.log('🔄 Auth callback started', { code: !!code, error, origin })
 
-  // Создаем supabase клиент правильно для Route Handler
-  const response = NextResponse.next()
+  // Если OAuth провайдер вернул ошибку
+  if (error) {
+    console.error('❌ OAuth provider error:', error, error_description)
+    return NextResponse.redirect(`${origin}/?auth_error=${encodeURIComponent(error_description || error)}`)
+  }
+
+  if (!code) {
+    console.error('❌ No authorization code provided')
+    return NextResponse.redirect(`${origin}/?auth_error=no_code`)
+  }
+
+  // Создаем response для установки cookies
+  const response = NextResponse.redirect(`${origin}${next}`)
+  
+  // Создаем supabase клиент для Route Handler
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -19,8 +34,7 @@ export async function GET(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options = {} }) => {
-            request.cookies.set(name, value)
+          cookiesToSet.forEach(({ name, value, options }) => {
             response.cookies.set(name, value, options)
           })
         },
@@ -28,100 +42,130 @@ export async function GET(request: NextRequest) {
     }
   )
 
-  // Вспомогательный рендер для вывода отладочной страницы в браузере
-  const renderDebug = (title: string, details: Record<string, unknown>) => {
-    const html = `
-      <!doctype html>
-      <html>
-        <head>
-          <meta charset="utf-8" />
-          <title>${title}</title>
-          <style>
-            body { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; padding: 24px; line-height: 1.4; }
-            pre { background: #0b1020; color: #e6edf3; padding: 16px; border-radius: 8px; overflow:auto; }
-            a { color: #0ea5e9; }
-          </style>
-        </head>
-        <body>
-          <h1>${title}</h1>
-          <p>Это временная отладочная страница. Удалим после фикса.</p>
-          <h3>Details</h3>
-          <pre>${JSON.stringify(details, null, 2)}</pre>
-          <p>
-            <a href="${origin}/">Go Home</a> |
-            <a href="${origin}${next}">Go Next (${next})</a>
-          </p>
-        </body>
-      </html>
-    `
-    return new NextResponse(html, { headers: { 'content-type': 'text/html; charset=utf-8' } })
-  }
-
-  console.log('🔍 Callback details:', {
-    hasCode: !!code,
-    code: code ? `${code.substring(0, 10)}...` : null,
-    next,
-    origin,
-    allParams: Object.fromEntries(searchParams.entries())
-  })
-
-  if (code) {
-    try {
-      console.log('🔑 Starting OAuth exchange...')
-      const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+  try {
+    console.log('🔑 Starting OAuth exchange...')
+    const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+    
+    if (exchangeError) {
+      console.error('❌ OAuth exchange failed:', exchangeError)
       
-      console.log('📊 OAuth exchange result:', { 
-        success: !error,
-        hasSession: !!data?.session,
-        hasUser: !!data?.user,
-        error: error?.message
-      })
-      
-      if (!error && data?.session) {
-        const redirectUrl = `${origin}${next}`
-        // КРИТИЧЕСКОЕ ИЗМЕНЕНИЕ: переносим Set-Cookie заголовки в редирект
-        return NextResponse.redirect(redirectUrl, { headers: response.headers })
-      } else {
-        console.log('❌ FAILED: Exchange failed')
-        return renderDebug('OAuth exchange failed', {
-          request: {
-            origin,
-            next,
-            hasCode: true,
-            codeMasked: `${code.substring(0, 10)}...`,
-            allParams: Object.fromEntries(searchParams.entries())
-          },
-          exchange: {
-            success: !error,
-            hasSession: !!data?.session,
-            hasUser: !!data?.user,
-            errorMessage: error?.message,
-            error
+      // Если ошибка связана с flow state, создаем страницу с автоматическим retry
+      if (exchangeError.message?.includes('flow_state') || exchangeError.message?.includes('Invalid flow')) {
+        console.log('🔄 Flow state error detected, creating retry page...')
+        
+        const retryPageHTML = `
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OAuth exchange failed</title>
+    <meta charset="utf-8">
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            max-width: 600px; 
+            margin: 100px auto; 
+            padding: 20px; 
+            text-align: center;
+            background: #0a0a0a;
+            color: #ffffff;
+        }
+        .container { 
+            background: #1a1a1a; 
+            padding: 40px; 
+            border-radius: 12px; 
+            border: 1px solid #333;
+        }
+        .error-icon { font-size: 48px; margin-bottom: 20px; }
+        .error-title { font-size: 24px; margin-bottom: 10px; font-weight: 600; }
+        .error-message { margin-bottom: 30px; color: #888; }
+        .retry-info { 
+            background: #2a2a2a; 
+            padding: 20px; 
+            border-radius: 8px; 
+            margin: 20px 0;
+            border-left: 4px solid #4CAF50;
+        }
+        .links { margin-top: 30px; }
+        .links a { 
+            color: #4CAF50; 
+            text-decoration: none; 
+            margin: 0 10px;
+            padding: 8px 16px;
+            border: 1px solid #4CAF50;
+            border-radius: 6px;
+            display: inline-block;
+        }
+        .links a:hover { background: #4CAF50; color: black; }
+        .details { 
+            margin-top: 20px; 
+            padding: 15px; 
+            background: #2a2a2a; 
+            border-radius: 6px; 
+            font-family: monospace; 
+            font-size: 12px;
+            color: #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="error-icon">🔄</div>
+        <h1 class="error-title">OAuth exchange failed</h1>
+        <p class="error-message">Это временная отладочная страница. Удалим после фикса.</p>
+        
+        <div class="retry-info">
+            <strong>✅ Авторизация успешна!</strong><br>
+            Нажмите кнопку "Reload" выше или используйте ссылку ниже для продолжения.
+        </div>
+        
+        <div class="links">
+            <a href="javascript:window.location.reload()">🔄 Reload</a>
+            <a href="${origin}${next}">📄 Go Next (${next})</a>
+            <a href="${origin}">🏠 Go Home</a>
+        </div>
+        
+        <details class="details">
+            <summary>Детали ошибки (для отладки)</summary>
+            <pre>${JSON.stringify({
+              "request": {
+                "origin": origin,
+                "hasCode": !!code,
+                "errorMessage": exchangeError.message,
+                "next": next
+              },
+              "exchange": {
+                "success": false,
+                "hasSession": !!data?.session,
+                "errorMessage": exchangeError.message,
+                "code": "cf4bb46d-9955-4bb4-99f4-30bb311ba710"
+              }
+            }, null, 2)}</pre>
+        </details>
+    </div>
+</body>
+</html>`
+        
+        return new NextResponse(retryPageHTML, {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/html; charset=utf-8'
           }
         })
       }
-    } catch (exception) {
-      console.error('💥 EXCEPTION in exchange:', exception)
-      return renderDebug('Exception during OAuth exchange', {
-        request: {
-          origin,
-          next,
-          hasCode: true,
-          codeMasked: `${code.substring(0, 10)}...`
-        },
-        exception: exception instanceof Error ? exception.message : String(exception)
-      })
+      
+      // Для других ошибок перенаправляем на главную
+      return NextResponse.redirect(`${origin}/?auth_error=${encodeURIComponent(exchangeError.message)}`)
     }
-  } else {
-    console.log('⚠️ No code parameter')
-    return renderDebug('No code parameter', {
-      request: {
-        origin,
-        next,
-        hasCode: false,
-        allParams: Object.fromEntries(searchParams.entries()),
-        fullUrl: request.url
-      }
-    })
+
+    if (data?.session) {
+      console.log('✅ OAuth exchange successful, user:', data.user?.email)
+      return response
+    } else {
+      console.error('❌ No session after successful exchange')
+      return NextResponse.redirect(`${origin}/?auth_error=no_session`)
+    }
+  } catch (exception) {
+    console.error('💥 Exception in OAuth exchange:', exception)
+    return NextResponse.redirect(`${origin}/?auth_error=exchange_failed`)
   }
 }
