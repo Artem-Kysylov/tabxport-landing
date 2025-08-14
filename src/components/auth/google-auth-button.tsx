@@ -26,10 +26,13 @@ export default function GoogleAuthButton({
     try {
       setIsLoading(true)
       
-      const redirectUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`
+      // Используем фиксированный базовый URL вместо window.location.origin
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin
+      const redirectUrl = `${baseUrl}/auth/callback?next=${encodeURIComponent(redirectTo)}`
       
       console.log('Google Auth Config:', {
         redirectTo: redirectUrl,
+        baseUrl,
         origin: window.location.origin,
         location: window.location.href,
         hostname: window.location.hostname,
