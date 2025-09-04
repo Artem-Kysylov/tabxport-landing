@@ -4,7 +4,8 @@ import Features from "@/components/sections/features/Features";
 import Faq from "@/components/sections/faq/Faq";
 import Cta from "@/components/sections/cta/Cta";
 import Demo from "@/components/sections/demo/Demo";
-import PricePlans from "@/components/sections/price-plans/PricePlans";
+// import PricePlans from "@/components/sections/price-plans/PricePlans";
+import FreePlan from "@/components/sections/free-plan/FreePlan";
 import About from "@/components/sections/about/About";
 
 import Image from 'next/image'
@@ -26,7 +27,8 @@ export default function Home() {
       <Hero />
       <Features />
       <Demo />
-      <PricePlans />
+      <FreePlan />
+      {/* <PricePlans /> */}
       <Faq />
       <About />
       <Cta />

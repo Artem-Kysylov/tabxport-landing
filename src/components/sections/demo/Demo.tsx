@@ -32,11 +32,11 @@ const tabItems: TabItem[] = [
     label: 'Data Summary & Analysis',
     videoSrc: '/demo-videos/analytics .mp4',
   },
-  {
-    value: 'googlesheets',
-    label: 'Google Sheets on Drive',
-    videoSrc: '/demo-videos/google sheets export.mp4',
-  },
+  // {
+  //   value: 'googlesheets',
+  //   label: 'Google Sheets on Drive',
+  //   videoSrc: '/demo-videos/google sheets export.mp4',
+  // },
 ];
 
 const Demo = () => {

@@ -35,6 +35,11 @@ const Features = () => {
       title: "Batch & Smart Fix",
       description: "Export multiple tables at once, auto-fix broken layouts."
     },
+    // {
+    //   icon: <HiDocumentCheck size={24} className="text-primary" />,
+    //   title: "Save Anywhere",
+    //   description: "Local files or Google Drive. 'Remember my format for instant saves."
+    // }
     {
       icon: <HiDocumentCheck size={24} className="text-primary" />,
       title: "Save Anywhere",
