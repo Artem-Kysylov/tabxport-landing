@@ -71,13 +71,28 @@ const Faq = () => {
 
               <div className='h-[1px] bg-secondary/10'></div>
 
-              <AccordionItem value="item-6" className='border-none'>
+              {/* <AccordionItem value="item-6" className='border-none'>
                 <AccordionTrigger className='text-[1.5625rem] font-semibold hover:no-underline data-[state=open]:text-primary group [&>svg:last-child]:hidden cursor-pointer'>
                   Need more details?
                   <FiPlus className='w-[34px] h-[34px] shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-45 text-primary' />
                 </AccordionTrigger>
                 <AccordionContent className='text-[1.125rem] pt-4'>
                   Check our full documentation → <a href="https://tablexport.gitbook.io/tablexport-docs/wkbciB0ogW3EFOM5Gwhg/" target='_blank' className='text-primary'>Documentation</a>
+                </AccordionContent>
+              </AccordionItem> */}
+              <AccordionItem value="item-6" className='border-none'>
+                <AccordionTrigger className='text-[1.5625rem] font-semibold hover:no-underline data-[state=open]:text-primary group [&>svg:last-child]:hidden cursor-pointer'>
+                  Need more details?
+                  <FiPlus className='w-[34px] h-[34px] shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-45 text-primary' />
+                </AccordionTrigger>
+                <AccordionContent className='text-[1.125rem] pt-4'>
+                  <a
+                    href="mailto:hello@tablexport.com"
+                    title="Any questions? Contact to me directly"
+                    className='text-primary'
+                  >
+                    Any questions? Contact to me directly
+                  </a>
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
