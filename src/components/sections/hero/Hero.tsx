@@ -9,8 +9,11 @@ const Hero = () => {
         <div className='container-custom'>
           <div className='flex flex-col items-center justify-center gap-8 pt-[200px]'>
             <FadeInUp delay={0.2}>
-              <h1 className='text-center text-7xl font-semibold'>
+              {/* <h1 className='text-center text-7xl font-semibold'>
                 <span className='text-primary'>Click. Export. Done.</span> AI Tables → Excel, PDF, Google Sheets
+              </h1> */}
+              <h1 className='text-center text-7xl font-semibold'>
+                <span className='text-primary'>Click. Export. Done.</span> AI Tables → Excel, PDF, Docx
               </h1>
             </FadeInUp>
             
