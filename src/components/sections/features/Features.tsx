@@ -42,8 +42,8 @@ const Features = () => {
     // }
     {
       icon: <HiDocumentCheck size={24} className="text-primary" />,
-      title: "Save Anywhere",
-      description: "Local files or Google Drive. 'Remember my format for instant saves."
+      title: "Save Instantly",
+      description: "Enable 'Remember my format' option for instant saves"
     }
   ];
 
