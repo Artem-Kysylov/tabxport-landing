@@ -90,7 +90,7 @@ function Faq() {
                   <a
                     href="mailto:hello@tablexport.com"
                     title="Contact to me directly hello@tablexport.com"
-                    className='text-primary font-semibold text-[1.5625rem] cursor-pointer order-1 md:order-2 hover:text-white transition-colors duration-300 ease-in-out'
+                    className='text-primary font-semibold text-[1.5625rem] cursor-pointer order-1 md:order-2 transition-colors duration-300 ease-in-out'
                   >
                     hello@tablexport.com
                   </a>
