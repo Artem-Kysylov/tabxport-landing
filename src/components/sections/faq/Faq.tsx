@@ -34,7 +34,7 @@ const Faq = () => {
 
               <div className='h-[1px] bg-secondary/10'></div>
 
-              <AccordionItem value="item-2" className='border-none'>
+              {/* <AccordionItem value="item-2" className='border-none'>
                 <AccordionTrigger className='text-[1.5625rem] font-semibold hover:no-underline data-[state=open]:text-primary group [&>svg:last-child]:hidden cursor-pointer'>
                   How do I export to Google Sheets?
                   <FiPlus className='w-[34px] h-[34px] shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-45 text-primary' />
@@ -42,7 +42,7 @@ const Faq = () => {
                 <AccordionContent className='text-[1.125rem] pt-4'>
                   Available in Pro. Click the Drive icon when saving.
                 </AccordionContent>
-              </AccordionItem>
+              </AccordionItem> */}
 
               <div className='h-[1px] bg-secondary/10'></div>
 
@@ -52,7 +52,8 @@ const Faq = () => {
                   <FiPlus className='w-[34px] h-[34px] shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-45 text-primary' />
                 </AccordionTrigger>
                 <AccordionContent className='text-[1.125rem] pt-4'>
-                  Yes! Pro users can batch export as ZIP or combined Excel.
+                  {/* Yes! Pro users can batch export as ZIP or combined Excel. */}
+                  Yes, batch export is available to ZIP or a single Excel file
                 </AccordionContent>
               </AccordionItem>
 
