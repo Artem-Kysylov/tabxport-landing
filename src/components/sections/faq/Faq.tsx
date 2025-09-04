@@ -9,7 +9,7 @@ import {
 import { FiPlus } from 'react-icons/fi'
 import { AnimatedSection, FadeInUp } from '@/components/animations'
 
-const Faq = () => {
+function Faq() {
   return (
     <AnimatedSection>
       <section id="faq">
@@ -86,12 +86,13 @@ const Faq = () => {
                   <FiPlus className='w-[34px] h-[34px] shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-45 text-primary' />
                 </AccordionTrigger>
                 <AccordionContent className='text-[1.125rem] pt-4'>
+                  Contact to me directly{" "}
                   <a
                     href="mailto:hello@tablexport.com"
-                    title="Any questions? Contact to me directly"
-                    className='text-primary'
+                    title="Contact to me directly hello@tablexport.com"
+                    className='text-primary font-semibold text-[1.5625rem] cursor-pointer order-1 md:order-2 hover:text-white transition-colors duration-300 ease-in-out'
                   >
-                    Any questions? Contact to me directly
+                    hello@tablexport.com
                   </a>
                 </AccordionContent>
               </AccordionItem>
