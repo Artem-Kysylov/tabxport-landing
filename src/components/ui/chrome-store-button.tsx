@@ -22,7 +22,7 @@ export default function ChromeStoreButton({
     
     // Пока расширение не в сторе, показываем заглушку
     if (!chromeStoreUrl || chromeStoreUrl.includes('placeholder')) {
-      alert('Extension is coming soon! We&apos;ll notify you when it&apos;s available in Chrome Web Store.')
+      alert("Extension is coming soon! We'll notify you when it's available in Chrome Web Store.")
       return
     }
     

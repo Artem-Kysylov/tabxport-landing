@@ -26,7 +26,7 @@ const Hero = () => {
             
             <FadeInUp delay={0.6}>
               <ChromeStoreButton className="hover:scale-105 transition-transform duration-200">
-                Add to Chrome - It&apos;s free
+                Add to Chrome - It's free
               </ChromeStoreButton>
             </FadeInUp>
           </div>
