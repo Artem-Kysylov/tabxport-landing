@@ -8,17 +8,19 @@ interface ChromeStoreButtonProps {
   className?: string
   variant?: 'default' | 'outline' | 'secondary' | 'ghost' | 'link'
   size?: 'default' | 'sm' | 'lg' | 'icon'
+  storeUrl?: string
 }
 
 export default function ChromeStoreButton({ 
   children = 'Install Chrome Extension',
   className = '',
   variant = 'default',
-  size = 'default'
+  size = 'default',
+  storeUrl
 }: ChromeStoreButtonProps) {
   
   const handleInstall = () => {
-    const chromeStoreUrl = process.env.NEXT_PUBLIC_CHROME_STORE_URL
+    const chromeStoreUrl = storeUrl ?? process.env.NEXT_PUBLIC_CHROME_STORE_URL
     
     // Пока расширение не в сторе, показываем заглушку
     if (!chromeStoreUrl || chromeStoreUrl.includes('placeholder')) {

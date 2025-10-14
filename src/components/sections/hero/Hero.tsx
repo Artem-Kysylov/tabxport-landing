@@ -13,7 +13,7 @@ const Hero = () => {
                 <span className='text-primary'>Click. Export. Done.</span> AI Tables → Excel, PDF, Google Sheets
               </h1> */}
               <h1 className='text-center text-7xl font-semibold'>
-                <span className='text-primary'>Click. Export. Done.</span> AI Tables → Excel, PDF, Docx
+                <span className='text-primary'>Click. Export. Done.</span> AI Tables → Excel, Docx
               </h1>
             </FadeInUp>
             
@@ -25,7 +25,10 @@ const Hero = () => {
             </FadeInUp>
             
             <FadeInUp delay={0.6}>
-              <ChromeStoreButton className="hover:scale-105 transition-transform duration-200">
+              <ChromeStoreButton
+                className="hover:scale-105 transition-transform duration-200"
+                storeUrl="https://chromewebstore.google.com/detail/tablexport/bcbjkpalaglbclfhidoknmngpmdmafgm?hl=ru&authuser=0"
+              >
                 Add to Chrome - It's free
               </ChromeStoreButton>
             </FadeInUp>

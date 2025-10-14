@@ -26,7 +26,9 @@ const Cta = () => {
         
         <FadeInUp delay={0.3}>
           <div className='flex flex-col items-center gap-4'>
-            <ChromeStoreButton className="w-[260px] flex items-center gap-2 hover:scale-105 transition-transform duration-200">
+            <ChromeStoreButton className="w-[260px] flex items-center gap-2 hover:scale-105 transition-transform duration-200"
+              storeUrl="https://chromewebstore.google.com/detail/tablexport/bcbjkpalaglbclfhidoknmngpmdmafgm?hl=ru&authuser=0"
+            >
               Install TableXport – Free
             </ChromeStoreButton>
             <span className='text-sm'>30-second install. Trusted by analysts & marketers.</span>

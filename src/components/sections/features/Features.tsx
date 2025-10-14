@@ -28,7 +28,7 @@ const Features = () => {
     {
       icon: <HiRocketLaunch size={24} className="text-primary" />,
       title: "One-click Export",
-      description: "Any AI table, any format — Excel, CSV, PDF, DOCX."
+      description: "Any AI table, any format — Excel, CSV, DOCX."
     },
     {
       icon: <HiSparkles size={24} className="text-primary" />,
