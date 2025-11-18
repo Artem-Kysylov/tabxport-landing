@@ -47,10 +47,10 @@ const Footer = () => {
           {/* Social and Email */}
           <div className='flex flex-col md:flex-row md:items-center md:justify-between w-full items-center gap-6 md:gap-0'>
             <div className='flex items-center gap-8 text-primary text-2xl order-2 md:order-1'>
-              <Link href='/' className='transition-colors duration-300 ease-in-out hover:text-white'>
+              <Link href='https://www.linkedin.com/in/artem-k-3392b3366/' className='transition-colors duration-300 ease-in-out hover:text-white'>
                 <SlSocialLinkedin />
               </Link>
-              <Link href='/' className='transition-colors duration-300 ease-in-out hover:text-white'>
+              <Link href='https://x.com/tabXport' className='transition-colors duration-300 ease-in-out hover:text-white'>
                 <FaXTwitter />
               </Link>
             </div>
