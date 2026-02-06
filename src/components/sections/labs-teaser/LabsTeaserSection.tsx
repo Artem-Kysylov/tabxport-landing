@@ -27,7 +27,7 @@ const LabsTeaserSection = () => {
             {/* Left Column - Text & Form */}
             <div className="space-y-8">
               <FadeInUp>
-                <div className="flex items-center px-3 py-1 rounded-full bg-primary-light text-primary text-sm font-medium">
+                <div className="flex items-center py-1 rounded-full bg-primary-light text-primary text-sm font-medium">
                   Coming Soon from Syntax Labs
                 </div>
               </FadeInUp>

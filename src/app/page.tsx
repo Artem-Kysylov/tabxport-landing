@@ -30,6 +30,7 @@ export default function Home() {
       <Demo />
       <FreePlan />
       {/* <PricePlans /> */}
+      <LabsTeaserSection />
       <Faq />
       <About />
       <Cta />
