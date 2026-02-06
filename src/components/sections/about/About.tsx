@@ -8,7 +8,7 @@ const About = () => {
       <section id="about" className='py-[50px] md:py-[100px]'>
         <div className='container-custom'>
           <div className='flex flex-col md:flex-row items-center justify-center gap-[50px]'>
-              <div className='md:w-[50%]'>
+              <div className='w-full md:w-[50%]'>
                   <FadeInUp>
                     <h2 className='text-[40px] md:text-[55px] font-semibold mb-[30px]'>
                     Hi, I&apos;m Artem — <span className='text-primary'>Creator of TableXport</span>
@@ -26,7 +26,7 @@ const About = () => {
                   </FadeInUp>
               </div>
 
-              <FadeInUp delay={0.5} className='md:w-[50%] flex justify-center'>
+              <FadeInUp delay={0.5} className='w-full md:w-[50%] flex justify-center'>
                 <div className='relative w-full max-w-[400px] aspect-square'>
                   <Image 
                     src='/about.png' 

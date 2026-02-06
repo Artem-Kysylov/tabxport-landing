@@ -15,7 +15,7 @@ function Faq() {
       <section id="faq">
         <div className='container-custom'>
           <FadeInUp>
-            <h2 className='text-[3.4375rem] font-semibold text-center mb-[3.125rem]'>
+            <h2 className='text-[2.5rem] md:text-[3.4375rem] font-semibold text-center mb-[3.125rem] leading-tight md:leading-tight'>
               Frequently <span className='text-primary'>Asked Questions</span>
             </h2>
           </FadeInUp>

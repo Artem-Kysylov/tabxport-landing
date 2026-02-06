@@ -87,6 +87,14 @@ export interface SharedTable {
   created_at: string;
 }
 
+export interface SyntaxWaitlist {
+  id: string;
+  email: string;
+  project: string;
+  source: string;
+  created_at: string;
+}
+
 export interface UsageQuota {
   id: string;
   user_id: string;
@@ -140,6 +148,11 @@ export interface Database {
         Row: SharedTable;
         Insert: Omit<SharedTable, 'id' | 'created_at'>;
         Update: Partial<Omit<SharedTable, 'id' | 'created_at'>>;
+      };
+      syntax_waitlist: {
+        Row: SyntaxWaitlist;
+        Insert: Omit<SyntaxWaitlist, 'id' | 'created_at'>;
+        Update: Partial<Omit<SyntaxWaitlist, 'id' | 'created_at'>>;
       };
     };
     Functions: {

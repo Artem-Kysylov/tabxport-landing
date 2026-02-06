@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { inter } from "./fonts";
 
+import { Toaster } from "sonner";
+
 // Import components 
 import Navbar from "@/components/layout/navbar/Navbar";
 import FooterWrapper from "@/components/layout/footer/FooterWrapper";
@@ -67,6 +69,15 @@ export default function RootLayout({
         <Navbar />
         {children}
         <FooterWrapper />
+        <Toaster 
+          position="bottom-center" 
+          richColors 
+          toastOptions={{
+            className:
+              'py-5 px-8 min-w-[340px] sm:min-w-[420px] text-[20px] font-bold text-center items-center',
+            descriptionClassName: 'text-[20px] font-bold text-center',
+          }}
+        />
       </body>
     </html>
   );
