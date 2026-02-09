@@ -5,7 +5,8 @@ import { inter } from "./fonts";
 import { Toaster } from "sonner";
 
 // Import components 
-import Navbar from "@/components/layout/navbar/Navbar";
+import NavbarWrapper from "@/components/layout/navbar/NavbarWrapper";
+import GlobalAnnouncementBar from "@/components/layout/announcement/GlobalAnnouncementBar";
 import FooterWrapper from "@/components/layout/footer/FooterWrapper";
 
 export const metadata: Metadata = {
@@ -66,7 +67,8 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable}>
       <body className="font-inter">
-        <Navbar />
+        <GlobalAnnouncementBar />
+        <NavbarWrapper />
         {children}
         <FooterWrapper />
         <Toaster 

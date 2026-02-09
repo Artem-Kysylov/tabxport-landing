@@ -12,12 +12,14 @@ const isValidEmail = (email: string) => {
 
 export async function submitToWaitlist(formData: FormData): Promise<SubmitToWaitlistResult> {
   const rawEmail = formData.get('email')
+  const rawSource = formData.get('source')
 
   if (typeof rawEmail !== 'string') {
     return { error: 'Please enter a valid email.' }
   }
 
   const email = rawEmail.trim().toLowerCase()
+  const source = typeof rawSource === 'string' ? rawSource : 'landing-section'
 
   if (!isValidEmail(email)) {
     return { error: 'Please enter a valid email.' }
@@ -31,7 +33,7 @@ export async function submitToWaitlist(formData: FormData): Promise<SubmitToWait
       .insert({
         email,
         project: 'prompt-builder',
-        source: 'landing-section',
+        source,
       })
 
     if (error) {

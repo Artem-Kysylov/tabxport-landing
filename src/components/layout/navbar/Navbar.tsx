@@ -71,7 +71,7 @@ const Navbar = () => {
       {/* Mobile Menu Overlay */}
       {!isPaymentPage && (
         <div 
-          className={`fixed inset-0 bg-white z-40 transition-transform duration-300 ${
+          className={`fixed inset-0 bg-white z-[60] transition-transform duration-300 ${
             isMenuOpen ? 'translate-x-0' : 'translate-x-full'
           }`}
         >
