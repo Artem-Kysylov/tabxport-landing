@@ -1,8 +1,4 @@
 // Enum типы на основе схемы (обновленные)
-export type SubscriptionPlan = 'free' | 'pro'; // убрал enterprise
-export type SubscriptionStatus = 'active' | 'canceled' | 'expired' | 'past_due';
-export type PaymentProvider = 'paypal' | 'stripe';
-export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded';
 export type ExportDestination = 'download' | 'google_drive' | 'email';
 
 // Основные интерфейсы таблиц
@@ -14,46 +10,6 @@ export interface UserProfile {
   google_id: string | null;
   created_at: string;
   updated_at: string;
-}
-
-export interface Subscription {
-  id: string;
-  user_id: string;
-  plan_type: SubscriptionPlan;
-  status: SubscriptionStatus;
-  paypal_subscription_id: string | null;
-  paypal_plan_id: string | null;
-  current_period_start: string | null;
-  current_period_end: string | null;
-  cancel_at_period_end: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Payment {
-  id: string;
-  user_id: string;
-  subscription_id: string | null;
-  amount: number;
-  currency: string;
-  status: PaymentStatus;
-  provider: PaymentProvider;
-  paypal_order_id: string | null;
-  paypal_payment_id: string | null;
-  provider_data: Record<string, unknown> | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface PaypalWebhook {
-  id: string;
-  event_id: string;
-  event_type: string;
-  resource_type: string;
-  resource_id: string;
-  processed: boolean;
-  data: Record<string, unknown>;
-  created_at: string;
 }
 
 export interface ExportHistory {
@@ -113,21 +69,6 @@ export interface Database {
         Row: UserProfile;
         Insert: Omit<UserProfile, 'id' | 'created_at' | 'updated_at'>;
         Update: Partial<Omit<UserProfile, 'id' | 'created_at' | 'updated_at'>>;
-      };
-      subscriptions: {
-        Row: Subscription;
-        Insert: Omit<Subscription, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<Subscription, 'id' | 'created_at' | 'updated_at'>>;
-      };
-      payments: {
-        Row: Payment;
-        Insert: Omit<Payment, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<Payment, 'id' | 'created_at' | 'updated_at'>>;
-      };
-      paypal_webhooks: {
-        Row: PaypalWebhook;
-        Insert: Omit<PaypalWebhook, 'id' | 'created_at'>;
-        Update: Partial<Omit<PaypalWebhook, 'id' | 'created_at'>>;
       };
       export_history: {
         Row: ExportHistory;

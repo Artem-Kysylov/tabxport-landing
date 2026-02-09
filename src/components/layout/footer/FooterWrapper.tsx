@@ -5,8 +5,8 @@ import Footer from './Footer';
 
 export default function FooterWrapper() {
   const pathname = usePathname();
-  const isPaymentPage = pathname === '/payment';
-  
-  if (isPaymentPage) return null;
+  const isWaitlistPage = pathname === '/waitlist';
+
+  if (isWaitlistPage) return null;
   return <Footer />;
 }

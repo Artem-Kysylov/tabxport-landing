@@ -10,11 +10,8 @@ export function initErrorMonitoring() {
   }
 }
 
-export function capturePaymentError(error: Error, metadata: any) {
+export function captureError(error: Error, metadata?: Record<string, unknown>) {
   Sentry.captureException(error, {
-    tags: {
-      type: 'payment_error'
-    },
     extra: metadata
   })
 }

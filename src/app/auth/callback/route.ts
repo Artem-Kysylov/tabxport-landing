@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code')
   const error = searchParams.get('error')
   const error_description = searchParams.get('error_description')
-  const next = searchParams.get('next') ?? '/payment?source=landing'
+  const next = searchParams.get('next') ?? '/'
 
   console.log('🔄 Auth callback started', { code: !!code, error, origin })
 

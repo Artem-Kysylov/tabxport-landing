@@ -6,7 +6,6 @@ import { HiCheck, HiX } from 'react-icons/hi'
 import Link from 'next/link'
 import { AnimatedSection, FadeInUp } from '@/components/animations'
 import { motion } from 'framer-motion'
-import GoogleAuthButton from '@/components/auth/google-auth-button'
 
 interface PriceFeature {
   text: string
@@ -71,13 +70,11 @@ const PriceCard: React.FC<PriceCardProps> = ({
       </div>
       <div className="flex flex-col items-center gap-2">
         {isPro ? (
-          <GoogleAuthButton 
-            variant="default"
-            className="w-full hover:scale-105 transition-transform duration-200"
-            redirectTo="/payment?source=landing"
-          >
-            {buttonText}
-          </GoogleAuthButton>
+          <Link href="/waitlist" className="w-full">
+            <Button className="w-full hover:scale-105 transition-transform duration-200">
+              {buttonText}
+            </Button>
+          </Link>
         ) : (
           <Link href="https://www.google.com/webhp?hl=ru&sa=X&ved=0ahUKEwjUssv37ubrAhVvx4sKHR5fBywQPAgI" target='_blank' className="w-full">
             <Button variant="outline" className="w-full hover:scale-105 transition-transform duration-200">
