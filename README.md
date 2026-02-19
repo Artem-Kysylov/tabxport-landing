@@ -8,6 +8,5 @@ The official marketing hub and web interface for TableXport. Built to demonstrat
 - **Tailwind CSS** for a clean, tool-first aesthetic.
 
 ## 🚀 Key Sections
-- **Interactive Demo:** A "Live Table" playground where users can test the export functionality before installing.
-- **Extension Hub:** Deep links to Chrome Web Store and Firefox Add-ons.
+- **Extension Hub:** Deep links to Chrome Web Store.
 - **SaaS Roadmap:** Information regarding the transition from a pure extension to a web-based data utility.
