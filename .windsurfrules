@@ -10,6 +10,9 @@
 - Never confuse it with the `supabase-spendly` server.
 - All table schemas should be optimized for storing parsing configurations and export history.
 
+## Remote access
+- Use GitHub MCP to manage issues or check remote code patterns.
+
 ## UI/UX Standards (Designer's Priorities)
 - Maintain a "cinematic" and clean UI consistent with the brand.
 - Always use Tailwind CSS for styling.
