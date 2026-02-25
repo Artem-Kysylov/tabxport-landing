@@ -1,0 +1,31 @@
+# TableXport Project Rules
+
+## Context & Stack
+- This is TableXport, a web-based table conversion tool (Web App/PWA).
+- Tech Stack: Next.js, Tailwind CSS, Supabase.
+- Main Goal: Convert web tables into various formats (Excel, CSV, etc.).
+
+## Database Management
+- ALWAYS use the `supabase-tablexport` MCP server for this project.
+- Never confuse it with the `supabase-spendly` server.
+- All table schemas should be optimized for storing parsing configurations and export history.
+
+## Remote access
+- Use GitHub MCP to manage issues or check remote code patterns.
+
+## UI/UX Standards (Designer's Priorities)
+- Maintain a "cinematic" and clean UI consistent with the brand.
+- Always use Tailwind CSS for styling.
+- Check accessibility and responsiveness for all new components.
+- When creating table-related UI, ensure it handles large datasets gracefully (virtualization or pagination).
+
+## Workflow
+- Before implementing new parsing logic, analyze the target table structure using Playwright MCP if needed.
+- If modifying the database schema, suggest a migration plan first.
+
+## Coding Standards & Types
+- STRICT TYPE SAFETY: NEVER use `any` type in this project.
+- Always define proper TypeScript interfaces or types for all data, especially for Supabase schemas and API responses.
+- If a type is unknown, use `unknown` and implement proper type guards.
+- Prefer Zod for runtime validation of table data and user inputs.
+- Use `T` (generics) where appropriate to maintain flexibility without sacrificing type safety.

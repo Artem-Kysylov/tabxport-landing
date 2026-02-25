@@ -7,6 +7,7 @@ import Demo from "@/components/sections/demo/Demo";
 // import PricePlans from "@/components/sections/price-plans/PricePlans";
 import FreePlan from "@/components/sections/free-plan/FreePlan";
 import About from "@/components/sections/about/About";
+import LabsTeaserSection from "@/components/sections/labs-teaser/LabsTeaserSection";
 
 import Image from 'next/image'
 
@@ -29,6 +30,7 @@ export default function Home() {
       <Demo />
       <FreePlan />
       {/* <PricePlans /> */}
+      <LabsTeaserSection />
       <Faq />
       <About />
       <Cta />
