@@ -13,7 +13,7 @@ export type TableCell = z.infer<typeof TableCellSchema>;
 export type TableRow = z.infer<typeof TableRowSchema>;
 export type TableData = z.infer<typeof TableDataSchema>;
 
-export type ExportFormat = 'xlsx' | 'csv' | 'docx';
+export type ExportFormat = 'xlsx' | 'csv' | 'docx' | 'pdf' | 'json' | 'md' | 'sql';
 
 export interface ParsedTable {
   data: TableData;

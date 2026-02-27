@@ -2,9 +2,10 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 import { ParsedTable, ExportFormat } from '@/types/table';
 import { exportTable, downloadBlob } from '@/services/exportService';
-import { ExcelIcon, CSVIcon, DocxIcon } from '@/components/icons/FormatIcons';
+import { ExcelIcon, CSVIcon, DocxIcon, PDFIcon, JSONIcon, MarkdownIcon, SQLIcon } from '@/components/icons/FormatIcons';
 import { Button } from '@/components/ui/button';
 
 interface TablePreviewProps {
@@ -42,6 +43,30 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ table, onClear }) =>
       icon: <DocxIcon size={32} />,
       description: 'For documents',
     },
+    {
+      format: 'pdf',
+      label: 'PDF',
+      icon: <PDFIcon size={32} />,
+      description: 'Portable document',
+    },
+    {
+      format: 'json',
+      label: 'JSON',
+      icon: <JSONIcon size={32} />,
+      description: 'Data interchange',
+    },
+    {
+      format: 'md',
+      label: 'Markdown',
+      icon: <MarkdownIcon size={32} />,
+      description: 'Lightweight markup',
+    },
+    {
+      format: 'sql',
+      label: 'SQL',
+      icon: <SQLIcon size={32} />,
+      description: 'Database inserts',
+    },
   ];
 
   const handleExport = async (format: ExportFormat) => {
@@ -53,11 +78,17 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ table, onClear }) =>
 
       if (result.success && result.blob) {
         downloadBlob(result.blob, 'table_export', format);
+        toast.success(`Successfully exported to ${format.toUpperCase()} ✨`, {
+          duration: 3000,
+        });
       } else {
         console.error('Export failed:', result.error);
+        toast.error(`Export failed: ${result.error}`);
       }
     } catch (error) {
       console.error('Export error:', error);
+      const message = error instanceof Error ? error.message : 'An unexpected error occurred during export';
+      toast.error(message);
     } finally {
       setIsExporting(false);
       setExportingFormat(null);
@@ -129,7 +160,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ table, onClear }) =>
 
         <div>
           <h4 className="text-lg font-bold text-secondary mb-4">Export as:</h4>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {formatOptions.map((option) => (
               <motion.button
                 key={option.format}
@@ -138,7 +169,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ table, onClear }) =>
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className={`
-                  relative p-6 rounded-xl border-2 transition-all duration-200
+                  relative p-2 rounded-xl border-2 transition-all duration-200
                   ${
                     exportingFormat === option.format
                       ? 'border-primary bg-primary-light/30'

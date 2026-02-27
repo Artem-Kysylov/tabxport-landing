@@ -38,6 +38,46 @@ export const DocxIcon: React.FC<IconProps> = ({ size = 32, className = '' }) => 
   />
 );
 
+export const PDFIcon: React.FC<IconProps> = ({ size = 32, className = '' }) => (
+  <Image
+    src="/icons/icon-pdf.svg"
+    alt="PDF"
+    width={size}
+    height={size}
+    className={className}
+  />
+);
+
+export const JSONIcon: React.FC<IconProps> = ({ size = 32, className = '' }) => (
+  <Image
+    src="/icons/icon-json.svg"
+    alt="JSON"
+    width={size}
+    height={size}
+    className={className}
+  />
+);
+
+export const MarkdownIcon: React.FC<IconProps> = ({ size = 32, className = '' }) => (
+  <Image
+    src="/icons/icon-md.svg"
+    alt="Markdown"
+    width={size}
+    height={size}
+    className={className}
+  />
+);
+
+export const SQLIcon: React.FC<IconProps> = ({ size = 32, className = '' }) => (
+  <Image
+    src="/icons/icon-sql.svg"
+    alt="SQL"
+    width={size}
+    height={size}
+    className={className}
+  />
+);
+
 export const SparklesIcon: React.FC<IconProps> = ({ size = 24, className = '' }) => (
   <svg
     width={size}
