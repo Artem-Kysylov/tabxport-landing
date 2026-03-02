@@ -16,6 +16,8 @@ export type TableData = z.infer<typeof TableDataSchema>;
 export type ExportFormat = 'xlsx' | 'csv' | 'docx' | 'pdf' | 'json' | 'md' | 'sql';
 
 export interface ParsedTable {
+  id: string;
+  name: string;
   data: TableData;
   rowCount: number;
   columnCount: number;
@@ -23,7 +25,7 @@ export interface ParsedTable {
 
 export interface ParserResult {
   success: boolean;
-  table?: ParsedTable;
+  tables?: ParsedTable[];
   error?: string;
 }
 

@@ -3,20 +3,28 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SparklesIcon } from '@/components/icons/FormatIcons';
+import { Button } from '@/components/ui/button';
 
 interface SmartDropzoneProps {
   onDataReceived: (data: string) => void;
   isProcessing?: boolean;
   errorMessage?: string | null;
+  mode?: 'replace' | 'append';
+  submitBehavior?: 'auto' | 'manual';
+  submitLabel?: string;
 }
 
 export const SmartDropzone: React.FC<SmartDropzoneProps> = ({ 
   onDataReceived, 
   isProcessing = false,
   errorMessage = null,
+  mode = 'replace',
+  submitBehavior = 'auto',
+  submitLabel,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [value, setValue] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dragDepthRef = useRef(0);
 
@@ -51,12 +59,22 @@ export const SmartDropzone: React.FC<SmartDropzoneProps> = ({
       const textData = e.dataTransfer.getData('text/plain');
 
       if (htmlData) {
-        onDataReceived(htmlData);
+        if (submitBehavior === 'auto') {
+          onDataReceived(htmlData);
+        } else {
+          setValue(htmlData);
+          if (textareaRef.current) textareaRef.current.value = htmlData;
+        }
         return;
       }
 
       if (textData) {
-        onDataReceived(textData);
+        if (submitBehavior === 'auto') {
+          onDataReceived(textData);
+        } else {
+          setValue(textData);
+          if (textareaRef.current) textareaRef.current.value = textData;
+        }
         return;
       }
 
@@ -64,40 +82,59 @@ export const SmartDropzone: React.FC<SmartDropzoneProps> = ({
         const file = files[0];
         try {
           const text = await file.text();
-          onDataReceived(text);
+          if (submitBehavior === 'auto') {
+            onDataReceived(text);
+          } else {
+            setValue(text);
+            if (textareaRef.current) textareaRef.current.value = text;
+          }
         } catch (error) {
           console.error('Failed to read file:', error);
         }
       }
     },
-    [onDataReceived]
+    [onDataReceived, submitBehavior]
   );
 
   const handlePaste = useCallback(
     (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
       const pastedText = e.clipboardData.getData('text/plain');
       if (pastedText) {
-        onDataReceived(pastedText);
+        if (submitBehavior === 'auto') {
+          onDataReceived(pastedText);
+        } else {
+          setValue(pastedText);
+        }
       }
     },
-    [onDataReceived]
+    [onDataReceived, submitBehavior]
   );
 
   const handleTextChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       const text = e.target.value;
-      if (text.trim()) {
-        onDataReceived(text);
+      setValue(text);
+      if (submitBehavior === 'auto') {
+        if (text.trim()) {
+          onDataReceived(text);
+        }
       }
     },
-    [onDataReceived]
+    [onDataReceived, submitBehavior]
   );
 
   useEffect(() => {
     if (!isProcessing && !errorMessage && textareaRef.current) {
       textareaRef.current.value = '';
+      setValue('');
     }
   }, [errorMessage, isProcessing]);
+
+  const handleManualSubmit = useCallback(() => {
+    const text = value.trim();
+    if (!text) return;
+    onDataReceived(text);
+  }, [onDataReceived, value]);
 
   return (
     <motion.div
@@ -134,10 +171,16 @@ export const SmartDropzone: React.FC<SmartDropzoneProps> = ({
 
             <div className="text-center">
               <h3 className="text-2xl font-bold text-secondary mb-2">
-                {isDragging ? 'Drop your table here!' : 'Smart Table Dropzone'}
+                {isDragging
+                  ? 'Drop your table here!'
+                  : mode === 'append'
+                  ? 'Add another table'
+                  : 'Smart Table Dropzone'}
               </h3>
               <p className="text-base text-secondary/70">
-                Paste, drag & drop, or type your table data
+                {mode === 'append'
+                  ? 'Paste or drop another table to add it to the list'
+                  : 'Paste, drag & drop, or type your table data'}
               </p>
               <p className="text-sm text-secondary/50 mt-1">
                 Supports: HTML, Markdown, CSV, TSV
@@ -151,13 +194,29 @@ export const SmartDropzone: React.FC<SmartDropzoneProps> = ({
                      focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20
                      resize-none font-mono text-sm transition-all duration-200
                      placeholder:text-secondary/40"
-            placeholder="Paste your table here or drag & drop a file..."
+            placeholder={
+              mode === 'append'
+                ? 'Paste another table here to add it...'
+                : 'Paste your table here or drag & drop a file...'
+            }
             onPaste={handlePaste}
             onChange={handleTextChange}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             disabled={isProcessing}
           />
+
+          {submitBehavior === 'manual' && (
+            <div className="mt-4 flex justify-end">
+              <Button
+                onClick={handleManualSubmit}
+                disabled={isProcessing || !value.trim()}
+                className="h-9 px-4 bg-primary hover:bg-primary/90 text-white"
+              >
+                {submitLabel || (mode === 'append' ? 'Add table' : 'Process')}
+              </Button>
+            </div>
+          )}
 
           {errorMessage && (
             <div className="mt-3 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">

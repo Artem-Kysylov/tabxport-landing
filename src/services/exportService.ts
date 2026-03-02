@@ -2,10 +2,16 @@ import * as XLSX from 'xlsx';
 import { Document, Paragraph, Table, TableCell, TableRow, WidthType } from 'docx';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import JSZip from 'jszip';
 import { TableData, ExportFormat, ExportResult } from '@/types/table';
 
 export interface ExportTableOptions {
   autoSum?: boolean;
+}
+
+export interface NamedTableData {
+  name: string;
+  data: TableData;
 }
 
 let notoSansRegularBase64: string | null = null;
@@ -102,7 +108,15 @@ function getNumericColumnIndices(data: TableData): number[] {
   return numericCols;
 }
 
-function exportToExcel(data: TableData, options?: ExportTableOptions): Blob {
+function sanitizeExcelSheetName(name: string): string {
+  // Excel worksheet name limit is 31, but extension uses tighter limits.
+  const MAX_LEN = 25;
+  const cleaned = name.replace(/[\\/?*\[\]:]/g, '').trim();
+  const base = cleaned.length >= 3 ? cleaned : 'Table';
+  return base.slice(0, MAX_LEN);
+}
+
+function createExcelWorksheet(data: TableData, options?: ExportTableOptions): XLSX.WorkSheet {
   const shouldAutoSum = Boolean(options?.autoSum);
   const numericColumnIndices = shouldAutoSum ? getNumericColumnIndices(data) : [];
   const hasAutoSum = numericColumnIndices.length > 0 && data.rows.length > 0;
@@ -148,6 +162,12 @@ function exportToExcel(data: TableData, options?: ExportTableOptions): Blob {
       worksheet[cellAddress] = { t: 'n', f: formula, v: sumValue };
     }
   }
+
+  return worksheet;
+}
+
+function exportToExcel(data: TableData, options?: ExportTableOptions): Blob {
+  const worksheet = createExcelWorksheet(data, options);
 
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
@@ -374,6 +394,61 @@ export async function exportTable(
   }
 }
 
+export async function exportTablesToXlsxMultiSheet(
+  tables: NamedTableData[],
+  options?: ExportTableOptions
+): Promise<Blob> {
+  const workbook = XLSX.utils.book_new();
+  const existingNames = new Set<string>();
+
+  for (let i = 0; i < tables.length; i++) {
+    const t = tables[i];
+    const base = sanitizeExcelSheetName(t?.name || `Table ${i + 1}`);
+
+    let sheetName = base;
+    let counter = 1;
+    while (existingNames.has(sheetName)) {
+      const suffix = `_${counter}`;
+      sheetName = (base.slice(0, Math.max(1, 25 - suffix.length)) + suffix).slice(0, 25);
+      counter++;
+    }
+    existingNames.add(sheetName);
+
+    const worksheet = createExcelWorksheet(t.data, options);
+    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+  }
+
+  const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+  return new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+}
+
+export async function exportTablesToZip(
+  tables: NamedTableData[],
+  format: ExportFormat,
+  options?: ExportTableOptions
+): Promise<Blob> {
+  const zip = new JSZip();
+
+  for (let i = 0; i < tables.length; i++) {
+    const t = tables[i];
+    const safeBase = (t?.name || `table_${i + 1}`)
+      .trim()
+      .replace(/\s+/g, '_')
+      .replace(/[^a-zA-Z0-9_-]/g, '')
+      .toLowerCase();
+    const filename = `${safeBase || `table_${i + 1}`}.${format}`;
+
+    const result = await exportTable(t.data, format, format === 'xlsx' ? options : undefined);
+    if (!result.success || !result.blob) {
+      throw new Error(result.error || `Failed to export ${t?.name || filename}`);
+    }
+
+    zip.file(filename, result.blob);
+  }
+
+  return zip.generateAsync({ type: 'blob' });
+}
+
 /**
  * Скачивает blob как файл
  */
@@ -382,6 +457,17 @@ export function downloadBlob(blob: Blob, filename: string, format: ExportFormat)
   const link = document.createElement('a');
   link.href = url;
   link.download = `${filename}.${format}`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+export function downloadZipBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${filename}.zip`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

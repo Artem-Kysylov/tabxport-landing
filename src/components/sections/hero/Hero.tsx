@@ -7,7 +7,7 @@ import { TablePreview } from '@/components/UniversalConverter/TablePreview'
 import { useTableParser } from '@/hooks/useTableParser'
 
 const Hero = () => {
-  const { parsedTable, isLoading, error, parseFromText, clearTable } = useTableParser();
+  const { parsedTables, isLoading, error, parseFromText, appendFromText, clearTable } = useTableParser();
 
   return (
     <AnimatedSection>
@@ -28,17 +28,27 @@ const Hero = () => {
             </FadeInUp>
             
             <FadeInUp delay={0.6} className="w-full">
-              {!parsedTable ? (
+              {!parsedTables || parsedTables.length === 0 ? (
                 <SmartDropzone 
                   onDataReceived={parseFromText}
                   isProcessing={isLoading}
                   errorMessage={error}
                 />
               ) : (
-                <TablePreview 
-                  table={parsedTable}
-                  onClear={clearTable}
-                />
+                <div className="w-full flex flex-col gap-6">
+                  <TablePreview 
+                    tables={parsedTables}
+                    onClear={clearTable}
+                  />
+                  <SmartDropzone
+                    onDataReceived={appendFromText}
+                    isProcessing={isLoading}
+                    errorMessage={error}
+                    mode="append"
+                    submitBehavior="manual"
+                    submitLabel="Add table"
+                  />
+                </div>
               )}
             </FadeInUp>
           </div>
