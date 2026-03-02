@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { ParsedTable, ExportFormat } from '@/types/table';
@@ -23,6 +23,19 @@ interface FormatOption {
 export const TablePreview: React.FC<TablePreviewProps> = ({ table, onClear }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [exportingFormat, setExportingFormat] = useState<ExportFormat | null>(null);
+  const [autoSumEnabled, setAutoSumEnabled] = useState(false);
+
+  useEffect(() => {
+    try {
+      const savedAutoSum = localStorage.getItem('tx_auto_sum_enabled');
+
+      if (savedAutoSum === 'true' || savedAutoSum === 'false') {
+        setAutoSumEnabled(savedAutoSum === 'true');
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const formatOptions: FormatOption[] = [
     {
@@ -74,7 +87,11 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ table, onClear }) =>
     setExportingFormat(format);
 
     try {
-      const result = await exportTable(table.data, format);
+      const result = await exportTable(
+        table.data,
+        format,
+        format === 'xlsx' ? { autoSum: autoSumEnabled } : undefined
+      );
 
       if (result.success && result.blob) {
         downloadBlob(result.blob, 'table_export', format);
@@ -93,6 +110,18 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ table, onClear }) =>
       setIsExporting(false);
       setExportingFormat(null);
     }
+  };
+
+  const handleToggleAutoSum = () => {
+    setAutoSumEnabled((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('tx_auto_sum_enabled', String(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
   };
 
   return (
@@ -159,7 +188,31 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ table, onClear }) =>
         </div>
 
         <div>
-          <h4 className="text-lg font-bold text-secondary mb-4">Export as:</h4>
+          <div className="flex items-center justify-between mb-4 gap-4">
+            <h4 className="text-lg font-bold text-secondary">Export as:</h4>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-secondary/60">Auto-sum (Excel)</span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={autoSumEnabled}
+                onClick={handleToggleAutoSum}
+                disabled={isExporting}
+                className={
+                  `relative inline-flex h-5 w-9 items-center rounded-full border transition-colors ` +
+                  (autoSumEnabled ? 'bg-primary border-primary' : 'bg-white border-primary-light') +
+                  (isExporting ? ' opacity-60 cursor-not-allowed' : ' cursor-pointer')
+                }
+              >
+                <span
+                  className={
+                    `inline-block h-4 w-4 transform rounded-full shadow transition-transform ` +
+                    (autoSumEnabled ? 'bg-white translate-x-4' : 'bg-primary translate-x-0.5')
+                  }
+                />
+              </button>
+            </div>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {formatOptions.map((option) => (
               <motion.button

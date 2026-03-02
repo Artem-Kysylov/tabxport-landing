@@ -4,6 +4,10 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { TableData, ExportFormat, ExportResult } from '@/types/table';
 
+export interface ExportTableOptions {
+  autoSum?: boolean;
+}
+
 let notoSansRegularBase64: string | null = null;
 let notoSansBoldBase64: string | null = null;
 
@@ -44,11 +48,106 @@ async function ensureNotoSansFontsLoaded(): Promise<void> {
 /**
  * Экспортирует таблицу в Excel формат
  */
-function exportToExcel(data: TableData): Blob {
-  const worksheet = XLSX.utils.aoa_to_sheet([
-    data.headers,
-    ...data.rows,
-  ]);
+function extractNumericValue(value: string): number | null {
+  const trimmed = value.trim();
+  if (trimmed === '' || trimmed === '-' || trimmed.toLowerCase() === 'n/a') {
+    return null;
+  }
+
+  const cleaned = trimmed
+    .replace(/[\u00A0\u200B-\u200D\uFEFF]/g, ' ')
+    .replace(/[\s]/g, '')
+    .replace(/[$€£¥₽₴]/g, '')
+    .replace(/(USD|EUR|GBP|UAH|RUB)$/i, '');
+
+  const withoutPercent = cleaned.endsWith('%') ? cleaned.slice(0, -1) : cleaned;
+
+  const lastComma = withoutPercent.lastIndexOf(',');
+  const lastDot = withoutPercent.lastIndexOf('.');
+
+  let normalized = withoutPercent;
+
+  if (lastComma !== -1 && lastDot !== -1) {
+    if (lastComma > lastDot) {
+      normalized = withoutPercent.replace(/\./g, '').replace(',', '.');
+    } else {
+      normalized = withoutPercent.replace(/,/g, '');
+    }
+  } else if (lastComma !== -1) {
+    normalized = /,\d{1,2}$/.test(withoutPercent)
+      ? withoutPercent.replace(',', '.')
+      : withoutPercent.replace(/,/g, '');
+  }
+
+  const num = Number.parseFloat(normalized);
+  return Number.isFinite(num) ? num : null;
+}
+
+function getNumericColumnIndices(data: TableData): number[] {
+  const colCount = data.headers.length;
+  const numericCols: number[] = [];
+
+  for (let c = 0; c < colCount; c++) {
+    const values = data.rows.map((r) => r[c] ?? '');
+    const nonEmpty = values.filter((v) => v.trim() !== '');
+
+    if (nonEmpty.length === 0) continue;
+
+    const numericCount = nonEmpty.reduce((acc, v) => (extractNumericValue(v) === null ? acc : acc + 1), 0);
+    if (numericCount / nonEmpty.length >= 0.8) {
+      numericCols.push(c);
+    }
+  }
+
+  return numericCols;
+}
+
+function exportToExcel(data: TableData, options?: ExportTableOptions): Blob {
+  const shouldAutoSum = Boolean(options?.autoSum);
+  const numericColumnIndices = shouldAutoSum ? getNumericColumnIndices(data) : [];
+  const hasAutoSum = numericColumnIndices.length > 0 && data.rows.length > 0;
+
+  const aoa: Array<Array<string>> = [data.headers, ...data.rows];
+  if (hasAutoSum) {
+    aoa.push(new Array(data.headers.length).fill(''));
+  }
+
+  const worksheet = XLSX.utils.aoa_to_sheet(aoa);
+
+  if (hasAutoSum) {
+    // Convert numeric columns values from strings to actual numeric cells,
+    // otherwise Excel treats them as text and SUM() results in 0.
+    for (let r = 0; r < data.rows.length; r++) {
+      const sheetRowIndex0 = r + 1; // +1 for header row
+      for (const c of numericColumnIndices) {
+        const raw = data.rows[r]?.[c] ?? '';
+        const parsed = extractNumericValue(raw);
+        if (parsed === null) continue;
+        const cellAddress = XLSX.utils.encode_cell({ r: sheetRowIndex0, c });
+        worksheet[cellAddress] = { t: 'n', v: parsed };
+      }
+    }
+
+    const dataStartRowNumber = 2;
+    const dataEndRowNumber = data.rows.length + 1;
+    const totalsRowIndex0 = data.rows.length + 1;
+
+    const labelCellAddress = XLSX.utils.encode_cell({ r: totalsRowIndex0, c: 0 });
+    worksheet[labelCellAddress] = { t: 's', v: 'Total' };
+
+    for (const c of numericColumnIndices) {
+      const colLetter = XLSX.utils.encode_col(c);
+      const cellAddress = XLSX.utils.encode_cell({ r: totalsRowIndex0, c });
+      const formula = `SUM(${colLetter}${dataStartRowNumber}:${colLetter}${dataEndRowNumber})`;
+
+      const sumValue = data.rows.reduce((acc, row) => {
+        const parsed = extractNumericValue(row[c] ?? '');
+        return parsed === null ? acc : acc + parsed;
+      }, 0);
+
+      worksheet[cellAddress] = { t: 'n', f: formula, v: sumValue };
+    }
+  }
 
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
@@ -228,14 +327,15 @@ function exportToSQL(data: TableData): Blob {
  */
 export async function exportTable(
   data: TableData,
-  format: ExportFormat
+  format: ExportFormat,
+  options?: ExportTableOptions
 ): Promise<ExportResult> {
   try {
     let blob: Blob;
 
     switch (format) {
       case 'xlsx':
-        blob = exportToExcel(data);
+        blob = exportToExcel(data, options);
         break;
       case 'csv':
         blob = exportToCSV(data);
