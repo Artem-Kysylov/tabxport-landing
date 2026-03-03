@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 interface TablePreviewProps {
   tables: ParsedTable[];
   onClear: () => void;
+  onAppend?: (text: string) => void;
 }
 
 interface FormatOption {
@@ -26,12 +27,13 @@ interface FormatOption {
   description: string;
 }
 
-export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear }) => {
+export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onAppend }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [exportingFormat, setExportingFormat] = useState<ExportFormat | null>(null);
   const [autoSumEnabled, setAutoSumEnabled] = useState(false);
   const [activeTableId, setActiveTableId] = useState<string | null>(null);
   const [selectedTableIds, setSelectedTableIds] = useState<Set<string>>(new Set());
+  const [appendText, setAppendText] = useState('');
 
   const [batchFormat, setBatchFormat] = useState<ExportFormat>('xlsx');
   const [batchMode, setBatchMode] = useState<'separate' | 'xlsx_tabs' | 'zip'>('separate');
@@ -216,6 +218,18 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear }) =
     });
   };
 
+  const handleAppendTable = () => {
+    if (!onAppend) return;
+    const text = appendText.trim();
+    if (!text) {
+      toast.error('Paste a table first');
+      return;
+    }
+
+    onAppend(text);
+    setAppendText('');
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -288,6 +302,29 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear }) =
               );
             })}
           </div>
+
+          {tables.length > 1 && onAppend && (
+            <div className="border-t border-primary-light/50 bg-white px-4 py-3">
+              <div className="text-xs font-semibold text-secondary mb-2">Add another table</div>
+              <div className="flex items-center gap-2">
+                <textarea
+                  value={appendText}
+                  onChange={(e) => setAppendText(e.target.value)}
+                  placeholder="Paste another table..."
+                  disabled={isExporting}
+                  rows={1}
+                  className="flex-1 h-10 min-h-10 max-h-10 rounded-md border border-primary-light bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+                />
+                <Button
+                  onClick={handleAppendTable}
+                  disabled={isExporting || !appendText.trim()}
+                  className="h-10 px-4 bg-primary hover:bg-primary/90 text-white"
+                >
+                  Add table
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="overflow-x-auto mb-8 rounded-xl border-2 border-primary-light">

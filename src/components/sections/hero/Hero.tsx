@@ -35,20 +35,11 @@ const Hero = () => {
                   errorMessage={error}
                 />
               ) : (
-                <div className="w-full flex flex-col gap-6">
-                  <TablePreview 
-                    tables={parsedTables}
-                    onClear={clearTable}
-                  />
-                  <SmartDropzone
-                    onDataReceived={appendFromText}
-                    isProcessing={isLoading}
-                    errorMessage={error}
-                    mode="append"
-                    submitBehavior="manual"
-                    submitLabel="Add table"
-                  />
-                </div>
+                <TablePreview 
+                  tables={parsedTables}
+                  onClear={clearTable}
+                  onAppend={appendFromText}
+                />
               )}
             </FadeInUp>
           </div>
