@@ -147,7 +147,7 @@ export default function WaitlistPage() {
                   src="/prompt-builder-video/prompt-builder.mp4"
                   width={820}
                   height={512}
-                  className="w-full h-auto object-cover rounded-lg"
+                  className="w-full h-auto object-cover rounded-lg scale-115"
                   autoPlay
                   loop
                   muted

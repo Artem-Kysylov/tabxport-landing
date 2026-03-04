@@ -155,7 +155,7 @@ const LabsTeaserSection = () => {
                     src="/prompt-builder-video/prompt-builder.mp4"
                     width={600}
                     height={375}
-                    className="w-full h-auto object-cover rounded-lg"
+                    className="w-full h-auto object-cover rounded-lg scale-115"
                     autoPlay
                     loop
                     muted
