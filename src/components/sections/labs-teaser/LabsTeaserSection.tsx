@@ -147,17 +147,19 @@ const LabsTeaserSection = () => {
               </FadeInUp>
             </div>
 
-            {/* Right Column - Image */}
+            {/* Right Column - Video */}
             <FadeInUp delay={0.6}>
               <div className="relative">
                 <div className="relative rounded-lg overflow-hidden shadow-2xl">
-                  <Image
-                    src="/images/prompt-builder-preview.png"
-                    alt="Prompt Builder Preview"
+                  <video
+                    src="/prompt-builder-video/prompt-builder.mp4"
                     width={600}
                     height={375}
-                    className="w-full h-auto object-cover"
-                    priority={false}
+                    className="w-full h-auto object-cover rounded-lg"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
                   />
                 </div>
               </div>

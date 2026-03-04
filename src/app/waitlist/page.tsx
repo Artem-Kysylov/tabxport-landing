@@ -140,16 +140,18 @@ export default function WaitlistPage() {
               </div>
             </div>
 
-            {/* Right Column - Image */}
+            {/* Right Column - Video */}
             <div className="min-w-0 relative lg:pl-4 lg:justify-self-end">
               <div className="relative w-full rounded-lg overflow-hidden lg:max-w-[760px] xl:max-w-[820px]">
-                <Image
-                  src="/images/prompt-builder-preview.png"
-                  alt="Prompt Builder Preview"
+                <video
+                  src="/prompt-builder-video/prompt-builder.mp4"
                   width={820}
                   height={512}
-                  className="w-full h-auto object-cover"
-                  priority
+                  className="w-full h-auto object-cover rounded-lg"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
                 />
               </div>
             </div>
