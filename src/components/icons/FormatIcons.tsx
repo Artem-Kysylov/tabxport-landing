@@ -78,6 +78,16 @@ export const SQLIcon: React.FC<IconProps> = ({ size = 32, className = '' }) => (
   />
 );
 
+export const GoogleSheetsIcon: React.FC<IconProps> = ({ size = 32, className = '' }) => (
+  <Image
+    src="/icons/icon-google-sheets.svg"
+    alt="Google Sheets"
+    width={size}
+    height={size}
+    className={className}
+  />
+);
+
 export const SparklesIcon: React.FC<IconProps> = ({ size = 24, className = '' }) => (
   <svg
     width={size}

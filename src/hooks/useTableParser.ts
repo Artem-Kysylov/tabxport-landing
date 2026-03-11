@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { ParsedTable, ParserResult } from '@/types/table';
 import { parseTable, parseTableFromFile } from '@/services/tableParserService';
 
@@ -14,9 +14,36 @@ interface UseTableParserReturn {
 }
 
 export function useTableParser(): UseTableParserReturn {
+  const STORAGE_KEY = 'tx_parsed_tables_cache';
   const [parsedTables, setParsedTables] = useState<ParsedTable[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const data: unknown = JSON.parse(raw);
+      if (Array.isArray(data)) {
+        setParsedTables(data as ParsedTable[]);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      if (parsedTables && parsedTables.length > 0) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsedTables));
+      } else {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    } catch {
+      // ignore
+    }
+  }, [parsedTables]);
 
   const normalizeMergedTables = useCallback((tables: ParsedTable[]): ParsedTable[] => {
     const usedIds = new Set<string>();
@@ -134,6 +161,11 @@ export function useTableParser(): UseTableParserReturn {
   const clearTable = useCallback(() => {
     setParsedTables(null);
     setError(null);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // ignore
+    }
   }, []);
 
   return {

@@ -13,7 +13,9 @@ export type TableCell = z.infer<typeof TableCellSchema>;
 export type TableRow = z.infer<typeof TableRowSchema>;
 export type TableData = z.infer<typeof TableDataSchema>;
 
-export type ExportFormat = 'xlsx' | 'csv' | 'docx' | 'pdf' | 'json' | 'md' | 'sql';
+export type ExportFormat = 'xlsx' | 'csv' | 'docx' | 'pdf' | 'json' | 'md' | 'sql' | 'google_sheets';
+
+export type ExportDestination = 'local' | 'google_drive';
 
 export interface ParsedTable {
   id: string;

@@ -3,7 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import { ParsedTable, ExportFormat } from '@/types/table';
+import Image from 'next/image';
+import { Sparkles, Plus } from 'lucide-react';
+import { ParsedTable, ExportFormat, ExportDestination } from '@/types/table';
 import {
   exportTable,
   downloadBlob,
@@ -11,8 +13,12 @@ import {
   exportTablesToXlsxMultiSheet,
   exportTablesToZip,
 } from '@/services/exportService';
-import { ExcelIcon, CSVIcon, DocxIcon, PDFIcon, JSONIcon, MarkdownIcon, SQLIcon } from '@/components/icons/FormatIcons';
+import { ExcelIcon, CSVIcon, DocxIcon, PDFIcon, JSONIcon, MarkdownIcon, SQLIcon, GoogleSheetsIcon } from '@/components/icons/FormatIcons';
 import { Button } from '@/components/ui/button';
+import { useGoogleAuth } from '@/hooks/useGoogleAuth';
+import { GoogleAuthPopup } from '@/components/auth/GoogleAuthPopup';
+import { exportTableToGoogleSheets } from '@/services/googleSheetsService';
+import { getOrCreateTableXportFolder, uploadFileToDrive, getFolderLink } from '@/services/googleDriveService';
 
 interface TablePreviewProps {
   tables: ParsedTable[];
@@ -34,16 +40,40 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
   const [activeTableId, setActiveTableId] = useState<string | null>(null);
   const [selectedTableIds, setSelectedTableIds] = useState<Set<string>>(new Set());
   const [appendText, setAppendText] = useState('');
+  const [editingTableId, setEditingTableId] = useState<string | null>(null);
+  const [editedName, setEditedName] = useState('');
 
   const [batchFormat, setBatchFormat] = useState<ExportFormat>('xlsx');
   const [batchMode, setBatchMode] = useState<'separate' | 'xlsx_tabs' | 'zip'>('separate');
+  const [exportDestination, setExportDestination] = useState<ExportDestination>('local');
+  const [showAuthPopup, setShowAuthPopup] = useState(false);
+
+  const { isAuthenticated, hasRequiredScopes, getAccessToken } = useGoogleAuth();
+
+  const persistTablesSnapshot = () => {
+    try {
+      localStorage.setItem('tx_parsed_tables_cache', JSON.stringify(tables));
+    } catch {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      setShowAuthPopup(false);
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
     try {
       const savedAutoSum = localStorage.getItem('tx_auto_sum_enabled');
-
       if (savedAutoSum === 'true' || savedAutoSum === 'false') {
         setAutoSumEnabled(savedAutoSum === 'true');
+      }
+
+      const savedDestination = localStorage.getItem('tx_export_destination');
+      if (savedDestination === 'local' || savedDestination === 'google_drive') {
+        setExportDestination(savedDestination);
       }
     } catch {
       // ignore
@@ -58,6 +88,45 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
 
   const activeTable = tables.find((t) => t.id === activeTableId) ?? tables[0];
 
+  // Status badge detection utility
+  const detectStatusBadge = (cellValue: string): { type: 'success' | 'warning' | 'error' | 'neutral' | null; text: string } => {
+    const value = cellValue.trim().toLowerCase();
+    
+    const successKeywords = ['active', 'success', 'completed', 'done', 'approved', 'confirmed', 'verified', 'enabled', 'live', 'published', 'paid', 'delivered'];
+    const warningKeywords = ['pending', 'in progress', 'processing', 'review', 'draft', 'scheduled', 'awaiting', 'on hold'];
+    const errorKeywords = ['inactive', 'suspended', 'cancelled', 'rejected', 'failed', 'error', 'blocked', 'disabled', 'expired', 'overdue'];
+    const neutralKeywords = ['new', 'unknown', 'n/a', 'tbd'];
+    
+    if (successKeywords.includes(value)) return { type: 'success', text: cellValue };
+    if (warningKeywords.includes(value)) return { type: 'warning', text: cellValue };
+    if (errorKeywords.includes(value)) return { type: 'error', text: cellValue };
+    if (neutralKeywords.includes(value)) return { type: 'neutral', text: cellValue };
+    
+    return { type: null, text: cellValue };
+  };
+
+  // Render cell with status badge if applicable
+  const renderCellContent = (cellValue: string) => {
+    const badge = detectStatusBadge(cellValue);
+    
+    if (!badge.type) {
+      return cellValue;
+    }
+
+    const badgeStyles = {
+      success: 'bg-green-100 text-green-800',
+      warning: 'bg-yellow-100 text-yellow-800',
+      error: 'bg-red-100 text-red-800',
+      neutral: 'bg-gray-100 text-gray-800',
+    };
+
+    return (
+      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${badgeStyles[badge.type]}`}>
+        {badge.text}
+      </span>
+    );
+  };
+
   const formatOptions: FormatOption[] = [
     {
       format: 'xlsx',
@@ -70,6 +139,12 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
       label: 'CSV',
       icon: <CSVIcon size={32} />,
       description: 'Universal format',
+    },
+    {
+      format: 'google_sheets',
+      label: 'Google Sheets',
+      icon: <GoogleSheetsIcon size={32} />,
+      description: 'Cloud spreadsheet',
     },
     {
       format: 'docx',
@@ -105,6 +180,72 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
 
   const handleExportSingle = async (format: ExportFormat) => {
     if (!activeTable) return;
+
+    // Handle Google Sheets export
+    if (format === 'google_sheets') {
+      if (!isAuthenticated || !hasRequiredScopes) {
+        toast.message('Sign in with Google to export to Google Sheets', { duration: 2000 });
+        persistTablesSnapshot();
+        setShowAuthPopup(true);
+        return;
+      }
+
+      toast.message('Preparing Google Sheets export...', { duration: 1500 });
+      setIsExporting(true);
+      setExportingFormat(format);
+
+      try {
+        const accessToken = await getAccessToken();
+        if (!accessToken) {
+          toast.message('Please sign in again to continue', { duration: 2000 });
+          persistTablesSnapshot();
+          setShowAuthPopup(true);
+          return;
+        }
+
+        const folderId = await getOrCreateTableXportFolder(accessToken);
+        const folderUrl = await getFolderLink(accessToken, folderId);
+        const result = await exportTableToGoogleSheets(accessToken, activeTable, folderId);
+
+        if (result.success && result.spreadsheetUrl) {
+          toast.success(
+            <div>
+              <span>Exported to Google Sheets ✨</span>
+              <br />
+              <a
+                href={folderUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ textDecoration: 'underline', color: 'var(--color-primary)' }}
+              >
+                Open Folder
+              </a>
+              <br />
+              <a
+                href={result.spreadsheetUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ textDecoration: 'underline', color: 'var(--color-primary)' }}
+              >
+                Open Spreadsheet
+              </a>
+            </div>,
+            { duration: 5000 }
+          );
+        } else {
+          toast.error(result.error || 'Failed to export to Google Sheets');
+        }
+      } catch (error) {
+        console.error('Google Sheets export error:', error);
+        toast.error('Failed to export to Google Sheets');
+      } finally {
+        setIsExporting(false);
+        setExportingFormat(null);
+      }
+      return;
+    }
+
+    // Handle local exports
     setIsExporting(true);
     setExportingFormat(format);
 
@@ -116,13 +257,75 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
       );
 
       if (result.success && result.blob) {
-        downloadBlob(result.blob, `${activeTable.name.replace(/\s+/g, '_').toLowerCase()}`, format);
-        toast.success(`Successfully exported to ${format.toUpperCase()} ✨`, {
-          duration: 3000,
-        });
+        if (exportDestination === 'google_drive') {
+          if (!isAuthenticated || !hasRequiredScopes) {
+            persistTablesSnapshot();
+            setShowAuthPopup(true);
+            return;
+          }
+
+          const accessToken = await getAccessToken();
+          if (!accessToken) {
+            toast.error('Failed to get access token');
+            return;
+          }
+
+          const folderId = await getOrCreateTableXportFolder(accessToken);
+          const folderUrl = await getFolderLink(accessToken, folderId);
+          const baseName = activeTable.name.replace(/\s+/g, '_').toLowerCase();
+
+          const mimeTypes: Record<string, string> = {
+            xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            csv: 'text/csv',
+            docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            pdf: 'application/pdf',
+            json: 'application/json',
+            md: 'text/markdown',
+            sql: 'text/plain',
+          };
+
+          const uploadResult = await uploadFileToDrive(accessToken, result.blob, {
+            filename: `${baseName}.${format}`,
+            mimeType: mimeTypes[format] || 'application/octet-stream',
+            folderId,
+          });
+
+          if (uploadResult.success && uploadResult.fileUrl) {
+            toast.success(
+              <div>
+                <span>Uploaded to Google Drive ✨</span>
+                <br />
+                <a
+                  href={folderUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ textDecoration: 'underline', color: 'var(--color-primary)' }}
+                >
+                  Open Folder
+                </a>
+                <br />
+                <a
+                  href={uploadResult.fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ textDecoration: 'underline', color: 'var(--color-primary)' }}
+                >
+                  Open File
+                </a>
+              </div>,
+              { duration: 5000 }
+            );
+          } else {
+            toast.error(uploadResult.error || 'Failed to upload to Google Drive');
+          }
+        } else {
+          downloadBlob(result.blob, `${activeTable.name.replace(/\s+/g, '_').toLowerCase()}`, format);
+          toast.success(`Successfully exported to ${format.toUpperCase()} ✨`, {
+            duration: 2500,
+          });
+        }
       } else {
-        console.error('Export failed:', result.error);
-        toast.error(`Export failed: ${result.error}`);
+        toast.error(result.error || 'Export failed');
       }
     } catch (error) {
       console.error('Export error:', error);
@@ -157,6 +360,118 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
       return;
     }
 
+    // Check if exporting to Google Drive
+    if (exportDestination === 'google_drive') {
+      if (!isAuthenticated || !hasRequiredScopes) {
+        persistTablesSnapshot();
+        setShowAuthPopup(true);
+        return;
+      }
+
+      setIsExporting(true);
+      try {
+        const accessToken = await getAccessToken();
+        if (!accessToken) {
+          toast.error('Failed to get access token');
+          return;
+        }
+
+        // Handle multi-sheet Google Sheets export
+        if (batchMode === 'xlsx_tabs' || batchFormat === 'google_sheets') {
+          const { createMultiSheetSpreadsheet } = await import('@/services/googleSheetsService');
+          const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+          const title = `Tables_${selectedTables.length}_${timestamp}`;
+          
+          toast.message(`Creating multi-sheet Google Spreadsheet...`, { duration: 2500 });
+          const folderId = await getOrCreateTableXportFolder(accessToken);
+          const result = await createMultiSheetSpreadsheet(accessToken, selectedTables, title, folderId);
+
+          if (result.success && result.spreadsheetUrl) {
+            toast.success(
+              <div>
+                <span>Exported to Google Sheets ✨</span>
+                <br />
+                <a
+                  href={result.spreadsheetUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ textDecoration: 'underline', color: 'var(--color-primary)' }}
+                >
+                  Open Spreadsheet
+                </a>
+              </div>,
+              { duration: 5000 }
+            );
+          } else {
+            toast.error(result.error || 'Failed to create multi-sheet spreadsheet');
+          }
+          return;
+        }
+
+        // Handle batch upload to Google Drive folder
+        const { createBatchFolder, uploadFileToDrive, getFolderLink } = await import('@/services/googleDriveService');
+        const mainFolderId = await getOrCreateTableXportFolder(accessToken);
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+        const batchFolderId = await createBatchFolder(accessToken, mainFolderId, timestamp);
+
+        toast.message(`Uploading ${selectedTables.length} files to Google Drive...`, { duration: 2000 });
+        
+        let successCount = 0;
+        for (let i = 0; i < selectedTables.length; i++) {
+          const t = selectedTables[i];
+          const result = await exportTable(t.data, batchFormat, batchFormat === 'xlsx' ? { autoSum: autoSumEnabled } : undefined);
+          
+          if (result.success && result.blob) {
+            const mimeTypes: Record<string, string> = {
+              xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+              csv: 'text/csv',
+              docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+              pdf: 'application/pdf',
+              json: 'application/json',
+              md: 'text/markdown',
+              sql: 'text/plain',
+            };
+
+            const uploadResult = await uploadFileToDrive(accessToken, result.blob, {
+              filename: `${t.name.replace(/\s+/g, '_').toLowerCase()}.${batchFormat}`,
+              mimeType: mimeTypes[batchFormat] || 'application/octet-stream',
+              folderId: batchFolderId,
+            });
+
+            if (uploadResult.success) {
+              successCount++;
+              toast.message(`Uploaded ${successCount}/${selectedTables.length} files...`, { duration: 1000 });
+            }
+          }
+          await new Promise((r) => setTimeout(r, 300));
+        }
+
+        const folderUrl = await getFolderLink(accessToken, batchFolderId);
+        toast.success(
+          <div>
+            <span>Uploaded {successCount} files to Google Drive ✨</span>
+            <br />
+            <a
+              href={folderUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ textDecoration: 'underline', color: 'var(--color-primary)' }}
+            >
+              Open Folder
+            </a>
+          </div>,
+          { duration: 5000 }
+        );
+      } catch (error) {
+        console.error('Google Drive batch export error:', error);
+        toast.error('Failed to export to Google Drive');
+      } finally {
+        setIsExporting(false);
+      }
+      return;
+    }
+
+    // Handle local batch export
     setIsExporting(true);
     try {
       if (batchMode === 'separate') {
@@ -303,38 +618,68 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
             })}
           </div>
 
-          {tables.length > 1 && onAppend && (
-            <div className="border-t border-primary-light/50 bg-white px-4 py-3">
-              <div className="text-xs font-semibold text-secondary mb-2">Add another table</div>
-              <div className="flex items-center gap-2">
-                <textarea
-                  value={appendText}
-                  onChange={(e) => setAppendText(e.target.value)}
-                  placeholder="Paste another table..."
-                  disabled={isExporting}
-                  rows={1}
-                  className="flex-1 h-10 min-h-10 max-h-10 rounded-md border border-primary-light bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
-                />
-                <Button
-                  onClick={handleAppendTable}
-                  disabled={isExporting || !appendText.trim()}
-                  className="h-10 px-4 bg-primary hover:bg-primary/90 text-white"
-                >
-                  Add table
-                </Button>
+          {tables.length >= 1 && onAppend && (
+            <div className="border-t border-primary-light/50 bg-gray-50 px-4 py-3">
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 bg-white">
+                <div className="text-xs font-semibold text-secondary mb-2">Add another table</div>
+                <div className="flex items-center gap-2">
+                  <textarea
+                    value={appendText}
+                    onChange={(e) => setAppendText(e.target.value)}
+                    placeholder="Paste another table..."
+                    disabled={isExporting}
+                    rows={1}
+                    className="flex-1 h-10 min-h-10 max-h-10 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+                  />
+                  <Button
+                    onClick={handleAppendTable}
+                    disabled={isExporting || !appendText.trim()}
+                    className="h-10 px-4 bg-primary hover:bg-primary/90 text-white flex items-center gap-2"
+                  >
+                    <Plus size={16} />
+                    Add table
+                  </Button>
+                </div>
               </div>
             </div>
           )}
         </div>
 
-        <div className="overflow-x-auto mb-8 rounded-xl border-2 border-primary-light">
+        <div className="overflow-x-auto mb-8 rounded-xl border-2 border-gray-200">
+          {/* Claude-style header */}
+          <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-200">
+            <input
+              type="text"
+              value={editingTableId === activeTable.id ? editedName : activeTable.name}
+              onChange={(e) => {
+                setEditedName(e.target.value);
+                setEditingTableId(activeTable.id);
+              }}
+              onBlur={() => {
+                if (editingTableId && editedName.trim()) {
+                  // Update table name in parent component if needed
+                  // For now, just reset editing state
+                }
+                setEditingTableId(null);
+              }}
+              className="text-sm font-semibold text-secondary bg-transparent border-none focus:outline-none focus:ring-0 px-0"
+            />
+            <Button
+              variant="outline"
+              onClick={onClear}
+              className="h-7 py-1 px-3 text-xs hover:bg-destructive hover:text-white hover:border-destructive"
+            >
+              Clear
+            </Button>
+          </div>
+          
           <table className="w-full">
             <thead>
-              <tr className="bg-primary-light">
+              <tr className="bg-primary">
                 {activeTable.data.headers.map((header, index) => (
                   <th
                     key={index}
-                    className="px-4 py-3 text-left text-sm font-bold text-secondary border-b-2 border-primary"
+                    className="px-4 py-3 text-left text-sm font-bold text-white border border-gray-200"
                   >
                     {header}
                   </th>
@@ -342,31 +687,85 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
               </tr>
             </thead>
             <tbody>
-              {activeTable.data.rows.slice(0, 10).map((row, rowIndex) => (
+              {activeTable.data.rows.slice(0, 3).map((row, rowIndex) => (
                 <tr
                   key={rowIndex}
-                  className={rowIndex % 2 === 0 ? 'bg-white' : 'bg-primary-light/30'}
+                  className={rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
                 >
                   {row.map((cell, cellIndex) => (
                     <td
                       key={cellIndex}
-                      className="px-4 py-3 text-sm text-secondary border-b border-primary-light/50"
+                      className="px-4 py-3 text-sm text-secondary border border-gray-200"
                     >
-                      {cell}
+                      {renderCellContent(cell)}
                     </td>
                   ))}
                 </tr>
               ))}
             </tbody>
           </table>
-          {activeTable.rowCount > 10 && (
+          {activeTable.rowCount > 3 && (
             <div className="bg-primary-light/20 px-4 py-2 text-center text-sm text-secondary/60">
-              Showing 10 of {activeTable.rowCount} rows
+              Showing 3 of {activeTable.rowCount} rows
             </div>
           )}
         </div>
 
         <div>
+          {/* Export Destination Switcher */}
+          <div className="mb-6 flex justify-center">
+            <div className="flex items-center gap-2 bg-primary-light/30 p-1 rounded-lg">
+              <button
+                type="button"
+                onClick={() => {
+                  setExportDestination('local');
+                  try {
+                    localStorage.setItem('tx_export_destination', 'local');
+                  } catch {
+                    // ignore
+                  }
+                }}
+                className={`flex items-center gap-2 px-6 py-3 rounded-md text-sm font-semibold transition-all cursor-pointer border-2 ${
+                  exportDestination === 'local'
+                    ? 'bg-white text-secondary border-primary'
+                    : 'text-secondary/60 hover:text-secondary border-transparent'
+                }`}
+              >
+                <Image src="/icons/icon-device.svg" alt="Local" width={20} height={20} />
+                Local Download
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setExportDestination('google_drive');
+                  try {
+                    localStorage.setItem('tx_export_destination', 'google_drive');
+                  } catch {
+                    // ignore
+                  }
+
+                  if (!isAuthenticated || !hasRequiredScopes) {
+                    persistTablesSnapshot();
+                    setShowAuthPopup(true);
+                  }
+                }}
+                className={`flex items-center gap-2 px-6 py-3 rounded-md text-sm font-semibold transition-all cursor-pointer border-2 ${
+                  exportDestination === 'google_drive'
+                    ? 'bg-white text-secondary border-primary'
+                    : 'text-secondary/60 hover:text-secondary border-transparent'
+                }`}
+              >
+                <Image src="/icons/icon-google-drive.svg" alt="Google Drive" width={20} height={20} />
+                Google Drive
+              </button>
+            </div>
+            {exportDestination === 'google_drive' && !isAuthenticated && (
+              <p className="text-xs text-secondary/60 mt-2 text-center">
+                Sign in with Google to export to Drive
+              </p>
+            )}
+          </div>
+
           <div className="flex items-center justify-between mb-4 gap-4">
             {tables.length === 1 ? (
               <h4 className="text-lg font-bold text-secondary">Export as:</h4>
@@ -374,7 +773,10 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
               <div />
             )}
             <div className="flex items-center gap-3">
-              <span className="text-xs text-secondary/60">Auto-sum (Excel)</span>
+              <span className="flex items-center gap-1 text-xs text-secondary/60">
+                <Sparkles size={14} className="text-primary" />
+                Auto-sum (Excel)
+              </span>
               <button
                 type="button"
                 role="switch"
@@ -489,7 +891,12 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
           )}
         </div>
       </div>
-  </motion.div>
-);
 
+      {/* Google Auth Popup */}
+      <GoogleAuthPopup 
+        trigger={showAuthPopup} 
+        onClose={() => setShowAuthPopup(false)} 
+      />
+    </motion.div>
+  );
 };
