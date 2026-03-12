@@ -41,3 +41,8 @@ export interface ExportResult {
   blob?: Blob;
   error?: string;
 }
+
+export interface PDFBrandingSettings {
+  logo?: string; // Base64 encoded image
+  brandColor?: string; // Hex color for table headers
+}

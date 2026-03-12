@@ -3,10 +3,11 @@ import { Document, Paragraph, Table, TableCell, TableRow, WidthType } from 'docx
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import JSZip from 'jszip';
-import { TableData, ExportFormat, ExportResult } from '@/types/table';
+import { TableData, ExportFormat, ExportResult, PDFBrandingSettings } from '@/types/table';
 
 export interface ExportTableOptions {
   autoSum?: boolean;
+  pdfBranding?: PDFBrandingSettings;
 }
 
 export interface NamedTableData {
@@ -237,7 +238,7 @@ async function exportToDocx(data: TableData): Promise<Blob> {
 /**
  * Экспортирует таблицу в PDF формат с поддержкой кириллицы
  */
-async function exportToPDF(data: TableData): Promise<Blob> {
+async function exportToPDF(data: TableData, branding?: PDFBrandingSettings): Promise<Blob> {
   const doc = new jsPDF();
 
   // IMPORTANT: jsPDF built-in fonts don't support Cyrillic.
@@ -267,15 +268,52 @@ async function exportToPDF(data: TableData): Promise<Blob> {
   const fontName = notoSansRegularBase64 ? 'NotoSans' : 'helvetica';
   doc.setFont(fontName, 'normal');
 
+  // Add logo if provided
+  let startY = 20;
+  if (branding?.logo) {
+    try {
+      const match = /^data:(image\/(png|jpeg));base64,/i.exec(branding.logo);
+      const imageType = match?.[2]?.toLowerCase() === 'jpeg' ? 'JPEG' : 'PNG';
+
+      const LOGO_X = 14;
+      const LOGO_Y = 10;
+      const LOGO_MAX_W = 60;
+      const LOGO_MAX_H = 20;
+
+      const props = doc.getImageProperties(branding.logo);
+      const ratio = Math.min(LOGO_MAX_W / props.width, LOGO_MAX_H / props.height);
+      const w = Math.max(1, props.width * ratio);
+      const h = Math.max(1, props.height * ratio);
+
+      doc.addImage(branding.logo, imageType, LOGO_X, LOGO_Y, w, h);
+      startY = Math.max(startY, LOGO_Y + h + 8);
+    } catch (error) {
+      console.error('Failed to add logo to PDF:', error);
+    }
+  }
+
+  // Parse brand color or use default
+  let headerColor: [number, number, number] = [27, 147, 88]; // Default green
+  if (branding?.brandColor) {
+    const hex = branding.brandColor.replace('#', '');
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    if (!isNaN(r) && !isNaN(g) && !isNaN(b)) {
+      headerColor = [r, g, b];
+    }
+  }
+
   autoTable(doc, {
     head: [data.headers],
     body: data.rows,
+    startY,
     styles: {
       font: fontName,
       fontStyle: 'normal',
     },
     headStyles: {
-      fillColor: [27, 147, 88],
+      fillColor: headerColor,
       textColor: [255, 255, 255],
       font: fontName,
       fontStyle: notoSansBoldBase64 ? 'bold' : 'normal',
@@ -364,7 +402,7 @@ export async function exportTable(
         blob = await exportToDocx(data);
         break;
       case 'pdf':
-        blob = await exportToPDF(data);
+        blob = await exportToPDF(data, options?.pdfBranding);
         break;
       case 'json':
         blob = exportToJSON(data);
