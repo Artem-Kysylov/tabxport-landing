@@ -53,7 +53,7 @@ const TermsOfService = () => {
 
             <h2>6. Governing Law</h2>
             <p>
-              These terms are governed by the laws of Ukraine (or your country of registration).
+              These terms are governed by the laws of Ukraine.
             </p>
           </div>
         </div>
