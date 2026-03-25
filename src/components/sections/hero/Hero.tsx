@@ -13,7 +13,7 @@ const Hero = () => {
     <AnimatedSection>
       <section>
         <div className='container-custom'>
-          <div className='standalone-hero flex flex-col items-center justify-center gap-8 pt-[200px] pb-[100px]'>
+          <div className='standalone-hero flex flex-col items-center justify-center gap-8 pt-[100px] pb-[50px]'>
             <FadeInUp delay={0.2} className='standalone-hero-copy'>
               <h1 className='text-center text-7xl font-semibold'>
                 <span className='text-primary'>Click. Export. Done.</span> AI Tables → Excel, Docx

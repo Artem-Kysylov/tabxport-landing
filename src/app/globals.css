@@ -222,9 +222,9 @@
    }
 
    .standalone-hero {
-     padding-top: 1.5rem !important;
-     padding-bottom: 1.5rem !important;
-     gap: 1.5rem !important;
+     padding-top: 1rem !important;
+     padding-bottom: 1rem !important;
+     gap: 1rem !important;
    }
 
    .standalone-hero-copy {
@@ -233,6 +233,7 @@
 
    .standalone-dropzone {
      max-width: 100% !important;
+     margin-top: 4rem !important;
    }
 
    .standalone-dropzone-card {
@@ -249,5 +250,18 @@
    .standalone-footer {
      background: #ffffff;
      border-top: 1px solid rgba(0, 0, 0, 0.08);
+     margin-top: 2rem !important;
+   }
+
+   .standalone-app-shell main {
+     min-height: calc(100vh - 120px);
+     display: flex;
+     flex-direction: column;
+   }
+
+   .standalone-app-shell .standalone-hero {
+     flex: 1;
+     padding-top: 2rem !important;
+     padding-bottom: 1rem !important;
    }
  }
