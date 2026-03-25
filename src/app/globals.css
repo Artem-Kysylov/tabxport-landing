@@ -200,6 +200,12 @@
    html,
    body {
      background: #000000;
+     min-height: 100dvh;
+   }
+
+   body {
+     display: flex;
+     flex-direction: column;
    }
 
    .standalone-hidden {
@@ -207,8 +213,11 @@
    }
 
    .standalone-app-shell {
-     min-height: 100dvh;
+     flex: 1 1 auto;
+     min-height: 0;
      background: #ffffff;
+     display: flex;
+     flex-direction: column;
    }
 
    .standalone-navbar {
@@ -222,7 +231,11 @@
    }
 
    .standalone-hero {
-     padding-top: 1rem !important;
+     flex: 1 1 auto;
+     display: flex !important;
+     align-items: center;
+     justify-content: center;
+     padding-top: 1.5rem !important;
      padding-bottom: 1rem !important;
      gap: 1rem !important;
    }
@@ -233,7 +246,7 @@
 
    .standalone-dropzone {
      max-width: 100% !important;
-     margin-top: 4rem !important;
+     margin-top: 1.5rem !important;
    }
 
    .standalone-dropzone-card {
@@ -250,17 +263,12 @@
    .standalone-footer {
      background: #ffffff;
      border-top: 1px solid rgba(0, 0, 0, 0.08);
-     margin-top: 2rem !important;
-   }
-
-   .standalone-app-shell main {
-     min-height: calc(100vh - 120px);
-     display: flex;
-     flex-direction: column;
+     margin-top: 0 !important;
+     flex-shrink: 0;
    }
 
    .standalone-app-shell .standalone-hero {
-     flex: 1;
+     min-height: 100%;
      padding-top: 2rem !important;
      padding-bottom: 1rem !important;
    }
