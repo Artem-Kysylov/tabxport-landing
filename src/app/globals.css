@@ -221,13 +221,25 @@
    }
 
    .standalone-navbar {
-     background: #000000;
+     background: var(--secondary);
    }
 
    .standalone-navbar a,
    .standalone-navbar button,
    .standalone-navbar span {
      color: #ffffff;
+   }
+
+   .standalone-hero-section {
+     flex: 1 1 auto;
+     display: flex;
+     flex-direction: column;
+   }
+
+   .standalone-hero-container {
+     flex: 1 1 auto;
+     display: flex;
+     flex-direction: column;
    }
 
    .standalone-hero {
@@ -246,7 +258,7 @@
 
    .standalone-dropzone {
      max-width: 100% !important;
-     margin-top: 1.5rem !important;
+     margin-top: 0 !important;
    }
 
    .standalone-dropzone-card {

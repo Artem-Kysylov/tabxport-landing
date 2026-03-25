@@ -11,8 +11,8 @@ const Hero = () => {
 
   return (
     <AnimatedSection>
-      <section>
-        <div className='container-custom'>
+      <section className='standalone-hero-section'>
+        <div className='container-custom standalone-hero-container'>
           <div className='standalone-hero flex flex-col items-center justify-center gap-8 pt-[100px] pb-[50px]'>
             <FadeInUp delay={0.2} className='standalone-hero-copy'>
               <h1 className='text-center text-7xl font-semibold'>
