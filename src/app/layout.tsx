@@ -14,6 +14,20 @@ export const metadata: Metadata = {
   description: "Export tables from ChatGPT, Claude, and other AI chats to Excel, CSV, or Google Sheets. No more manual copying — just click Export!",
   keywords: "ChatGPT export, table export, Excel export, CSV export, Google Sheets, AI chat export, Claude export, Gemini export, data export",
   
+  // PWA Configuration
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'TableXport',
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  icons: {
+    apple: '/icons/app-icons/apple-touch-icon.png',
+  },
+  
   // Open Graph метатеги
   openGraph: {
     title: "TableXport: Export tables from ChatGPT to Excel in 1 click",
@@ -22,7 +36,7 @@ export const metadata: Metadata = {
     siteName: "TableXport",
     images: [
       {
-        url: "https://tablexport.com/open-graph.png", // ✅ Изменено с og-image.jpg на open-graph.png
+        url: "https://tablexport.com/open-graph.png",
         width: 1200,
         height: 630,
         alt: "TableXport - Export tables from AI chats",
@@ -37,7 +51,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "TableXport: Export tables from ChatGPT to Excel in 1 click",
     description: "Export tables from ChatGPT, Claude, and other AI chats to Excel, CSV, or Google Sheets. No more manual copying — just click Export!",
-    images: ["https://tablexport.com/open-graph.png"], // ✅ Изменено с og-image.jpg на open-graph.png
+    images: ["https://tablexport.com/open-graph.png"],
   },
   
   // Дополнительные метатеги

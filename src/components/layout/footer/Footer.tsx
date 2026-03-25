@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { SlSocialLinkedin } from "react-icons/sl"
 import { FaXTwitter } from "react-icons/fa6"
+import { InstallAppButton } from '@/components/pwa/InstallAppButton'
 
 const Footer = () => {
   return (
@@ -60,13 +61,14 @@ const Footer = () => {
 
           {/* Bottom Links */}
           <div className='flex flex-col md:flex-row items-center gap-4 md:gap-0 md:justify-between text-white text-sm font-normal w-full'>
-            <div className='flex items-center gap-5'>
+            <div className='flex flex-col md:flex-row items-center gap-5 md:gap-5'>
               <Link href='/privacy' className='transition-colors duration-300 ease-in-out hover:text-primary'>Privacy policy</Link>
               <Link href='/terms' className='transition-colors duration-300 ease-in-out hover:text-primary'>Terms of Service</Link>
               <Link href='/refund' className='transition-colors duration-300 ease-in-out hover:text-primary'>Refund Policy</Link>
+              <InstallAppButton />
               {/* <Link href='https://tablexport.gitbook.io/tablexport-docs/wkbciB0ogW3EFOM5Gwhg/' target='_blank' className='transition-colors duration-300 ease-in-out hover:text-primary'>Documentation</Link> */}
             </div>
-            <span>Proudly Indie-Built</span>
+            <span className='mt-5 md:mt-0 opacity-60'>Proudly Indie-Built</span>
           </div>
         </div>
       </div>

@@ -17,6 +17,7 @@ import { ExcelIcon, CSVIcon, DocxIcon, PDFIcon, JSONIcon, MarkdownIcon, SQLIcon,
 import { Button } from '@/components/ui/button';
 import { useGoogleAuth } from '@/hooks/useGoogleAuth';
 import { GoogleAuthPopup } from '@/components/auth/GoogleAuthPopup';
+import { PWAInstallPrompt } from '@/components/pwa/PWAInstallPrompt';
 import { exportTableToGoogleSheets } from '@/services/googleSheetsService';
 import { getOrCreateTableXportFolder, uploadFileToDrive, getFolderLink } from '@/services/googleDriveService';
 
@@ -50,12 +51,25 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
   const [showAuthPopup, setShowAuthPopup] = useState(false);
   const [pdfBranding, setPdfBranding] = useState<PDFBrandingSettings>({});
   const [showPdfSettings, setShowPdfSettings] = useState(false);
+  const [showPwaPrompt, setShowPwaPrompt] = useState(false);
 
   const { isAuthenticated, hasRequiredScopes, user, signOut, getAccessToken } = useGoogleAuth();
 
   const persistTablesSnapshot = () => {
     try {
       localStorage.setItem('tx_parsed_tables_cache', JSON.stringify(localTables));
+    } catch {
+      // ignore
+    }
+  };
+
+  const trackFirstExport = () => {
+    try {
+      const hasExported = localStorage.getItem('tx_first_export_completed');
+      if (!hasExported) {
+        localStorage.setItem('tx_first_export_completed', 'true');
+        setShowPwaPrompt(true);
+      }
     } catch {
       // ignore
     }
@@ -397,6 +411,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
         const result = await exportTableToGoogleSheets(accessToken, activeTable, folderId);
 
         if (result.success && result.spreadsheetUrl) {
+          trackFirstExport();
           toast.success(
             <div>
               <span>Exported to Google Sheets ✨</span>
@@ -478,6 +493,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
           });
 
           if (uploadResult.success && uploadResult.fileUrl) {
+            trackFirstExport();
             toast.success(
               <div>
                 <span>Uploaded to Google Drive ✨</span>
@@ -507,6 +523,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
           }
         } else {
           downloadBlob(result.blob, `${activeTable.name.replace(/\s+/g, '_').toLowerCase()}`, format);
+          trackFirstExport();
           toast.success(`Successfully exported to ${format.toUpperCase()} ✨`, {
             duration: 2500,
           });
@@ -573,6 +590,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
           const result = await createMultiSheetSpreadsheet(accessToken, selectedTables, title, folderId);
 
           if (result.success && result.spreadsheetUrl) {
+            trackFirstExport();
             toast.success(
               <div>
                 <span>Exported to Google Sheets ✨</span>
@@ -641,6 +659,9 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
         }
 
         const folderUrl = await getFolderLink(accessToken, batchFolderId);
+        if (successCount > 0) {
+          trackFirstExport();
+        }
         toast.success(
           <div>
             <span>Uploaded {successCount} files to Google Drive ✨</span>
@@ -687,6 +708,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
           }
           await new Promise((r) => setTimeout(r, 200));
         }
+        trackFirstExport();
         toast.success(`Exported ${selectedTables.length} tables ✨`, { duration: 2500 });
         return;
       }
@@ -703,6 +725,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
           { autoSum: autoSumEnabled }
         );
         downloadBlob(blob, `tables_${selectedTables.length}_combined`, 'xlsx');
+        trackFirstExport();
         toast.success('Combined XLSX exported ✨', { duration: 2500 });
         return;
       }
@@ -714,6 +737,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
         batchFormat === 'xlsx' ? { autoSum: autoSumEnabled } : undefined
       );
       downloadZipBlob(zipBlob, `tables_${selectedTables.length}`);
+      trackFirstExport();
       toast.success('ZIP archive exported ✨', { duration: 2500 });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Batch export failed';
@@ -1461,6 +1485,12 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
       <GoogleAuthPopup 
         trigger={showAuthPopup} 
         onClose={() => setShowAuthPopup(false)} 
+      />
+
+      {/* PWA Install Prompt */}
+      <PWAInstallPrompt 
+        trigger={showPwaPrompt} 
+        onClose={() => setShowPwaPrompt(false)} 
       />
     </motion.div>
   );

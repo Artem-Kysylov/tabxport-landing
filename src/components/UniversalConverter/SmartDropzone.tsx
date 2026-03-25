@@ -14,6 +14,13 @@ interface SmartDropzoneProps {
   submitLabel?: string;
 }
 
+const EXAMPLE_TABLE_DATA = `| ID | User Name | Status | Plan | Last Activity |
+|:---|:---|:---|:---|:---|
+| #1201 | Artem K. | Active | Pro | 2 mins ago |
+| #1205 | Sarah Miller | Pending | Free | 1 hour ago |
+| #1209 | John Doe | Suspended | Free | 3 days ago |
+| #1212 | Michael Smith | Inactive | Pro | 1 week ago |`;
+
 export const SmartDropzone: React.FC<SmartDropzoneProps> = ({ 
   onDataReceived, 
   isProcessing = false,
@@ -136,6 +143,14 @@ export const SmartDropzone: React.FC<SmartDropzoneProps> = ({
     onDataReceived(text);
   }, [onDataReceived, value]);
 
+  const handleTryExample = useCallback(() => {
+    setValue(EXAMPLE_TABLE_DATA);
+    if (textareaRef.current) {
+      textareaRef.current.value = EXAMPLE_TABLE_DATA;
+    }
+    onDataReceived(EXAMPLE_TABLE_DATA);
+  }, [onDataReceived]);
+
   return (
     <motion.div
       className="relative w-full max-w-3xl mx-auto"
@@ -185,6 +200,15 @@ export const SmartDropzone: React.FC<SmartDropzoneProps> = ({
               <p className="text-sm text-secondary/50 mt-1">
                 Supports: HTML, Markdown, CSV, TSV
               </p>
+              {mode !== 'append' && !value.trim() && (
+                <button
+                  onClick={handleTryExample}
+                  className="text-sm text-gray-500 hover:text-gray-700 underline cursor-pointer transition-colors mt-2"
+                  type="button"
+                >
+                  Try with example data ✨
+                </button>
+              )}
             </div>
           </div>
 
