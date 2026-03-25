@@ -51,7 +51,7 @@ const Navbar = () => {
               <Link href='/#demo' className='transition-colors duration-300 ease-in-out hover:text-primary'>See TableXport in action</Link>
             </li>
             <li>
-              <Link href='/#price-plans' className='transition-colors duration-300 ease-in-out hover:text-primary'>Unlock Productivity</Link>
+              <Link href='/#price-plans' className='transition-colors duration-300 ease-in-out hover:text-primary'>Simple Pricing</Link>
             </li>
             <li>
               <Link href='/#faq' className='transition-colors duration-300 ease-in-out hover:text-primary'>FAQ</Link>
@@ -84,11 +84,11 @@ const Navbar = () => {
           <ul className='flex flex-col items-center gap-8'>
             <li>
               <Link 
-                href='/#why-tabxport' 
+                href='/#features' 
                 className='text-[25px] font-semibold transition-colors duration-300 ease-in-out hover:text-primary'
                 onClick={handleLinkClick}
               >
-                Why TabXport?
+                Why TableXport?
               </Link>
             </li>
             <li>
@@ -97,16 +97,16 @@ const Navbar = () => {
                 className='text-[25px] font-semibold transition-colors duration-300 ease-in-out hover:text-primary'
                 onClick={handleLinkClick}
               >
-                See TabXport in action
+                See TableXport in action
               </Link>
             </li>
             <li>
               <Link 
-                href='/#features' 
+                href='/#price-plans' 
                 className='text-[25px] font-semibold transition-colors duration-300 ease-in-out hover:text-primary'
                 onClick={handleLinkClick}
               >
-                Unlock Productivity
+                Simple Pricing
               </Link>
             </li>
             <li>

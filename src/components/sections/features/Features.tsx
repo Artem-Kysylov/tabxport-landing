@@ -27,13 +27,13 @@ const Features = () => {
   const featureCards = [
     {
       icon: <HiRocketLaunch size={24} className="text-primary" />,
-      title: "One-click Export",
-      description: "Any AI table, any format — Excel, CSV, DOCX."
+      title: "Live Edit & Preview (WYSIWYG)",
+      description: "See exactly what you get. Edit cell values, fix AI typos, and switch between Excel, JSON, or PDF views instantly before downloading."
     },
     {
       icon: <HiSparkles size={24} className="text-primary" />,
-      title: "Batch & Smart Fix",
-      description: "Export multiple tables at once, auto-fix broken layouts."
+      title: "Custom PDF Branding (Pro)",
+      description: "Deliver professional reports. Add your company logo, customize header colors, and generate client-ready PDFs with one click."
     },
     // {
     //   icon: <HiDocumentCheck size={24} className="text-primary" />,
@@ -42,14 +42,14 @@ const Features = () => {
     // }
     {
       icon: <HiDocumentCheck size={24} className="text-primary" />,
-      title: "Save Instantly",
-      description: "Enable 'Remember my format' option for instant saves"
+      title: "Google Drive & Sheets Sync (Pro)",
+      description: "Skip the downloads folder. Export your tables directly to your Google Drive or open them as native Google Sheets immediately."
     }
   ];
 
   return (
     <AnimatedSection>
-      <section id="features" className="bg-[#D2F2E2] py-[50px] px-5 md:p-[50px] mt-[200px]">
+      <section id="features" className="bg-[#D2F2E2] py-[50px] px-5 md:p-[50px] mt-[120px] md:mt-[140px]">
         <div className="container-custom">
           <div className="flex flex-col items-center">
             <FadeInUp>
@@ -59,9 +59,8 @@ const Features = () => {
             </FadeInUp>
             
             <FadeInUp delay={0.2}>
-              <p className="text-center mb-[30px] max-w-[535px]">
-                I built TableXport after watching analysts waste hours copy-pasting from AI chats.
-                Now, it's the one-click tool that handles everything for you.
+              <p className="text-center mb-[30px] max-w-[640px]">
+                TableXport turns messy AI output into polished spreadsheets, branded PDFs, and shareable cloud docs without the cleanup work.
               </p>
             </FadeInUp>
             

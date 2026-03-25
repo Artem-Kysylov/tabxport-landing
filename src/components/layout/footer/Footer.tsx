@@ -53,13 +53,13 @@ const Footer = () => {
             <nav className='w-full md:w-auto'>
               <ul className='flex flex-col md:flex-row items-center gap-6 md:gap-10 text-white'>
                 <li>
-                  <Link href='/#why-tabxport' className='transition-colors duration-300 ease-in-out hover:text-primary'>Why TableXport?</Link>
+                  <Link href='/#features' className='transition-colors duration-300 ease-in-out hover:text-primary'>Why TableXport?</Link>
                 </li>
                 <li>
                   <Link href='/#demo' className='transition-colors duration-300 ease-in-out hover:text-primary'>See TableXport in action</Link>
                 </li>
                 <li>
-                  <Link href='/#features' className='transition-colors duration-300 ease-in-out hover:text-primary'>Unlock Productivity</Link>
+                  <Link href='/#price-plans' className='transition-colors duration-300 ease-in-out hover:text-primary'>Simple Pricing</Link>
                 </li>
                 <li>
                   <Link href='/#faq' className='transition-colors duration-300 ease-in-out hover:text-primary'>FAQ</Link>
@@ -91,7 +91,7 @@ const Footer = () => {
               <Link href='/privacy' className='transition-colors duration-300 ease-in-out hover:text-primary'>Privacy policy</Link>
               <Link href='/terms' className='transition-colors duration-300 ease-in-out hover:text-primary'>Terms of Service</Link>
               <Link href='/refund' className='transition-colors duration-300 ease-in-out hover:text-primary'>Refund Policy</Link>
-              <InstallAppButton />
+              <InstallAppButton label='Install TableXport' />
               {/* <Link href='https://tablexport.gitbook.io/tablexport-docs/wkbciB0ogW3EFOM5Gwhg/' target='_blank' className='transition-colors duration-300 ease-in-out hover:text-primary'>Documentation</Link> */}
             </div>
             <span className='mt-5 md:mt-0 opacity-60'>Proudly Indie-Built</span>

@@ -13,34 +13,29 @@ interface TabItem {
 
 const tabItems: TabItem[] = [
   {
-    value: 'regularexport',
-    label: 'Regular Export (Excel)',
+    value: 'livepreview',
+    label: 'Live Preview & Edit',
     videoSrc: '/demo-videos/export excel.mp4',
   },
   {
-    value: 'batchexport',
-    label: 'Batch Export (ZIP / Combined)',
-    videoSrc: '/demo-videos/batch export.mp4',
-  },
-  {
-    value: 'remembermyformat',
-    label: 'Remember My Format',
+    value: 'pdfbranding',
+    label: 'PDF Branding',
     videoSrc: '/demo-videos/remember my format.mp4',
   },
   {
-    value: 'datasummary',
-    label: 'Data Summary & Analysis',
-    videoSrc: '/demo-videos/analytics .mp4',
+    value: 'googlesheets',
+    label: 'Google Sheets Sync',
+    videoSrc: '/demo-videos/google sheets export.mp4',
   },
-  // {
-  //   value: 'googlesheets',
-  //   label: 'Google Sheets on Drive',
-  //   videoSrc: '/demo-videos/google sheets export.mp4',
-  // },
+  {
+    value: 'batchexport',
+    label: 'Batch Export',
+    videoSrc: '/demo-videos/batch export.mp4',
+  },
 ];
 
 const Demo = () => {
-  const [activeTab, setActiveTab] = useState('regularexport')
+  const [activeTab, setActiveTab] = useState('livepreview')
 
   return (
     <AnimatedSection>
@@ -53,7 +48,7 @@ const Demo = () => {
           </FadeInUp>
 
           <FadeInUp delay={0.2}>
-            <p className='text-center mb-[50px]'>From single-table exports to batch operations and Google Drive sync — watch it work in seconds.</p>
+            <p className='text-center mb-[50px]'>Watch how TableXport turns AI-generated tables into editable, branded, and cloud-ready exports in seconds.</p>
           </FadeInUp>
 
           <FadeInUp delay={0.4}>

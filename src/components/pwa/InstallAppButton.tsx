@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { PWAInstallPrompt } from './PWAInstallPrompt';
 import { BeforeInstallPromptEvent } from '@/types/pwa';
+import { cn } from '@/lib/utils';
 
 const detectIOSDevice = (): boolean => {
   if (typeof window === 'undefined') return false;
@@ -17,7 +18,15 @@ const detectIOSDevice = (): boolean => {
   return isIOSUserAgent || isIPadOS;
 };
 
-export const InstallAppButton: React.FC = () => {
+interface InstallAppButtonProps {
+  className?: string;
+  label?: React.ReactNode;
+}
+
+export const InstallAppButton: React.FC<InstallAppButtonProps> = ({
+  className,
+  label = 'Install App',
+}) => {
   const [showPrompt, setShowPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
@@ -86,10 +95,10 @@ export const InstallAppButton: React.FC = () => {
     <>
       <button
         onClick={handleClick}
-        className='transition-colors duration-300 ease-in-out hover:text-primary cursor-pointer'
+        className={cn('transition-colors duration-300 ease-in-out hover:text-primary cursor-pointer', className)}
         type='button'
       >
-        Install App
+        {label}
       </button>
       <PWAInstallPrompt 
         trigger={showPrompt}

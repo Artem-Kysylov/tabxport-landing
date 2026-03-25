@@ -84,6 +84,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.variable}>
+      <head>
+        <link rel="apple-touch-icon" href="/icons/app-icons/apple-touch-icon.png" />
+      </head>
       <body className="font-inter">
         <GlobalAnnouncementBar />
         <NavbarWrapper />
