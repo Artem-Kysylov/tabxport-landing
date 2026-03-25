@@ -1,6 +1,13 @@
+'use client'
+
 import Link from 'next/link'
+import { useStandaloneMode } from '@/hooks/useStandaloneMode'
 
 const GlobalAnnouncementBar = () => {
+  const isStandalone = useStandaloneMode()
+
+  if (isStandalone) return null
+
   return (
     <div className="sticky top-0 z-40 w-full bg-[#0f172a]">
       <div className="container-custom flex h-9 items-center justify-center px-4 text-xs text-white sm:h-10 sm:text-sm">

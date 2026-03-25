@@ -967,7 +967,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
       transition={{ duration: 0.5 }}
       className="w-full max-w-5xl mx-auto"
     >
-      <div className="bg-white rounded-2xl shadow-lg border-2 border-primary-light p-8">
+      <div className="standalone-preview-card bg-white rounded-2xl shadow-lg border-2 border-primary-light p-8">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h3 className="text-2xl font-bold text-secondary">Table Preview</h3>

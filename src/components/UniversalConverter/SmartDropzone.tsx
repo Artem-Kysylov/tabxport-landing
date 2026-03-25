@@ -153,14 +153,14 @@ export const SmartDropzone: React.FC<SmartDropzoneProps> = ({
 
   return (
     <motion.div
-      className="relative w-full max-w-3xl mx-auto"
+      className="standalone-dropzone relative w-full max-w-3xl mx-auto"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
       <div
         className={`
-          relative rounded-2xl border-2 border-dashed transition-all duration-300
+          standalone-dropzone-card relative rounded-2xl border-2 border-dashed transition-all duration-300
           ${isDragging 
             ? 'border-primary bg-primary-light/30 scale-105' 
             : isFocused

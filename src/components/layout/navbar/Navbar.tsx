@@ -4,8 +4,10 @@
 import React, { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useStandaloneMode } from '@/hooks/useStandaloneMode'
 
 const Navbar = () => {
+  const isStandalone = useStandaloneMode()
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const toggleMenu = () => {
@@ -18,6 +20,19 @@ const Navbar = () => {
     setIsMenuOpen(false);
     document.body.style.overflow = 'unset';
   };
+
+  if (isStandalone) {
+    return (
+      <div className='standalone-navbar sticky top-0 z-50 border-b border-white/10'>
+        <div className='container-custom flex items-center justify-between py-4'>
+          <Link href='/'>
+            <Image src='/logo-light.svg' alt='logo' width={141} height={58} />
+          </Link>
+          <span className='text-sm font-medium text-white/70'>App Mode</span>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <>

@@ -13,14 +13,14 @@ const Hero = () => {
     <AnimatedSection>
       <section>
         <div className='container-custom'>
-          <div className='flex flex-col items-center justify-center gap-8 pt-[200px] pb-[100px]'>
-            <FadeInUp delay={0.2}>
+          <div className='standalone-hero flex flex-col items-center justify-center gap-8 pt-[200px] pb-[100px]'>
+            <FadeInUp delay={0.2} className='standalone-hero-copy'>
               <h1 className='text-center text-7xl font-semibold'>
                 <span className='text-primary'>Click. Export. Done.</span> AI Tables → Excel, Docx
               </h1>
             </FadeInUp>
             
-            <FadeInUp delay={0.4}>
+            <FadeInUp delay={0.4} className='standalone-hero-copy'>
               <p className='text-center font-normal'>
                 Stop wasting hours fixing AI-generated tables.<br /> 
                 TableXport converts them in seconds — perfectly formatted, ready to use.

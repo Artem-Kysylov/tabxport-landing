@@ -4,8 +4,8 @@
   "description": "Export tables from ChatGPT, Claude, and other AI chats to Excel, CSV, or Google Sheets",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#FFFFFF",
-  "theme_color": "#39FF14",
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "orientation": "portrait-primary",
   "icons": [
     {
