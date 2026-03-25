@@ -13,12 +13,12 @@ interface FeatureCardProps {
 
 const FeatureCard: React.FC<FeatureCardProps> = ({ title, description, icon }) => {
   return (
-    <div className="bg-white rounded-[10px] p-[30px] md:p-[15px] flex flex-col items-center justify-center gap-[15px] md:h-[204px] hover:scale-105 transition-transform duration-300">
-      <div className="w-[44px] h-[44px] rounded-full bg-[#D2F2E2] flex items-center justify-center">
+    <div className="bg-white rounded-[10px] p-[30px] md:p-[25px] flex flex-col items-center justify-center gap-[15px] md:h-[260px] hover:scale-105 transition-transform duration-300">
+      <div className="w-[52px] h-[52px] rounded-full bg-[#D2F2E2] flex items-center justify-center">
         {icon}
       </div>
       <h3 className="text-[25px] font-semibold text-center">{title}</h3>
-      <p className="text-center">{description}</p>
+      <p className="text-center leading-relaxed">{description}</p>
     </div>
   )
 }
@@ -26,12 +26,12 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ title, description, icon }) =
 const Features = () => {
   const featureCards = [
     {
-      icon: <HiRocketLaunch size={24} className="text-primary" />,
+      icon: <HiRocketLaunch size={28} className="text-primary" />,
       title: "Live Edit & Preview (WYSIWYG)",
       description: "See exactly what you get. Edit cell values, fix AI typos, and switch between Excel, JSON, or PDF views instantly before downloading."
     },
     {
-      icon: <HiSparkles size={24} className="text-primary" />,
+      icon: <HiSparkles size={28} className="text-primary" />,
       title: "Custom PDF Branding (Pro)",
       description: "Deliver professional reports. Add your company logo, customize header colors, and generate client-ready PDFs with one click."
     },
@@ -41,7 +41,7 @@ const Features = () => {
     //   description: "Local files or Google Drive. 'Remember my format for instant saves."
     // }
     {
-      icon: <HiDocumentCheck size={24} className="text-primary" />,
+      icon: <HiDocumentCheck size={28} className="text-primary" />,
       title: "Google Drive & Sheets Sync (Pro)",
       description: "Skip the downloads folder. Export your tables directly to your Google Drive or open them as native Google Sheets immediately."
     }

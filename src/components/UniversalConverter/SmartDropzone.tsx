@@ -136,6 +136,25 @@ export const SmartDropzone: React.FC<SmartDropzoneProps> = ({
       setValue('');
     }
   }, [errorMessage, isProcessing]);
+  
+  // Auto-resize textarea logic
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const resizeTextarea = () => {
+      textarea.style.height = 'auto';
+      const newHeight = Math.min(textarea.scrollHeight, 350); // max-height: 350px
+      textarea.style.height = `${newHeight}px`;
+    };
+
+    resizeTextarea();
+
+    textarea.addEventListener('input', resizeTextarea);
+    return () => {
+      textarea.removeEventListener('input', resizeTextarea);
+    };
+  }, []);
 
   const handleManualSubmit = useCallback(() => {
     const text = value.trim();
@@ -214,9 +233,9 @@ export const SmartDropzone: React.FC<SmartDropzoneProps> = ({
 
           <textarea
             ref={textareaRef}
-            className="w-full min-h-[200px] p-4 rounded-xl border-2 border-primary-light 
+            className="w-full min-h-[120px] max-h-[350px] p-4 rounded-xl border-2 border-primary-light 
                      focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20
-                     resize-none font-mono text-sm transition-all duration-200
+                     resize-none font-mono text-sm transition-all duration-200 overflow-y-auto
                      placeholder:text-secondary/40"
             placeholder={
               mode === 'append'

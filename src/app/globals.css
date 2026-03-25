@@ -254,7 +254,7 @@
      display: flex !important;
      align-items: center;
      justify-content: center;
-     padding-top: 1.5rem !important;
+     padding-top: 0.75rem !important;
      padding-bottom: 1rem !important;
      gap: 1rem !important;
    }
@@ -266,6 +266,15 @@
    .standalone-dropzone {
      max-width: 100% !important;
      margin-top: 0 !important;
+     background-color: #f7f7f7;
+     padding: 20px;
+     border: 1px solid #ddd;
+     border-radius: 10px;
+     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+   }
+
+   .standalone-dropzone .min-h-[200px] {
+     min-height: 140px !important;
    }
 
    .standalone-dropzone-card {
