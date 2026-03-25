@@ -10,7 +10,7 @@ const Hero = () => {
   const { parsedTables, isLoading, error, parseFromText, appendFromText, clearTable } = useTableParser();
 
   return (
-    <AnimatedSection>
+    <AnimatedSection className='standalone-hero-shell'>
       <section className='standalone-hero-section'>
         <div className='container-custom standalone-hero-container'>
           <div className='standalone-hero flex flex-col items-center justify-center gap-8 pt-[100px] pb-[50px]'>

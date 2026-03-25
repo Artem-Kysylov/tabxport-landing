@@ -230,6 +230,13 @@
      color: #ffffff;
    }
 
+   .standalone-hero-shell {
+     flex: 1 1 auto;
+     display: flex;
+     flex-direction: column;
+     min-height: 0;
+   }
+
    .standalone-hero-section {
      flex: 1 1 auto;
      display: flex;
