@@ -20,7 +20,7 @@ const Cta = () => {
         </div>
         
         <FadeInUp>
-          <div className='flex flex-col items-center gap-5 text-center'>
+          <div className='flex flex-col items-center gap-5 text-center px-5'>
             <div className='w-[72px] h-[72px] rounded-full bg-white/80 flex items-center justify-center text-primary shadow-[0_10px_30px_rgba(27,147,88,0.18)]'>
               <MonitorSmartphone size={34} />
             </div>
@@ -31,7 +31,7 @@ const Cta = () => {
         </FadeInUp>
         
         <FadeInUp delay={0.3}>
-          <div className='flex flex-col items-center gap-4 max-w-[640px]'>
+          <div className='flex flex-col items-center gap-4 max-w-[640px] px-5'>
             <p className='text-center text-secondary/80'>
               Works on Mac, Windows, iOS, and Android. No App Store needed. Just click Install and take your AI tables everywhere.
             </p>

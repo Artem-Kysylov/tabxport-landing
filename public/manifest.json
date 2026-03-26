@@ -1,4 +1,5 @@
 {
+  "id": "/",
   "name": "TableXport - Export AI Tables",
   "short_name": "TableXport",
   "description": "Export tables from ChatGPT, Claude, and other AI chats to Excel, CSV, or Google Sheets",
@@ -6,7 +7,6 @@
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
-  "orientation": "portrait-primary",
   "icons": [
     {
       "src": "/icons/app-icons/icon-192x192.png",

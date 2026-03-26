@@ -13,8 +13,8 @@ interface FeatureCardProps {
 
 const FeatureCard: React.FC<FeatureCardProps> = ({ title, description, icon }) => {
   return (
-    <div className="bg-white rounded-[10px] p-[30px] md:p-[25px] flex flex-col items-center justify-center gap-[15px] md:h-[260px] hover:scale-105 transition-transform duration-300">
-      <div className="w-[52px] h-[52px] rounded-full bg-[#D2F2E2] flex items-center justify-center">
+    <div className="bg-white rounded-[10px] py-[30px] px-[30px] md:py-[30px] md:px-[25px] flex flex-col items-center justify-center gap-[20px] md:h-[300px] hover:scale-105 transition-transform duration-300">
+      <div className="w-[52px] h-[52px] aspect-square rounded-full bg-[#D2F2E2] flex items-center justify-center flex-shrink-0">
         {icon}
       </div>
       <h3 className="text-[25px] font-semibold text-center">{title}</h3>
@@ -27,7 +27,7 @@ const Features = () => {
   const featureCards = [
     {
       icon: <HiRocketLaunch size={28} className="text-primary" />,
-      title: "Live Edit & Preview (WYSIWYG)",
+      title: "Live Edit & Preview",
       description: "See exactly what you get. Edit cell values, fix AI typos, and switch between Excel, JSON, or PDF views instantly before downloading."
     },
     {
@@ -35,14 +35,9 @@ const Features = () => {
       title: "Custom PDF Branding (Pro)",
       description: "Deliver professional reports. Add your company logo, customize header colors, and generate client-ready PDFs with one click."
     },
-    // {
-    //   icon: <HiDocumentCheck size={24} className="text-primary" />,
-    //   title: "Save Anywhere",
-    //   description: "Local files or Google Drive. 'Remember my format for instant saves."
-    // }
     {
       icon: <HiDocumentCheck size={28} className="text-primary" />,
-      title: "Google Drive & Sheets Sync (Pro)",
+      title: "Google Cloud Sync (Pro)",
       description: "Skip the downloads folder. Export your tables directly to your Google Drive or open them as native Google Sheets immediately."
     }
   ];
