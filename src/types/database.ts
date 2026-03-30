@@ -1,7 +1,7 @@
 // Enum типы на основе схемы (обновленные)
 export type ExportDestination = 'download' | 'google_drive' | 'email';
 export type SubscriptionPlan = 'free' | 'pro' | 'enterprise';
-export type SubscriptionStatus = 'active' | 'cancelled' | 'expired' | 'trialing';
+export type SubscriptionStatus = 'active' | 'cancelled' | 'expired' | 'trialing' | 'past_due';
 export type PaymentStatus = 'succeeded' | 'failed' | 'pending' | 'cancelled';
 
 // Основные интерфейсы таблиц
@@ -69,12 +69,13 @@ export interface Subscription {
   user_id: string;
   plan_type: SubscriptionPlan;
   status: SubscriptionStatus;
-  paypal_customer_email: string | null;
   paypal_subscription_id: string | null;
   paypal_plan_id: string | null;
   current_period_start: string | null;
   current_period_end: string | null;
   trial_end: string | null;
+  monthly_price: number | null;
+  currency: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -127,8 +128,31 @@ export interface Database {
       };
       subscriptions: {
         Row: Subscription;
-        Insert: Omit<Subscription, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<Subscription, 'id' | 'created_at' | 'updated_at'>>;
+        Insert: {
+          user_id: string;
+          plan_type?: SubscriptionPlan;
+          status?: SubscriptionStatus;
+          paypal_subscription_id?: string | null;
+          paypal_plan_id?: string | null;
+          current_period_start?: string | null;
+          current_period_end?: string | null;
+          trial_end?: string | null;
+          monthly_price?: number | null;
+          currency?: string | null;
+        };
+        Update: {
+          user_id?: string;
+          plan_type?: SubscriptionPlan;
+          status?: SubscriptionStatus;
+          paypal_subscription_id?: string | null;
+          paypal_plan_id?: string | null;
+          current_period_start?: string | null;
+          current_period_end?: string | null;
+          trial_end?: string | null;
+          monthly_price?: number | null;
+          currency?: string | null;
+          updated_at?: string;
+        };
       };
       payments: {
         Row: Payment;

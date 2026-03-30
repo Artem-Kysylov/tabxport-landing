@@ -11,6 +11,7 @@ interface ProContextValue {
   isLoading: boolean;
   error: Error | null;
   refetch: () => Promise<void>;
+  activatePro: () => void;
 }
 
 const ProContext = createContext<ProContextValue | undefined>(undefined);

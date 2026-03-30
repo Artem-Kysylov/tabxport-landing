@@ -1,9 +1,16 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { initializePaddle, type PaddleEventData } from '@paddle/paddle-js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check, Sparkles } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { usePro } from '@/contexts/ProContext';
+import { createClient } from '@/lib/supabase/client';
+
+const PADDLE_PRICE_ID = process.env.NEXT_PUBLIC_PADDLE_PRICE_ID ?? 'pri_01kmzphzgfw9gecj77dp5apxve';
+const PADDLE_CLIENT_TOKEN = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN ?? process.env.NEXT_PUBLIC_PADDLE_SANDBOX_CLIENT_TOKEN ?? '';
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -12,6 +19,11 @@ interface UpgradeModalProps {
 }
 
 export function UpgradeModal({ isOpen, onClose, feature }: UpgradeModalProps) {
+  const [isOpeningCheckout, setIsOpeningCheckout] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const checkoutCompletedRef = useRef(false);
+  const { activatePro, refetch } = usePro();
+
   const features = [
     'PDF Export with Custom Branding',
     'Google Drive & Sheets Integration',
@@ -19,8 +31,91 @@ export function UpgradeModal({ isOpen, onClose, feature }: UpgradeModalProps) {
     'Priority Support',
   ];
 
-  const handleUpgrade = () => {
-    console.log('Upgrade clicked - Paddle integration pending');
+  useEffect(() => {
+    if (!isOpen) {
+      setCheckoutError(null);
+      setIsOpeningCheckout(false);
+      checkoutCompletedRef.current = false;
+    }
+  }, [isOpen]);
+
+  const handleUpgrade = async () => {
+    setCheckoutError(null);
+    setIsOpeningCheckout(true);
+
+    try {
+      if (!PADDLE_CLIENT_TOKEN) {
+        throw new Error('Missing Paddle client token. Add NEXT_PUBLIC_PADDLE_CLIENT_TOKEN for Sandbox checkout.');
+      }
+
+      const supabase = createClient();
+      const { data: { user }, error } = await supabase.auth.getUser();
+
+      if (error || !user) {
+        throw new Error('Please sign in before upgrading to Pro.');
+      }
+
+      const paddle = await initializePaddle({
+        environment: 'sandbox',
+        token: PADDLE_CLIENT_TOKEN,
+        eventCallback: (event: PaddleEventData) => {
+          if (event.name === 'checkout.completed') {
+            checkoutCompletedRef.current = true;
+            activatePro();
+            onClose();
+            toast.success('Welcome to TableXport Pro!');
+            setCheckoutError(null);
+            setIsOpeningCheckout(false);
+            window.setTimeout(() => {
+              void refetch();
+            }, 1500);
+            window.setTimeout(() => {
+              void refetch();
+            }, 4000);
+          }
+
+          if (event.name === 'checkout.closed' && !checkoutCompletedRef.current) {
+            setCheckoutError('Payment was cancelled before completion.');
+            setIsOpeningCheckout(false);
+          }
+        },
+      });
+
+      if (!paddle) {
+        throw new Error('Failed to initialize Paddle checkout.');
+      }
+
+      checkoutCompletedRef.current = false;
+
+      paddle.Checkout.open({
+        items: [
+          {
+            priceId: PADDLE_PRICE_ID,
+            quantity: 1,
+          },
+        ],
+        customer: user.email
+          ? {
+              email: user.email,
+            }
+          : undefined,
+        customData: {
+          user_id: user.id,
+        },
+        settings: {
+          displayMode: 'overlay',
+          variant: 'one-page',
+          theme: 'light',
+          locale: 'en',
+        },
+      });
+
+      setIsOpeningCheckout(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to open checkout.';
+      setCheckoutError(message);
+      setIsOpeningCheckout(false);
+    }
   };
 
   return (
@@ -87,12 +182,19 @@ export function UpgradeModal({ isOpen, onClose, feature }: UpgradeModalProps) {
                 </p>
               </div>
 
+              {checkoutError && (
+                <div className="w-full mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                  {checkoutError}
+                </div>
+              )}
+
               <div className="flex flex-col gap-3 w-full">
                 <Button
                   onClick={handleUpgrade}
+                  disabled={isOpeningCheckout}
                   className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
                 >
-                  Get Pro Lifetime
+                  {isOpeningCheckout ? 'Opening Checkout...' : 'Get Pro Lifetime'}
                 </Button>
                 <button
                   onClick={onClose}
