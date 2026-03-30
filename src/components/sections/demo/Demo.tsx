@@ -15,22 +15,22 @@ const tabItems: TabItem[] = [
   {
     value: 'livepreview',
     label: 'Live Preview & Edit',
-    videoSrc: '/demo-videos/export excel.mp4',
+    videoSrc: '/demo-videos/live_preview_&_edit.mp4',
   },
   {
     value: 'pdfbranding',
     label: 'PDF Branding',
-    videoSrc: '/demo-videos/remember my format.mp4',
+    videoSrc: '/demo-videos/pdf_branding.mp4',
   },
   {
     value: 'googlesheets',
     label: 'Google Sheets Sync',
-    videoSrc: '/demo-videos/google sheets export.mp4',
+    videoSrc: '/demo-videos/google_sheets_sync.mp4',
   },
   {
     value: 'batchexport',
     label: 'Batch Export',
-    videoSrc: '/demo-videos/batch export.mp4',
+    videoSrc: '/demo-videos/batch_export.mp4',
   },
 ];
 
