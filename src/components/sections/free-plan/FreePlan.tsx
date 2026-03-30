@@ -87,7 +87,7 @@ const FreePlan = () => {
 
               <div className="flex flex-col items-center gap-2">
                 <Link href='/#dropzone' className="w-full">
-                  <Button variant="outline" className="w-full hover:scale-105 transition-transform duration-200 border-secondary/20 text-secondary hover:bg-secondary/10">
+                  <Button variant="outline" className="w-full hover:scale-105 transition-transform duration-200 border-secondary/20 text-secondary hover:bg-transparent hover:text-secondary hover:border-secondary/20">
                     Start for Free
                   </Button>
                 </Link>
