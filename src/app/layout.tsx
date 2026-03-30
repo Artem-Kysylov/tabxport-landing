@@ -3,6 +3,7 @@ import "./globals.css";
 import { inter } from "./fonts";
 
 import { Toaster } from "sonner";
+import { ProProvider } from "@/contexts/ProContext";
 
 // Import components 
 import NavbarWrapper from "@/components/layout/navbar/NavbarWrapper";
@@ -88,19 +89,21 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/app-icons/apple-touch-icon.png" />
       </head>
       <body className="font-inter">
-        <GlobalAnnouncementBar />
-        <NavbarWrapper />
-        {children}
-        <FooterWrapper />
-        <Toaster 
-          position="bottom-center" 
-          richColors 
-          toastOptions={{
-            className:
-              'py-5 px-8 min-w-[340px] sm:min-w-[420px] text-[20px] font-bold text-center items-center',
-            descriptionClassName: 'text-[20px] font-bold text-center',
-          }}
-        />
+        <ProProvider>
+          <GlobalAnnouncementBar />
+          <NavbarWrapper />
+          {children}
+          <FooterWrapper />
+          <Toaster 
+            position="bottom-center" 
+            richColors 
+            toastOptions={{
+              className:
+                'py-5 px-8 min-w-[340px] sm:min-w-[420px] text-[20px] font-bold text-center items-center',
+              descriptionClassName: 'text-[20px] font-bold text-center',
+            }}
+          />
+        </ProProvider>
       </body>
     </html>
   );

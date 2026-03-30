@@ -20,6 +20,9 @@ import { GoogleAuthPopup } from '@/components/auth/GoogleAuthPopup';
 import { PWAInstallPrompt } from '@/components/pwa/PWAInstallPrompt';
 import { exportTableToGoogleSheets } from '@/services/googleSheetsService';
 import { getOrCreateTableXportFolder, uploadFileToDrive, getFolderLink } from '@/services/googleDriveService';
+import { usePro } from '@/contexts/ProContext';
+import { ProBadge } from '@/components/ui/ProBadge';
+import { UpgradeModal } from '@/components/modals/UpgradeModal';
 
 interface TablePreviewProps {
   tables: ParsedTable[];
@@ -52,8 +55,11 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
   const [pdfBranding, setPdfBranding] = useState<PDFBrandingSettings>({});
   const [showPdfSettings, setShowPdfSettings] = useState(false);
   const [showPwaPrompt, setShowPwaPrompt] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeFeature, setUpgradeFeature] = useState<string>('');
 
   const { isAuthenticated, hasRequiredScopes, user, signOut, getAccessToken } = useGoogleAuth();
+  const { isPro } = usePro();
 
   const persistTablesSnapshot = () => {
     try {
@@ -226,6 +232,11 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
     } catch {
       // ignore
     }
+  };
+
+  const showUpgradePrompt = (feature: string) => {
+    setUpgradeFeature(feature);
+    setShowUpgradeModal(true);
   };
 
   useEffect(() => {
@@ -761,6 +772,12 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
 
   const handleAppendTable = () => {
     if (!onAppend) return;
+    
+    if (!isPro && localTables.length >= 3) {
+      showUpgradePrompt('Batch limit reached. Upgrade to Pro to process unlimited tables at once and unlock bulk exports.');
+      return;
+    }
+    
     const text = appendText.trim();
     if (!text) {
       toast.error('Paste a table first');
@@ -1011,6 +1028,10 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
               <button
                 type="button"
                 onClick={() => {
+                  if (!isPro) {
+                    showUpgradePrompt('');
+                    return;
+                  }
                   setExportDestination('google_drive');
                   try {
                     localStorage.setItem('tx_export_destination', 'google_drive');
@@ -1023,14 +1044,19 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                     setShowAuthPopup(true);
                   }
                 }}
-                className={`flex items-center gap-2 px-6 py-3 rounded-md text-sm font-semibold transition-all cursor-pointer border-2 ${
+                className={`relative flex items-center gap-2 px-6 py-3 rounded-md text-sm font-semibold transition-all cursor-pointer border-2 ${
                   exportDestination === 'google_drive'
                     ? 'bg-white text-secondary border-primary'
                     : 'text-secondary/60 hover:text-secondary border-transparent'
-                }`}
+                } ${!isPro ? 'grayscale opacity-60' : ''}`}
               >
                 <Image src="/icons/icon-google-drive.svg" alt="Google Drive" width={20} height={20} />
                 Google Drive
+                {!isPro && (
+                  <div className="ml-1">
+                    <ProBadge variant="icon" size={14} />
+                  </div>
+                )}
               </button>
               </div>
             </div>
@@ -1117,7 +1143,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                 <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div>
+                      <div className={`relative ${!isPro ? 'pointer-events-none' : ''}`}>
                         <label className="block text-sm font-medium text-secondary mb-2">
                           Logo (PNG/JPG)
                         </label>
@@ -1126,7 +1152,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                             <img
                               src={pdfBranding.logo}
                               alt="Logo preview"
-                              className="w-16 h-16 object-contain border border-gray-200 rounded bg-white p-1"
+                              className={`w-16 h-16 object-contain border border-gray-200 rounded bg-white p-1 ${!isPro ? 'grayscale' : ''}`}
                             />
                             <button
                               onClick={handleRemoveLogo}
@@ -1137,34 +1163,59 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                             </button>
                           </div>
                         ) : (
-                          <label className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50 transition-colors">
+                          <label 
+                            className={`flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md transition-colors ${!isPro ? 'grayscale opacity-60 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-50'}`}
+                            onClick={(e) => {
+                              if (!isPro) {
+                                e.preventDefault();
+                                showUpgradePrompt('');
+                              }
+                            }}
+                          >
                             <Upload size={16} className="text-secondary/60" />
                             <span className="text-sm text-secondary">Upload Logo</span>
-                            <input
-                              type="file"
-                              accept="image/png,image/jpeg,image/jpg"
-                              onChange={handleLogoUpload}
-                              className="hidden"
-                            />
+                            {isPro && (
+                              <input
+                                type="file"
+                                accept="image/png,image/jpeg,image/jpg"
+                                onChange={handleLogoUpload}
+                                className="hidden"
+                              />
+                            )}
                           </label>
+                        )}
+                        {!isPro && (
+                          <div className="absolute top-0 right-0">
+                            <ProBadge variant="icon" size={16} />
+                          </div>
                         )}
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <div>
+                      <div className={`relative ${!isPro ? 'pointer-events-none' : ''}`}>
                         <label className="block text-sm font-medium text-secondary mb-2">
                           Header Color
                         </label>
                         <div className="flex items-center gap-3">
-                          <input
-                            type="color"
-                            value={pdfBranding.brandColor || '#1B9358'}
-                            onChange={(e) => handleColorChange(e.target.value)}
-                            className="w-12 h-12 rounded border border-gray-300 cursor-pointer"
-                          />
+                          <div 
+                            className={`relative ${!isPro ? 'cursor-not-allowed' : ''}`}
+                            onClick={() => {
+                              if (!isPro) {
+                                showUpgradePrompt('');
+                              }
+                            }}
+                          >
+                            <input
+                              type="color"
+                              value={pdfBranding.brandColor || '#1B9358'}
+                              onChange={(e) => handleColorChange(e.target.value)}
+                              disabled={!isPro}
+                              className={`w-12 h-12 rounded border border-gray-300 ${!isPro ? 'grayscale opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                            />
+                          </div>
                           <div className="flex flex-col">
-                            <span className="text-sm text-secondary font-medium">
+                            <span className={`text-sm text-secondary font-medium ${!isPro ? 'opacity-60' : ''}`}>
                               {pdfBranding.brandColor || '#1B9358'}
                             </span>
                             <span className="text-xs text-secondary/60">
@@ -1172,6 +1223,11 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                             </span>
                           </div>
                         </div>
+                        {!isPro && (
+                          <div className="absolute top-0 right-0">
+                            <ProBadge variant="icon" size={16} />
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1182,51 +1238,67 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
 
           {localTables.length === 1 && (
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {formatOptions.map((option) => (
-                (() => {
-                  const isSheetsDisabled = option.format === 'google_sheets' && exportDestination === 'local';
-                  return (
-                <motion.button
-                  key={option.format}
-                  onClick={() => {
-                    if (isSheetsDisabled) return;
-                    setActiveFormat(option.format);
-                  }}
-                  disabled={isExporting}
-                  aria-disabled={isSheetsDisabled}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className={`
-                    relative p-2 rounded-xl border-2 transition-all duration-200
-                    ${
-                      activeFormat === option.format
-                        ? 'border-primary bg-primary-light/30 shadow-[0_0_0_3px_rgba(27,147,88,0.08)]'
-                        : 'border-primary-light bg-white hover:border-primary hover:bg-primary-light/10'
+              {formatOptions.map((option) => {
+                const isSheetsDisabled = option.format === 'google_sheets' && exportDestination === 'local';
+                const isPdfLocked = option.format === 'pdf' && !isPro;
+                const isGoogleSheetsLocked = option.format === 'google_sheets' && !isPro;
+                const isLocked = isPdfLocked || isGoogleSheetsLocked;
+                
+                return (
+                  <motion.button
+                    key={option.format}
+                    onClick={() => {
+                      if (isSheetsDisabled) return;
+                      if (isLocked) {
+                        showUpgradePrompt('');
+                        return;
+                      }
+                      setActiveFormat(option.format);
+                    }}
+                    disabled={isExporting}
+                    aria-disabled={isSheetsDisabled || isLocked}
+                    whileHover={{ scale: isLocked ? 1 : 1.05 }}
+                    whileTap={{ scale: isLocked ? 1 : 0.95 }}
+                    className={`
+                      relative p-2 rounded-xl border-2 transition-all duration-200
+                      ${
+                        activeFormat === option.format
+                          ? 'border-primary bg-primary-light/30 shadow-[0_0_0_3px_rgba(27,147,88,0.08)]'
+                          : 'border-primary-light bg-white hover:border-primary hover:bg-primary-light/10'
+                      }
+                      ${
+                        isExporting || isSheetsDisabled
+                          ? 'opacity-50 cursor-not-allowed'
+                          : isLocked
+                            ? 'cursor-pointer'
+                            : 'cursor-pointer'
+                      }
+                      ${isLocked ? 'grayscale opacity-60' : ''}
+                      disabled:opacity-50 disabled:cursor-not-allowed
+                    `}
+                    title={
+                      isSheetsDisabled
+                        ? 'Switch to Google Drive to export as Google Sheets'
+                        : isLocked
+                          ? 'Pro feature - Click to upgrade'
+                          : undefined
                     }
-                    ${
-                      isExporting || isSheetsDisabled
-                        ? 'opacity-50 cursor-not-allowed'
-                        : 'cursor-pointer'
-                    }
-                    disabled:opacity-50 disabled:cursor-not-allowed
-                  `}
-                  title={
-                    isSheetsDisabled
-                      ? 'Switch to Google Drive to export as Google Sheets'
-                      : undefined
-                  }
-                >
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="text-primary">{option.icon}</div>
-                    <div className="text-center">
-                      <p className="font-bold text-secondary">{option.label}</p>
-                      <p className="text-xs text-secondary/60 mt-1">{option.description}</p>
+                  >
+                    {isLocked && (
+                      <div className="absolute top-2 right-2 z-10">
+                        <ProBadge variant="badge" />
+                      </div>
+                    )}
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="text-primary">{option.icon}</div>
+                      <div className="text-center">
+                        <p className="font-bold text-secondary">{option.label}</p>
+                        <p className="text-xs text-secondary/60 mt-1">{option.description}</p>
+                      </div>
                     </div>
-                  </div>
-                </motion.button>
-                  );
-                })()
-              ))}
+                  </motion.button>
+                );
+              })}
             </div>
           )}
 
@@ -1364,7 +1436,14 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
 
           {localTables.length > 1 && onAppend && (
             <div className="mt-4 rounded-xl border-2 border-dashed border-primary-light bg-primary-light/10 p-4">
-              <div className="text-xs font-semibold text-secondary mb-2">Add another table</div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-xs font-semibold text-secondary">Add another table</div>
+                {!isPro && (
+                  <div className="text-xs text-secondary/60 font-medium">
+                    {localTables.length}/3 tables
+                  </div>
+                )}
+              </div>
               <div className="flex items-center gap-2">
                 <textarea
                   value={appendText}
@@ -1434,7 +1513,14 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
 
           {localTables.length === 1 && onAppend && (
             <div className="mt-4 rounded-xl border-2 border-dashed border-primary-light bg-primary-light/10 p-4">
-              <div className="text-xs font-semibold text-secondary mb-2">Add another table</div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-xs font-semibold text-secondary">Add another table</div>
+                {!isPro && (
+                  <div className="text-xs text-secondary/60 font-medium">
+                    {localTables.length}/3 tables
+                  </div>
+                )}
+              </div>
               <div className="flex items-center gap-2">
                 <textarea
                   value={appendText}
@@ -1491,6 +1577,13 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
       <PWAInstallPrompt 
         trigger={showPwaPrompt} 
         onClose={() => setShowPwaPrompt(false)} 
+      />
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        feature={upgradeFeature}
       />
     </motion.div>
   );
