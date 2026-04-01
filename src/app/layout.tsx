@@ -4,6 +4,7 @@ import { inter } from "./fonts";
 
 import { Toaster } from "sonner";
 import { ProProvider } from "@/contexts/ProContext";
+import { ProLifetimeBadge } from "@/components/ui/ProLifetimeBadge";
 
 // Import components 
 import NavbarWrapper from "@/components/layout/navbar/NavbarWrapper";
@@ -94,6 +95,7 @@ export default function RootLayout({
           <NavbarWrapper />
           {children}
           <FooterWrapper />
+          <ProLifetimeBadge />
           <Toaster 
             position="bottom-center" 
             richColors 

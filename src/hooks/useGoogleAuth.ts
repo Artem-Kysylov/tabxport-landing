@@ -1,8 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { GoogleAuthStatus } from '@/types/google';
+
+interface SignInOptions {
+  action?: 'upgrade';
+  nextPath?: string;
+}
 
 export function useGoogleAuth() {
   const [authStatus, setAuthStatus] = useState<GoogleAuthStatus>({
@@ -12,10 +17,9 @@ export function useGoogleAuth() {
     loading: true,
   });
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
-    // Check initial auth status
     const checkAuthStatus = async () => {
       try {
         const { data: { user }, error } = await supabase.auth.getUser();
@@ -30,15 +34,15 @@ export function useGoogleAuth() {
           return;
         }
 
-        // Check if user authenticated with Google and has required scopes
         const { data: { session } } = await supabase.auth.getSession();
+        const authUser = session?.user ?? user;
         const hasGoogleProvider = session?.user?.app_metadata?.provider === 'google';
         const hasProviderToken = !!session?.provider_token;
 
         setAuthStatus({
           isAuthenticated: true,
           hasRequiredScopes: hasGoogleProvider && hasProviderToken,
-          user,
+          user: authUser,
           loading: false,
         });
       } catch (error) {
@@ -54,7 +58,6 @@ export function useGoogleAuth() {
 
     checkAuthStatus();
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
@@ -81,14 +84,20 @@ export function useGoogleAuth() {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [supabase]);
 
-  const signIn = async () => {
+  const signIn = useCallback(async (options?: SignInOptions) => {
     try {
       setAuthStatus(prev => ({ ...prev, loading: true }));
 
       const baseUrl = window.location.origin;
-      const nextPath = `${window.location.pathname}${window.location.search}`;
+      const nextUrl = new URL(options?.nextPath ?? `${window.location.pathname}${window.location.search}`, baseUrl);
+
+      if (options?.action === 'upgrade') {
+        nextUrl.searchParams.set('action', 'upgrade');
+      }
+
+      const nextPath = `${nextUrl.pathname}${nextUrl.search}`;
       const redirectUrl = `${baseUrl}/auth/callback?next=${encodeURIComponent(nextPath)}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
@@ -113,9 +122,9 @@ export function useGoogleAuth() {
       setAuthStatus(prev => ({ ...prev, loading: false }));
       throw error;
     }
-  };
+  }, [supabase]);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     try {
       setAuthStatus(prev => ({ ...prev, loading: true }));
       await supabase.auth.signOut();
@@ -130,9 +139,9 @@ export function useGoogleAuth() {
       setAuthStatus(prev => ({ ...prev, loading: false }));
       throw error;
     }
-  };
+  }, [supabase]);
 
-  const getAccessToken = async (): Promise<string | null> => {
+  const getAccessToken = useCallback(async (): Promise<string | null> => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       return session?.provider_token || null;
@@ -140,7 +149,7 @@ export function useGoogleAuth() {
       console.error('Error getting access token:', error);
       return null;
     }
-  };
+  }, [supabase]);
 
   return {
     ...authStatus,

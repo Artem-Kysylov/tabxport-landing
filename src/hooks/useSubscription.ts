@@ -2,11 +2,71 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Subscription, SubscriptionPlan } from '@/types/database';
+import { SubscriptionPlan, UserProfile } from '@/types/database';
+
+const PENDING_PRO_STORAGE_KEY = 'tx_pending_pro_activation';
+const KNOWN_PRO_PURCHASE_KEY = 'tx_known_pro_purchase';
+
+function readPendingProActivation(): boolean {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  try {
+    return window.sessionStorage.getItem(PENDING_PRO_STORAGE_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function writePendingProActivation(value: boolean) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    if (value) {
+      window.sessionStorage.setItem(PENDING_PRO_STORAGE_KEY, 'true');
+      return;
+    }
+
+    window.sessionStorage.removeItem(PENDING_PRO_STORAGE_KEY);
+  } catch {
+  }
+}
+
+function readKnownProPurchase(): boolean {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  try {
+    return window.localStorage.getItem(KNOWN_PRO_PURCHASE_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function writeKnownProPurchase(value: boolean) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    if (value) {
+      window.localStorage.setItem(KNOWN_PRO_PURCHASE_KEY, 'true');
+      return;
+    }
+
+    window.localStorage.removeItem(KNOWN_PRO_PURCHASE_KEY);
+  } catch {
+  }
+}
 
 interface UseSubscriptionReturn {
-  subscription: Subscription | null;
+  profile: UserProfile | null;
   isPro: boolean;
+  hasKnownProPurchase: boolean;
   planType: SubscriptionPlan;
   isLoading: boolean;
   error: Error | null;
@@ -15,11 +75,12 @@ interface UseSubscriptionReturn {
 }
 
 export function useSubscription(): UseSubscriptionReturn {
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
-  const [optimisticIsPro, setOptimisticIsPro] = useState(false);
+  const [optimisticIsPro, setOptimisticIsPro] = useState<boolean>(() => readPendingProActivation());
+  const [hasKnownProPurchase, setHasKnownProPurchase] = useState<boolean>(() => readKnownProPurchase());
 
   const supabase = useMemo(() => createClient(), []);
 
@@ -31,8 +92,9 @@ export function useSubscription(): UseSubscriptionReturn {
 
       if (!user) {
         setUserId(null);
-        setSubscription(null);
+        setProfile(null);
         setOptimisticIsPro(false);
+        writePendingProActivation(false);
         setIsLoading(false);
         return;
       }
@@ -40,30 +102,59 @@ export function useSubscription(): UseSubscriptionReturn {
       setUserId(user.id);
 
       const { data, error: fetchError } = await supabase
-        .from('subscriptions')
+        .from('user_profiles')
         .select('*')
         .eq('user_id', user.id)
         .single();
 
       if (fetchError) {
         if (fetchError.code === 'PGRST116') {
-          setSubscription(null);
+          setProfile(null);
         } else {
           throw fetchError;
         }
       } else {
-        setSubscription(data);
-        if (data.plan_type === 'pro' && data.status === 'active') {
+        setProfile(data);
+        if (data.is_pro) {
           setOptimisticIsPro(false);
+          writePendingProActivation(false);
+          setHasKnownProPurchase(true);
+          writeKnownProPurchase(true);
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch subscription'));
-      setSubscription(null);
+      setError(err instanceof Error ? err : new Error('Failed to fetch user profile'));
+      setProfile(null);
     } finally {
       setIsLoading(false);
     }
   }, [supabase]);
+
+  useEffect(() => {
+    if (!userId || !optimisticIsPro || profile?.is_pro === true) {
+      return;
+    }
+
+    let cancelled = false;
+    let attempts = 0;
+
+    const pollForProfileUpgrade = async () => {
+      while (!cancelled && attempts < 8) {
+        attempts += 1;
+        await new Promise((resolve) => window.setTimeout(resolve, attempts <= 3 ? 1200 : 2500));
+        if (cancelled) {
+          return;
+        }
+        await fetchSubscription();
+      }
+    };
+
+    void pollForProfileUpgrade();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchSubscription, optimisticIsPro, profile?.is_pro, userId]);
 
   useEffect(() => {
     fetchSubscription();
@@ -78,14 +169,16 @@ export function useSubscription(): UseSubscriptionReturn {
 
   const activatePro = () => {
     setOptimisticIsPro(true);
-    setSubscription((current) => {
+    writePendingProActivation(true);
+    setHasKnownProPurchase(true);
+    writeKnownProPurchase(true);
+    setProfile((current) => {
       const now = new Date().toISOString();
 
       if (current) {
         return {
           ...current,
-          plan_type: 'pro',
-          status: 'active',
+          is_pro: true,
           updated_at: now,
         };
       }
@@ -97,27 +190,25 @@ export function useSubscription(): UseSubscriptionReturn {
       return {
         id: `optimistic-${userId}`,
         user_id: userId,
-        plan_type: 'pro',
-        status: 'active',
-        paypal_subscription_id: null,
-        paypal_plan_id: null,
-        current_period_start: null,
-        current_period_end: null,
-        trial_end: null,
-        monthly_price: null,
-        currency: 'USD',
+        full_name: null,
+        avatar_url: null,
+        google_drive_folder_id: null,
+        google_drive_enabled: false,
+        preferences: null,
+        is_pro: true,
         created_at: now,
         updated_at: now,
       };
     });
   };
 
-  const isPro = optimisticIsPro || (subscription?.plan_type === 'pro' && subscription?.status === 'active');
-  const planType: SubscriptionPlan = subscription?.plan_type || 'free';
+  const isPro = optimisticIsPro || profile?.is_pro === true;
+  const planType: SubscriptionPlan = isPro ? 'pro' : 'free';
 
   return {
-    subscription,
+    profile,
     isPro,
+    hasKnownProPurchase,
     planType,
     isLoading,
     error,

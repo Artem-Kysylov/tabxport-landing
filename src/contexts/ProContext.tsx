@@ -2,12 +2,13 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useSubscription } from '@/hooks/useSubscription';
-import { SubscriptionPlan, Subscription } from '@/types/database';
+import { SubscriptionPlan, UserProfile } from '@/types/database';
 
 interface ProContextValue {
   isPro: boolean;
+  hasKnownProPurchase: boolean;
   planType: SubscriptionPlan;
-  subscription: Subscription | null;
+  profile: UserProfile | null;
   isLoading: boolean;
   error: Error | null;
   refetch: () => Promise<void>;

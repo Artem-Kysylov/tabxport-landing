@@ -103,7 +103,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Missing custom_data.user_id in transaction.completed payload.' }, { status: 400 });
   }
 
-  const { error } = await supabaseAdmin
+  const { error: profileError } = await supabaseAdmin
+    .from('user_profiles')
+    .upsert(
+      {
+        user_id: userId,
+        is_pro: true,
+      },
+      { onConflict: 'user_id' }
+    );
+
+  if (profileError) {
+    return NextResponse.json({ error: 'Failed to update profile Pro status.' }, { status: 500 });
+  }
+
+  const { error: subscriptionError } = await supabaseAdmin
     .from('subscriptions')
     .upsert(
       {
@@ -115,7 +129,7 @@ export async function POST(request: NextRequest) {
       { onConflict: 'user_id' }
     );
 
-  if (error) {
+  if (subscriptionError) {
     return NextResponse.json({ error: 'Failed to update subscription status.' }, { status: 500 });
   }
 

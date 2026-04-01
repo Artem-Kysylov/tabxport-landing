@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import Image from 'next/image';
-import { Sparkles, Plus, Upload, X, Palette } from 'lucide-react';
+import { Sparkles, Plus, Upload, X, Palette, LogIn } from 'lucide-react';
 import { ParsedTable, ExportFormat, ExportDestination, PDFBrandingSettings } from '@/types/table';
 import {
   exportTable,
@@ -23,6 +23,8 @@ import { getOrCreateTableXportFolder, uploadFileToDrive, getFolderLink } from '@
 import { usePro } from '@/contexts/ProContext';
 import { ProBadge } from '@/components/ui/ProBadge';
 import { UpgradeModal } from '@/components/modals/UpgradeModal';
+import { useUpgradeAutoResume } from '@/hooks/useUpgradeAutoResume';
+import { useUpgradeAction } from '@/hooks/useUpgradeAction';
 
 interface TablePreviewProps {
   tables: ParsedTable[];
@@ -35,6 +37,43 @@ interface FormatOption {
   label: string;
   icon: React.ReactNode;
   description: string;
+}
+
+type PostAuthIntent = 'signin' | 'locked_feature' | null;
+
+function getRecordValue(record: unknown, key: string): unknown {
+  if (!record || typeof record !== 'object') {
+    return undefined;
+  }
+
+  return (record as Record<string, unknown>)[key];
+}
+
+function getStringValue(record: unknown, key: string): string | null {
+  const value = getRecordValue(record, key);
+  return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
+function getUserAvatarUrl(user: unknown): string | null {
+  const directSources = [
+    getStringValue(getRecordValue(user, 'user_metadata'), 'avatar_url'),
+    getStringValue(getRecordValue(user, 'user_metadata'), 'picture'),
+  ];
+
+  const identities = getRecordValue(user, 'identities');
+  const identitySources = Array.isArray(identities)
+    ? identities.flatMap((identity) => {
+        const identityData = getRecordValue(identity, 'identity_data');
+        return [
+          getStringValue(identityData, 'avatar_url'),
+          getStringValue(identityData, 'picture'),
+          getStringValue(identityData, 'photo_url'),
+        ];
+      })
+    : [];
+
+  const avatarUrl = [...directSources, ...identitySources].find((value): value is string => typeof value === 'string' && value.length > 0) ?? null;
+  return avatarUrl;
 }
 
 export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onAppend }) => {
@@ -57,9 +96,13 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
   const [showPwaPrompt, setShowPwaPrompt] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeFeature, setUpgradeFeature] = useState<string>('');
+  const [postAuthIntent, setPostAuthIntent] = useState<PostAuthIntent>(null);
 
   const { isAuthenticated, hasRequiredScopes, user, signOut, getAccessToken } = useGoogleAuth();
-  const { isPro } = usePro();
+  const { isPro, isLoading: isProLoading } = usePro();
+  const { startUpgrade } = useUpgradeAction();
+  const isProLocked = !isProLoading && !isPro;
+  const userAvatarUrl = getUserAvatarUrl(user);
 
   const persistTablesSnapshot = () => {
     try {
@@ -98,6 +141,17 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
   };
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isProLoading) {
+      e.target.value = '';
+      return;
+    }
+
+    if (!isPro) {
+      showUpgradePrompt('Upgrade to Pro to add custom PDF branding.');
+      e.target.value = '';
+      return;
+    }
+
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -214,6 +268,15 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
   };
 
   const handleColorChange = (color: string) => {
+    if (isProLoading) {
+      return;
+    }
+
+    if (!isPro) {
+      showUpgradePrompt('Upgrade to Pro to customize PDF colors.');
+      return;
+    }
+
     const updatedBranding = { ...pdfBranding, brandColor: color };
     setPdfBranding(updatedBranding);
     try {
@@ -234,16 +297,41 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
     }
   };
 
-  const showUpgradePrompt = (feature: string) => {
+  const showUpgradePrompt = useCallback((feature: string) => {
     setUpgradeFeature(feature);
     setShowUpgradeModal(true);
-  };
+  }, []);
+
+  const openAuthPopup = useCallback((intent: PostAuthIntent = 'signin') => {
+    setPostAuthIntent(intent);
+    setShowAuthPopup(true);
+  }, []);
+
+  const { isResumingUpgrade } = useUpgradeAutoResume({
+    enabled: localTables.length > 0,
+    onResume: () => {
+      void startUpgrade({
+        onError: (message) => {
+          toast.error(message);
+          showUpgradePrompt('Continue upgrading to unlock the Pro features you selected.');
+        },
+      });
+    },
+  });
 
   useEffect(() => {
-    if (isAuthenticated) {
-      setShowAuthPopup(false);
+    if (!isAuthenticated) {
+      return;
     }
-  }, [isAuthenticated]);
+
+    setShowAuthPopup(false);
+
+    if (postAuthIntent === 'locked_feature' && !isProLoading && !isPro) {
+      showUpgradePrompt('Unlock Google Drive and premium exports with Pro.');
+    }
+
+    setPostAuthIntent(null);
+  }, [isAuthenticated, isPro, isProLoading, postAuthIntent, showUpgradePrompt]);
 
   useEffect(() => {
     try {
@@ -397,6 +485,23 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
   const handleExportSingle = async (format: ExportFormat) => {
     if (!activeTable) return;
 
+    if (isProLoading) {
+      return;
+    }
+
+    if ((format === 'pdf' || format === 'google_sheets') && isProLocked) {
+      if (!isAuthenticated) {
+        persistTablesSnapshot();
+        openAuthPopup('locked_feature');
+        return;
+      }
+
+      showUpgradePrompt(format === 'pdf'
+        ? 'Upgrade to Pro to export branded PDF files.'
+        : 'Upgrade to Pro to export directly to Google Sheets.');
+      return;
+    }
+
     // Handle Google Sheets export
     if (format === 'google_sheets') {
       if (!isAuthenticated || !hasRequiredScopes) {
@@ -471,9 +576,20 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
 
       if (result.success && result.blob) {
         if (exportDestination === 'google_drive') {
+          if (isProLocked) {
+            if (!isAuthenticated) {
+              persistTablesSnapshot();
+              openAuthPopup('locked_feature');
+              return;
+            }
+
+            showUpgradePrompt('Upgrade to Pro to export files to Google Drive.');
+            return;
+          }
+
           if (!isAuthenticated || !hasRequiredScopes) {
             persistTablesSnapshot();
-            setShowAuthPopup(true);
+            openAuthPopup('signin');
             return;
           }
 
@@ -574,11 +690,28 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
       return;
     }
 
+    if (isProLoading) {
+      return;
+    }
+
+    if (isProLocked && (batchFormat === 'pdf' || exportDestination === 'google_drive')) {
+      if (!isAuthenticated) {
+        persistTablesSnapshot();
+        openAuthPopup('locked_feature');
+        return;
+      }
+
+      showUpgradePrompt(batchFormat === 'pdf'
+        ? 'Upgrade to Pro to batch export PDF files.'
+        : 'Upgrade to Pro to batch export to Google Drive.');
+      return;
+    }
+
     // Check if exporting to Google Drive
     if (exportDestination === 'google_drive') {
       if (!isAuthenticated || !hasRequiredScopes) {
         persistTablesSnapshot();
-        setShowAuthPopup(true);
+        openAuthPopup('signin');
         return;
       }
 
@@ -773,7 +906,9 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
   const handleAppendTable = () => {
     if (!onAppend) return;
     
-    if (!isPro && localTables.length >= 3) {
+    if (isProLoading) return;
+
+    if (isProLocked && localTables.length >= 3) {
       showUpgradePrompt('Batch limit reached. Upgrade to Pro to process unlimited tables at once and unlock bulk exports.');
       return;
     }
@@ -1004,8 +1139,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
         <div>
           {/* Export Destination Switcher */}
           <div className="mb-6 flex items-center justify-between">
-            <div className="flex-1 flex justify-center">
-              <div className="flex items-center gap-2 bg-primary-light/30 p-1 rounded-lg">
+            <div className="flex items-center gap-2 bg-primary-light/30 p-1 rounded-lg">
               <button
                 type="button"
                 onClick={() => {
@@ -1028,50 +1162,55 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
               <button
                 type="button"
                 onClick={() => {
-                  if (!isPro) {
+                  if (isProLoading) {
+                    return;
+                  }
+
+                  if (isProLocked) {
+                    if (!isAuthenticated) {
+                      persistTablesSnapshot();
+                      openAuthPopup('locked_feature');
+                      return;
+                    }
                     showUpgradePrompt('');
                     return;
                   }
-                  setExportDestination('google_drive');
-                  try {
-                    localStorage.setItem('tx_export_destination', 'google_drive');
-                  } catch {
-                    // ignore
-                  }
 
                   if (!isAuthenticated || !hasRequiredScopes) {
-                    persistTablesSnapshot();
-                    setShowAuthPopup(true);
+                    openAuthPopup('signin');
+                    return;
                   }
+
+                  setExportDestination('google_drive');
                 }}
                 className={`relative flex items-center gap-2 px-6 py-3 rounded-md text-sm font-semibold transition-all cursor-pointer border-2 ${
                   exportDestination === 'google_drive'
                     ? 'bg-white text-secondary border-primary'
                     : 'text-secondary/60 hover:text-secondary border-transparent'
-                } ${!isPro ? 'grayscale opacity-60' : ''}`}
+                } ${isProLocked ? 'grayscale opacity-60' : ''}`}
               >
                 <Image src="/icons/icon-google-drive.svg" alt="Google Drive" width={20} height={20} />
                 Google Drive
-                {!isPro && (
+                {isProLocked && (
                   <div className="ml-1">
-                    <ProBadge variant="icon" size={14} />
+                    <ProBadge variant="badge" />
                   </div>
                 )}
               </button>
-              </div>
             </div>
 
             {/* Google User Badge */}
-            {isAuthenticated && hasRequiredScopes && user && (
+            {isAuthenticated && user ? (
               <div className="flex items-center gap-2">
-                <img
-                  src={user.user_metadata?.avatar_url || user.user_metadata?.picture || ''}
-                  alt={user.user_metadata?.full_name || user.user_metadata?.name || 'User'}
-                  className="w-6 h-6 rounded-full"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
+                {userAvatarUrl ? (
+                  <img
+                    src={userAvatarUrl}
+                    alt={user.user_metadata?.full_name || user.user_metadata?.name || 'User'}
+                    className="w-6 h-6 rounded-full object-cover"
+                    referrerPolicy="no-referrer"
+                    crossOrigin="anonymous"
+                  />
+                ) : null}
                 <span className="text-xs text-secondary font-medium max-w-[120px] truncate">
                   {user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User'}
                 </span>
@@ -1082,6 +1221,15 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                   Sign out
                 </button>
               </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => openAuthPopup('signin')}
+                className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-secondary/20 bg-white px-3 py-2 text-xs font-medium text-secondary transition-colors hover:border-secondary/35 hover:bg-secondary/5"
+              >
+                <LogIn size={14} className="text-secondary/70" />
+                <span>Google Sign in</span>
+              </button>
             )}
           </div>
 
@@ -1143,7 +1291,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                 <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className={`relative ${!isPro ? 'pointer-events-none' : ''}`}>
+                      <div className={`relative ${isProLocked ? 'pointer-events-none' : ''}`}>
                         <label className="block text-sm font-medium text-secondary mb-2">
                           Logo (PNG/JPG)
                         </label>
@@ -1152,7 +1300,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                             <img
                               src={pdfBranding.logo}
                               alt="Logo preview"
-                              className={`w-16 h-16 object-contain border border-gray-200 rounded bg-white p-1 ${!isPro ? 'grayscale' : ''}`}
+                              className={`w-16 h-16 object-contain border border-gray-200 rounded bg-white p-1 ${isProLocked ? 'grayscale' : ''}`}
                             />
                             <button
                               onClick={handleRemoveLogo}
@@ -1164,17 +1312,22 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                           </div>
                         ) : (
                           <label 
-                            className={`flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md transition-colors ${!isPro ? 'grayscale opacity-60 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-50'}`}
+                            className={`flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md transition-colors ${isProLocked ? 'grayscale opacity-60 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-50'}`}
                             onClick={(e) => {
-                              if (!isPro) {
+                              if (isProLoading || isProLocked) {
                                 e.preventDefault();
+                                if (!isAuthenticated) {
+                                  persistTablesSnapshot();
+                                  openAuthPopup('locked_feature');
+                                  return;
+                                }
                                 showUpgradePrompt('');
                               }
                             }}
                           >
                             <Upload size={16} className="text-secondary/60" />
                             <span className="text-sm text-secondary">Upload Logo</span>
-                            {isPro && (
+                            {!isProLocked && (
                               <input
                                 type="file"
                                 accept="image/png,image/jpeg,image/jpg"
@@ -1184,7 +1337,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                             )}
                           </label>
                         )}
-                        {!isPro && (
+                        {isProLocked && (
                           <div className="absolute top-0 right-0">
                             <ProBadge variant="icon" size={16} />
                           </div>
@@ -1193,15 +1346,20 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <div className={`relative ${!isPro ? 'pointer-events-none' : ''}`}>
+                      <div className={`relative ${isProLocked ? 'pointer-events-none' : ''}`}>
                         <label className="block text-sm font-medium text-secondary mb-2">
                           Header Color
                         </label>
                         <div className="flex items-center gap-3">
                           <div 
-                            className={`relative ${!isPro ? 'cursor-not-allowed' : ''}`}
+                            className={`relative ${isProLocked ? 'cursor-not-allowed' : ''}`}
                             onClick={() => {
-                              if (!isPro) {
+                              if (isProLoading || isProLocked) {
+                                if (!isAuthenticated) {
+                                  persistTablesSnapshot();
+                                  openAuthPopup('locked_feature');
+                                  return;
+                                }
                                 showUpgradePrompt('');
                               }
                             }}
@@ -1210,20 +1368,20 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                               type="color"
                               value={pdfBranding.brandColor || '#1B9358'}
                               onChange={(e) => handleColorChange(e.target.value)}
-                              disabled={!isPro}
-                              className={`w-12 h-12 rounded border border-gray-300 ${!isPro ? 'grayscale opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                              disabled={isProLoading || isProLocked}
+                              className={`w-12 h-12 rounded border border-gray-300 ${isProLocked ? 'grayscale opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
                             />
                           </div>
                           <div className="flex flex-col">
-                            <span className={`text-sm text-secondary font-medium ${!isPro ? 'opacity-60' : ''}`}>
+                            <span className={`text-sm text-secondary font-medium ${isProLocked ? 'opacity-60' : ''}`}>
                               {pdfBranding.brandColor || '#1B9358'}
                             </span>
                             <span className="text-xs text-secondary/60">
-                              Click to change table header color
+                              Customize PDF header branding
                             </span>
                           </div>
                         </div>
-                        {!isPro && (
+                        {isProLocked && (
                           <div className="absolute top-0 right-0">
                             <ProBadge variant="icon" size={16} />
                           </div>
@@ -1240,8 +1398,8 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {formatOptions.map((option) => {
                 const isSheetsDisabled = option.format === 'google_sheets' && exportDestination === 'local';
-                const isPdfLocked = option.format === 'pdf' && !isPro;
-                const isGoogleSheetsLocked = option.format === 'google_sheets' && !isPro;
+                const isPdfLocked = option.format === 'pdf' && isProLocked;
+                const isGoogleSheetsLocked = option.format === 'google_sheets' && isProLocked;
                 const isLocked = isPdfLocked || isGoogleSheetsLocked;
                 
                 return (
@@ -1250,6 +1408,11 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                     onClick={() => {
                       if (isSheetsDisabled) return;
                       if (isLocked) {
+                        if (!isAuthenticated) {
+                          persistTablesSnapshot();
+                          openAuthPopup('locked_feature');
+                          return;
+                        }
                         showUpgradePrompt('');
                         return;
                       }
@@ -1438,7 +1601,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
             <div className="mt-4 rounded-xl border-2 border-dashed border-primary-light bg-primary-light/10 p-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="text-xs font-semibold text-secondary">Add another table</div>
-                {!isPro && (
+                {isProLocked && (
                   <div className="text-xs text-secondary/60 font-medium">
                     {localTables.length}/3 tables
                   </div>
@@ -1515,7 +1678,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
             <div className="mt-4 rounded-xl border-2 border-dashed border-primary-light bg-primary-light/10 p-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="text-xs font-semibold text-secondary">Add another table</div>
-                {!isPro && (
+                {isProLocked && (
                   <div className="text-xs text-secondary/60 font-medium">
                     {localTables.length}/3 tables
                   </div>
@@ -1573,10 +1736,20 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
         onClose={() => setShowAuthPopup(false)} 
       />
 
+      {isResumingUpgrade && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-white/92 backdrop-blur-sm px-6">
+          <div className="flex max-w-sm flex-col items-center text-center">
+            <div className="mb-5 h-12 w-12 animate-spin rounded-full border-4 border-primary/20 border-t-primary" />
+            <h3 className="text-xl font-semibold text-secondary mb-2">Restoring your upgrade flow</h3>
+            <p className="text-sm text-secondary/70">Please wait while we sign you in and open secure checkout.</p>
+          </div>
+        </div>
+      )}
+
       {/* PWA Install Prompt */}
-      <PWAInstallPrompt 
-        trigger={showPwaPrompt} 
-        onClose={() => setShowPwaPrompt(false)} 
+      <PWAInstallPrompt
+        trigger={showPwaPrompt}
+        onClose={() => setShowPwaPrompt(false)}
       />
 
       {/* Upgrade Modal */}

@@ -7,10 +7,13 @@ export type PaymentStatus = 'succeeded' | 'failed' | 'pending' | 'cancelled';
 // Основные интерфейсы таблиц
 export interface UserProfile {
   id: string;
-  email: string;
+  user_id: string;
   full_name: string | null;
   avatar_url: string | null;
-  google_id: string | null;
+  google_drive_folder_id: string | null;
+  google_drive_enabled: boolean;
+  preferences: Record<string, unknown> | null;
+  is_pro: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -98,8 +101,25 @@ export interface Database {
     Tables: {
       user_profiles: {
         Row: UserProfile;
-        Insert: Omit<UserProfile, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<UserProfile, 'id' | 'created_at' | 'updated_at'>>;
+        Insert: {
+          user_id: string;
+          full_name?: string | null;
+          avatar_url?: string | null;
+          google_drive_folder_id?: string | null;
+          google_drive_enabled?: boolean;
+          preferences?: Record<string, unknown> | null;
+          is_pro?: boolean;
+        };
+        Update: {
+          user_id?: string;
+          full_name?: string | null;
+          avatar_url?: string | null;
+          google_drive_folder_id?: string | null;
+          google_drive_enabled?: boolean;
+          preferences?: Record<string, unknown> | null;
+          is_pro?: boolean;
+          updated_at?: string;
+        };
       };
       export_history: {
         Row: ExportHistory;
