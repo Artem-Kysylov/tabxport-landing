@@ -24,8 +24,7 @@ export default function GoogleAuthButton({
     try {
       setIsLoading(true)
       
-      // Используем фиксированный базовый URL вместо window.location.origin
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin
+      const baseUrl = window.location.origin
       const redirectUrl = `${baseUrl}/auth/callback?next=${encodeURIComponent(redirectTo)}`
       
       console.log('Google Auth Config:', {
@@ -43,7 +42,8 @@ export default function GoogleAuthButton({
           queryParams: {
             access_type: 'offline',
             prompt: 'consent'
-          }
+          },
+          scopes: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets'
         }
       })
 

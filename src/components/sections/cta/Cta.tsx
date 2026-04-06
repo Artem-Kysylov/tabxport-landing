@@ -1,12 +1,13 @@
 import React from 'react'
 import Image from 'next/image'
+import { MonitorSmartphone } from 'lucide-react'
 import { AnimatedSection, FadeInUp } from '@/components/animations'
-import ChromeStoreButton from '@/components/ui/chrome-store-button'
+import { InstallAppButton } from '@/components/pwa/InstallAppButton'
 
 const Cta = () => {
   return (
     <AnimatedSection scale={0.95}>
-      <section className="relative h-[700px] flex flex-col items-center justify-center">
+      <section className="relative min-h-[620px] flex flex-col items-center justify-center py-[80px]">
         <div className='absolute top-0 left-0 w-full h-full -z-10'>
           <Image 
             src="/bg.png"
@@ -19,19 +20,26 @@ const Cta = () => {
         </div>
         
         <FadeInUp>
-          <h2 className='text-[55px] font-semibold text-center mb-[30px]'>
-            Ready to Save <span className='text-primary'>5+ Hours Every Week?</span>
-          </h2>
+          <div className='flex flex-col items-center gap-5 text-center px-5'>
+            <div className='w-[72px] h-[72px] rounded-full bg-white/80 flex items-center justify-center text-primary shadow-[0_10px_30px_rgba(27,147,88,0.18)]'>
+              <MonitorSmartphone size={34} />
+            </div>
+            <h2 className='text-[40px] md:text-[55px] font-semibold leading-tight'>
+              Get TableXport <span className='text-primary'>on all your devices</span>
+            </h2>
+          </div>
         </FadeInUp>
         
         <FadeInUp delay={0.3}>
-          <div className='flex flex-col items-center gap-4'>
-            <ChromeStoreButton className="w-[260px] flex items-center gap-2 hover:scale-105 transition-transform duration-200"
-              storeUrl="https://chromewebstore.google.com/detail/tablexport/bcbjkpalaglbclfhidoknmngpmdmafgm?hl=ru&authuser=0"
-            >
-              Install TableXport – Free
-            </ChromeStoreButton>
-            <span className='text-sm'>30-second install. Trusted by analysts & marketers.</span>
+          <div className='flex flex-col items-center gap-4 max-w-[640px] px-5'>
+            <p className='text-center text-secondary/80'>
+              Works on Mac, Windows, iOS, and Android. No App Store needed. Just click Install and take your AI tables everywhere.
+            </p>
+            <InstallAppButton
+              className='w-[260px] px-5 py-5 rounded-[8px] bg-primary text-white font-bold hover:bg-primary/90 hover:text-white hover:scale-105 transition-all duration-200'
+              label='Install TableXport'
+            />
+            <span className='text-sm text-secondary/65'>iOS user? Tap Share, then Add to Home Screen.</span>
           </div>
         </FadeInUp>
       </section>

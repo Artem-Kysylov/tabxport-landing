@@ -13,8 +13,8 @@ import Image from 'next/image'
 
 export default function Home() {
   return (
-    <main className='relative min-h-screen'>
-      <div className='absolute -top-20 left-0 w-full h-[800px] -z-10'>
+    <main className='relative min-h-screen standalone-app-shell'>
+      <div className='absolute -top-20 left-0 w-full h-[800px] -z-10 standalone-hidden'>
         <Image 
           src="/bg.png"
           alt="background"
@@ -26,14 +26,28 @@ export default function Home() {
         />
       </div>
       <Hero />
-      <Features />
-      <Demo />
-      <FreePlan />
+      <div className='standalone-hidden'>
+        <Features />
+      </div>
+      <div className='standalone-hidden'>
+        <Demo />
+      </div>
+      <div className='standalone-hidden'>
+        <FreePlan />
+      </div>
       {/* <PricePlans /> */}
-      <LabsTeaserSection />
-      <Faq />
-      <About />
-      <Cta />
+      <div className='standalone-hidden'>
+        <LabsTeaserSection />
+      </div>
+      <div className='standalone-hidden'>
+        <Faq />
+      </div>
+      <div className='standalone-hidden'>
+        <About />
+      </div>
+      <div className='standalone-hidden'>
+        <Cta />
+      </div>
     </main>
   );
 }

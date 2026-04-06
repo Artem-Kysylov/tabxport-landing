@@ -28,7 +28,7 @@ function Faq() {
                   <FiPlus className='w-[34px] h-[34px] shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-45 text-primary' />
                 </AccordionTrigger>
                 <AccordionContent className='text-[1.125rem] pt-4'>
-                  Works with ChatGPT, Claude, Gemini, and Deepseek.
+                  TableXport seamlessly works with all major AI chatbots, including ChatGPT, Claude, Gemini, and DeepSeek. You can paste tables in Markdown, HTML, CSV, or TSV formats directly into our smart converter.
                 </AccordionContent>
               </AccordionItem>
 
@@ -52,8 +52,7 @@ function Faq() {
                   <FiPlus className='w-[34px] h-[34px] shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-45 text-primary' />
                 </AccordionTrigger>
                 <AccordionContent className='text-[1.125rem] pt-4'>
-                  {/* Yes! Pro users can batch export as ZIP or combined Excel. */}
-                  Yes, batch export is available to ZIP or a single Excel file
+                  Yes! With our Batch Export feature, you can paste multiple AI-generated tables and download them as a single combined Excel file (.xlsx) or a ZIP archive in seconds.
                 </AccordionContent>
               </AccordionItem>
 
@@ -61,11 +60,11 @@ function Faq() {
 
               <AccordionItem value="item-5" className='border-none'>
                 <AccordionTrigger className='text-[1.5625rem] font-semibold hover:no-underline data-[state=open]:text-primary group [&>svg:last-child]:hidden cursor-pointer'>
-                  What if my table isn't detected?
+                  What if my table is not formatted correctly?
                   <FiPlus className='w-[34px] h-[34px] shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-45 text-primary' />
                 </AccordionTrigger>
                 <AccordionContent className='text-[1.125rem] pt-4'>
-                  Use Manual Select, highlight the table — TableXport will fix the rest.
+                  Our smart parser auto-detects and fixes broken AI layouts. Plus, with our Live Edit & Preview feature, you can manually adjust cell values, fix typos, and preview the data before exporting.
                 </AccordionContent>
               </AccordionItem>
 
@@ -82,18 +81,11 @@ function Faq() {
               </AccordionItem> */}
               <AccordionItem value="item-6" className='border-none'>
                 <AccordionTrigger className='text-[1.5625rem] font-semibold hover:no-underline data-[state=open]:text-primary group [&>svg:last-child]:hidden cursor-pointer'>
-                  Need more details?
+                  How does the Google Drive export work?
                   <FiPlus className='w-[34px] h-[34px] shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-45 text-primary' />
                 </AccordionTrigger>
                 <AccordionContent className='text-[1.125rem] pt-4'>
-                  Contact to me directly{" "}
-                  <a
-                    href="mailto:hello@tablexport.com"
-                    title="Contact to me directly hello@tablexport.com"
-                    className='text-primary font-semibold text-[1.5625rem] cursor-pointer order-1 md:order-2 transition-colors duration-300 ease-in-out'
-                  >
-                    hello@tablexport.com
-                  </a>
+                  You securely authenticate via Google. We only request permission to create and save the specific table you choose. We never read your existing files or store your data on our servers.
                 </AccordionContent>
               </AccordionItem>
             </Accordion>

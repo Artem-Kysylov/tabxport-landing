@@ -1,13 +1,19 @@
 // Enum типы на основе схемы (обновленные)
 export type ExportDestination = 'download' | 'google_drive' | 'email';
+export type SubscriptionPlan = 'free' | 'pro' | 'enterprise';
+export type SubscriptionStatus = 'active' | 'cancelled' | 'expired' | 'trialing' | 'past_due';
+export type PaymentStatus = 'succeeded' | 'failed' | 'pending' | 'cancelled';
 
 // Основные интерфейсы таблиц
 export interface UserProfile {
   id: string;
-  email: string;
+  user_id: string;
   full_name: string | null;
   avatar_url: string | null;
-  google_id: string | null;
+  google_drive_folder_id: string | null;
+  google_drive_enabled: boolean;
+  preferences: Record<string, unknown> | null;
+  is_pro: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -61,14 +67,59 @@ export interface UsageQuota {
   updated_at: string;
 }
 
+export interface Subscription {
+  id: string;
+  user_id: string;
+  plan_type: SubscriptionPlan;
+  status: SubscriptionStatus;
+  paypal_subscription_id: string | null;
+  paypal_plan_id: string | null;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  trial_end: string | null;
+  monthly_price: number | null;
+  currency: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Payment {
+  id: string;
+  subscription_id: string;
+  amount: number;
+  currency: string;
+  paypal_payment_id: string | null;
+  paypal_transaction_id: string | null;
+  status: PaymentStatus;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
 // Database типы для Supabase
 export interface Database {
   public: {
     Tables: {
       user_profiles: {
         Row: UserProfile;
-        Insert: Omit<UserProfile, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<UserProfile, 'id' | 'created_at' | 'updated_at'>>;
+        Insert: {
+          user_id: string;
+          full_name?: string | null;
+          avatar_url?: string | null;
+          google_drive_folder_id?: string | null;
+          google_drive_enabled?: boolean;
+          preferences?: Record<string, unknown> | null;
+          is_pro?: boolean;
+        };
+        Update: {
+          user_id?: string;
+          full_name?: string | null;
+          avatar_url?: string | null;
+          google_drive_folder_id?: string | null;
+          google_drive_enabled?: boolean;
+          preferences?: Record<string, unknown> | null;
+          is_pro?: boolean;
+          updated_at?: string;
+        };
       };
       export_history: {
         Row: ExportHistory;
@@ -94,6 +145,39 @@ export interface Database {
         Row: SyntaxWaitlist;
         Insert: Omit<SyntaxWaitlist, 'id' | 'created_at'>;
         Update: Partial<Omit<SyntaxWaitlist, 'id' | 'created_at'>>;
+      };
+      subscriptions: {
+        Row: Subscription;
+        Insert: {
+          user_id: string;
+          plan_type?: SubscriptionPlan;
+          status?: SubscriptionStatus;
+          paypal_subscription_id?: string | null;
+          paypal_plan_id?: string | null;
+          current_period_start?: string | null;
+          current_period_end?: string | null;
+          trial_end?: string | null;
+          monthly_price?: number | null;
+          currency?: string | null;
+        };
+        Update: {
+          user_id?: string;
+          plan_type?: SubscriptionPlan;
+          status?: SubscriptionStatus;
+          paypal_subscription_id?: string | null;
+          paypal_plan_id?: string | null;
+          current_period_start?: string | null;
+          current_period_end?: string | null;
+          trial_end?: string | null;
+          monthly_price?: number | null;
+          currency?: string | null;
+          updated_at?: string;
+        };
+      };
+      payments: {
+        Row: Payment;
+        Insert: Omit<Payment, 'id' | 'created_at'>;
+        Update: Partial<Omit<Payment, 'id' | 'created_at'>>;
       };
     };
     Functions: {

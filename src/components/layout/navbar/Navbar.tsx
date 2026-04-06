@@ -4,8 +4,10 @@
 import React, { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useStandaloneMode } from '@/hooks/useStandaloneMode'
 
 const Navbar = () => {
+  const isStandalone = useStandaloneMode()
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const toggleMenu = () => {
@@ -18,6 +20,19 @@ const Navbar = () => {
     setIsMenuOpen(false);
     document.body.style.overflow = 'unset';
   };
+
+  if (isStandalone) {
+    return (
+      <div className='standalone-navbar sticky top-0 z-50 border-b border-white/10'>
+        <div className='container-custom flex items-center justify-between py-4'>
+          <Link href='/'>
+            <Image src='/logo-light.svg' alt='logo' width={141} height={58} />
+          </Link>
+          <span className='text-sm font-medium text-white/70'>App Mode</span>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <>
@@ -36,7 +51,7 @@ const Navbar = () => {
               <Link href='/#demo' className='transition-colors duration-300 ease-in-out hover:text-primary'>See TableXport in action</Link>
             </li>
             <li>
-              <Link href='/#price-plans' className='transition-colors duration-300 ease-in-out hover:text-primary'>Unlock Productivity</Link>
+              <Link href='/#price-plans' className='transition-colors duration-300 ease-in-out hover:text-primary'>Simple Pricing</Link>
             </li>
             <li>
               <Link href='/#faq' className='transition-colors duration-300 ease-in-out hover:text-primary'>FAQ</Link>
@@ -69,11 +84,11 @@ const Navbar = () => {
           <ul className='flex flex-col items-center gap-8'>
             <li>
               <Link 
-                href='/#why-tabxport' 
+                href='/#features' 
                 className='text-[25px] font-semibold transition-colors duration-300 ease-in-out hover:text-primary'
                 onClick={handleLinkClick}
               >
-                Why TabXport?
+                Why TableXport?
               </Link>
             </li>
             <li>
@@ -82,16 +97,16 @@ const Navbar = () => {
                 className='text-[25px] font-semibold transition-colors duration-300 ease-in-out hover:text-primary'
                 onClick={handleLinkClick}
               >
-                See TabXport in action
+                See TableXport in action
               </Link>
             </li>
             <li>
               <Link 
-                href='/#features' 
+                href='/#price-plans' 
                 className='text-[25px] font-semibold transition-colors duration-300 ease-in-out hover:text-primary'
                 onClick={handleLinkClick}
               >
-                Unlock Productivity
+                Simple Pricing
               </Link>
             </li>
             <li>
