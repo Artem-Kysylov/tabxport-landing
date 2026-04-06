@@ -3,9 +3,9 @@ import Link from 'next/link'
 
 const RefundPolicy = () => {
   return (
-    <main className="py-[100px]">
-      <div className="container-custom">
-        <div className="flex flex-col gap-8">
+    <main className="flex flex-col py-[60px] flex-1">
+      <div className="container-custom flex-1">
+        <div className="flex flex-col gap-8 h-full">
           {/* Back to Home */}
           <Link 
             href="/" 
@@ -18,7 +18,7 @@ const RefundPolicy = () => {
           <h1 className="text-4xl md:text-5xl font-semibold mb-8">Refund Policy</h1>
 
           {/* Content */}
-          <div className="prose prose-lg max-w-none [&>h2]:text-[25px] [&>h2]:font-semibold [&>h2]:mt-[30px]">
+          <div className="prose prose-lg max-w-none [&>h2]:text-[25px] [&>h2]:font-semibold [&>h2]:mt-[30px] flex-1">
             <p>Last updated: {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
 
             <p>

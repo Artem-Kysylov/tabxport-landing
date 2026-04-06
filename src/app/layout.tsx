@@ -93,7 +93,7 @@ export default function RootLayout({
       <head>
         <link rel="apple-touch-icon" href="/icons/app-icons/apple-touch-icon.png" />
       </head>
-      <body className="font-inter">
+      <body className="font-inter flex flex-col min-h-screen">
         <ProProvider>
           <GlobalAnnouncementBar />
           <NavbarWrapper />
