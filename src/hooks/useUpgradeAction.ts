@@ -7,9 +7,6 @@ import { useGoogleAuth } from '@/hooks/useGoogleAuth';
 
 const PADDLE_PRICE_ID = process.env.NEXT_PUBLIC_PADDLE_PRICE_ID ?? 'pri_01kmzphzgfw9gecj77dp5apxve';
 const PADDLE_CLIENT_TOKEN = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN ?? process.env.NEXT_PUBLIC_PADDLE_SANDBOX_CLIENT_TOKEN ?? '';
-const CHECKOUT_FINALIZING_PATH = '/checkout/finalizing';
-const CHECKOUT_SUCCESS_PATH = '/checkout/success';
-const POST_PAYMENT_LOADING_MS = 3500;
 const REFETCH_ATTEMPTS = 6;
 
 interface StartUpgradeOptions {
@@ -25,7 +22,9 @@ export function useUpgradeAction() {
   const { isPro, isLoading: proLoading, activatePro, refetch } = usePro();
   const [isOpeningCheckout, setIsOpeningCheckout] = useState(false);
   const [isCompletingCheckout, setIsCompletingCheckout] = useState(false);
+  const [checkoutSuccess, setCheckoutSuccess] = useState(false);
   const checkoutCompletedRef = useRef(false);
+  const paddleInstanceRef = useRef<Awaited<ReturnType<typeof initializePaddle>> | null>(null);
 
   const ctaState: UpgradeCtaState = authLoading || proLoading
     ? 'loading'
@@ -56,8 +55,6 @@ export function useUpgradeAction() {
     setIsCompletingCheckout(false);
 
     try {
-      const finalizingUrl = `${window.location.origin}${CHECKOUT_FINALIZING_PATH}`;
-
       if (!PADDLE_CLIENT_TOKEN) {
         throw new Error('Missing Paddle client token. Add NEXT_PUBLIC_PADDLE_CLIENT_TOKEN for Sandbox checkout.');
       }
@@ -73,9 +70,19 @@ export function useUpgradeAction() {
           if (event.name === 'checkout.completed') {
             checkoutCompletedRef.current = true;
             setIsCompletingCheckout(true);
+            setCheckoutSuccess(true);
             activatePro();
             options?.onSuccess?.();
             setIsOpeningCheckout(false);
+
+            // Close Paddle overlay immediately to prevent default success page
+            if (paddleInstanceRef.current) {
+              try {
+                paddleInstanceRef.current.Checkout.close();
+              } catch (error) {
+                console.error('Failed to close Paddle checkout:', error);
+              }
+            }
 
             // Aggressive refetch to ensure session is updated
             let attempts = 0;
@@ -91,12 +98,6 @@ export function useUpgradeAction() {
               }
             };
             void pollUntilPro();
-
-            const params = new URLSearchParams({
-              next: CHECKOUT_SUCCESS_PATH,
-              delay: POST_PAYMENT_LOADING_MS.toString(),
-            });
-            window.location.replace(`${finalizingUrl}?${params.toString()}`);
           }
 
           if (event.name === 'checkout.closed' && !checkoutCompletedRef.current) {
@@ -111,6 +112,7 @@ export function useUpgradeAction() {
         throw new Error('Failed to initialize Paddle checkout.');
       }
 
+      paddleInstanceRef.current = paddle;
       checkoutCompletedRef.current = false;
 
       paddle.Checkout.open({
@@ -133,7 +135,6 @@ export function useUpgradeAction() {
           variant: 'one-page',
           theme: 'light',
           locale: 'en',
-          successUrl: finalizingUrl,
         },
       });
 
@@ -169,6 +170,7 @@ export function useUpgradeAction() {
     ctaState,
     isOpeningCheckout,
     isCompletingCheckout,
+    checkoutSuccess,
     isAuthenticated,
     isPro,
     user,

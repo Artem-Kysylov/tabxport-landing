@@ -490,12 +490,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
     }
 
     if ((format === 'pdf' || format === 'google_sheets') && isProLocked) {
-      if (!isAuthenticated) {
-        persistTablesSnapshot();
-        openAuthPopup('locked_feature');
-        return;
-      }
-
+      persistTablesSnapshot();
       showUpgradePrompt(format === 'pdf'
         ? 'Upgrade to Pro to export branded PDF files.'
         : 'Upgrade to Pro to export directly to Google Sheets.');
@@ -577,12 +572,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
       if (result.success && result.blob) {
         if (exportDestination === 'google_drive') {
           if (isProLocked) {
-            if (!isAuthenticated) {
-              persistTablesSnapshot();
-              openAuthPopup('locked_feature');
-              return;
-            }
-
+            persistTablesSnapshot();
             showUpgradePrompt('Upgrade to Pro to export files to Google Drive.');
             return;
           }
@@ -695,12 +685,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
     }
 
     if (isProLocked && (batchFormat === 'pdf' || exportDestination === 'google_drive')) {
-      if (!isAuthenticated) {
-        persistTablesSnapshot();
-        openAuthPopup('locked_feature');
-        return;
-      }
-
+      persistTablesSnapshot();
       showUpgradePrompt(batchFormat === 'pdf'
         ? 'Upgrade to Pro to batch export PDF files.'
         : 'Upgrade to Pro to batch export to Google Drive.');
@@ -1167,11 +1152,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                   }
 
                   if (isProLocked) {
-                    if (!isAuthenticated) {
-                      persistTablesSnapshot();
-                      openAuthPopup('locked_feature');
-                      return;
-                    }
+                    persistTablesSnapshot();
                     showUpgradePrompt('');
                     return;
                   }
@@ -1214,9 +1195,18 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                 <span className="text-xs text-secondary font-medium max-w-[120px] truncate">
                   {user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User'}
                 </span>
+                {!isPro && !isProLoading && (
+                  <button
+                    onClick={() => setShowUpgradeModal(true)}
+                    className="inline-flex cursor-pointer items-center gap-1 rounded-md bg-primary px-2 py-1 text-xs font-semibold text-white transition-all hover:bg-primary/90 hover:shadow-md"
+                  >
+                    <Sparkles size={12} />
+                    Upgrade to Pro
+                  </button>
+                )}
                 <button
                   onClick={handleSignOut}
-                  className="text-xs text-secondary/60 hover:text-secondary underline transition-colors"
+                  className="cursor-pointer text-xs text-secondary/60 hover:text-secondary underline transition-colors"
                 >
                   Sign out
                 </button>
@@ -1316,11 +1306,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                             onClick={(e) => {
                               if (isProLoading || isProLocked) {
                                 e.preventDefault();
-                                if (!isAuthenticated) {
-                                  persistTablesSnapshot();
-                                  openAuthPopup('locked_feature');
-                                  return;
-                                }
+                                persistTablesSnapshot();
                                 showUpgradePrompt('');
                               }
                             }}
@@ -1355,11 +1341,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                             className={`relative ${isProLocked ? 'cursor-not-allowed' : ''}`}
                             onClick={() => {
                               if (isProLoading || isProLocked) {
-                                if (!isAuthenticated) {
-                                  persistTablesSnapshot();
-                                  openAuthPopup('locked_feature');
-                                  return;
-                                }
+                                persistTablesSnapshot();
                                 showUpgradePrompt('');
                               }
                             }}
@@ -1408,11 +1390,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                     onClick={() => {
                       if (isSheetsDisabled) return;
                       if (isLocked) {
-                        if (!isAuthenticated) {
-                          persistTablesSnapshot();
-                          openAuthPopup('locked_feature');
-                          return;
-                        }
+                        persistTablesSnapshot();
                         showUpgradePrompt('');
                         return;
                       }
