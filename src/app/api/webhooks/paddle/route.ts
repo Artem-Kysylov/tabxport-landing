@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { sendBrevoEmail } from '@/lib/brevo/email';
 
 export const runtime = 'nodejs';
 
@@ -12,10 +13,15 @@ const paddleWebhookEventSchema = z.object({
   data: z.object({
     id: z.string(),
     status: z.string().optional(),
+    customer_id: z.string().optional(),
     custom_data: z.object({
       user_id: z.string().uuid(),
     }).passthrough().nullable().optional(),
   }).passthrough(),
+});
+
+const paddleCustomerSchema = z.object({
+  email: z.string().email(),
 });
 
 function parsePaddleSignature(signatureHeader: string): { timestamp: string; signatures: string[] } {
@@ -131,6 +137,63 @@ export async function POST(request: NextRequest) {
 
   if (subscriptionError) {
     return NextResponse.json({ error: 'Failed to update subscription status.' }, { status: 500 });
+  }
+
+  let userEmail: string | null = null;
+
+  try {
+    const customerId = event.data.customer_id;
+    
+    if (customerId) {
+      const paddleApiKey = process.env.PADDLE_API_KEY;
+      
+      if (paddleApiKey) {
+        const customerResponse = await fetch(
+          `https://api.paddle.com/customers/${customerId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${paddleApiKey}`,
+            },
+          }
+        );
+
+        if (customerResponse.ok) {
+          const customerData = await customerResponse.json();
+          const parsedCustomer = paddleCustomerSchema.safeParse(customerData.data);
+          
+          if (parsedCustomer.success) {
+            userEmail = parsedCustomer.data.email;
+          }
+        }
+      }
+    }
+
+    if (!userEmail) {
+      const { data: userData } = await supabaseAdmin.auth.admin.getUserById(userId);
+      userEmail = userData?.user?.email || null;
+    }
+
+    if (userEmail) {
+      const templateId = parseInt(process.env.BREVO_TEMPLATE_ID || '3', 10);
+      
+      const emailResult = await sendBrevoEmail({
+        to: userEmail,
+        templateId,
+        params: {
+          user_id: userId,
+        },
+      });
+
+      if (emailResult.error) {
+        console.error('Failed to send confirmation email:', emailResult.error);
+      } else {
+        console.log('Confirmation email sent successfully:', emailResult.messageId);
+      }
+    } else {
+      console.warn('No email found for user:', userId);
+    }
+  } catch (emailError) {
+    console.error('Error sending confirmation email:', emailError);
   }
 
   return NextResponse.json({ received: true, upgraded: true });
