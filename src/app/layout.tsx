@@ -15,6 +15,10 @@ export const metadata: Metadata = {
   title: "TableXport: Export tables from ChatGPT to Excel in 1 click",
   description: "Export tables from ChatGPT, Claude, and other AI chats to Excel, CSV, or Google Sheets. No more manual copying — just click Export!",
   keywords: "ChatGPT export, table export, Excel export, CSV export, Google Sheets, AI chat export, Claude export, Gemini export, data export",
+
+  verification: {
+    google: 'yKwtmSMlcL6XYe0jkxbHW9kilWaESWjqHOBphH9EI8A',
+  },
   
   // PWA Configuration
   manifest: '/manifest.json',

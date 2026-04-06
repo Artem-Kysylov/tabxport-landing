@@ -149,12 +149,12 @@ const LabsTeaserSection = () => {
 
             {/* Right Column - Video */}
             <FadeInUp delay={0.6}>
-              <div className="relative">
-                <div className="relative rounded-lg overflow-hidden shadow-2xl">
+              <div className="min-w-0 relative lg:pl-4 lg:justify-self-end">
+                <div className="relative w-full rounded-lg overflow-hidden lg:max-w-[760px] xl:max-w-[820px]">
                   <video
                     src="/prompt-builder-video/prompt-builder.mp4"
-                    width={600}
-                    height={375}
+                    width={820}
+                    height={512}
                     className="w-full h-auto object-cover rounded-lg scale-115"
                     autoPlay
                     loop
