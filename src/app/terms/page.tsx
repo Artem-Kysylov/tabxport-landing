@@ -20,6 +20,7 @@ const TermsOfService = () => {
           {/* Content */}
           <div className="prose prose-lg max-w-none [&>h2]:text-[25px] [&>h2]:font-semibold [&>h2]:mt-[30px]">
             <p>Last updated: {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+            <p>TableXport is owned and operated by Spendly.</p>
 
             <h2>1. Agreement to Terms</h2>
             <p>
