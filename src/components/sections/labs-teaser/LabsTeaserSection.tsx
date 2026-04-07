@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState } from 'react'
-import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Check, Loader2 } from 'lucide-react'
 import { AnimatedSection, FadeInUp } from '@/components/animations'

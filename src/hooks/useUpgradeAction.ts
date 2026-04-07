@@ -1,15 +1,15 @@
 'use client';
 
 import { useCallback, useRef, useState } from 'react';
-import { initializePaddle, type PaddleEventData } from '@paddle/paddle-js';
+import { initializePaddle, type PaddleEventData, type Environments } from '@paddle/paddle-js';
 import { usePro } from '@/contexts/ProContext';
 import { useGoogleAuth } from '@/hooks/useGoogleAuth';
 
 const PADDLE_PRICE_ID = process.env.NEXT_PUBLIC_PADDLE_PRICE_ID ?? '';
 const PADDLE_CLIENT_TOKEN = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN ?? '';
-const PADDLE_ENVIRONMENT = process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT === 'production' 
+const PADDLE_ENVIRONMENT: Environments = (process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT === 'production' 
   ? 'live' 
-  : (process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT as 'sandbox' | 'live' | undefined) ?? 'sandbox';
+  : process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT ?? 'sandbox') as Environments;
 const REFETCH_ATTEMPTS = 6;
 
 interface StartUpgradeOptions {
