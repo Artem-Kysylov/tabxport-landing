@@ -5,9 +5,9 @@ import { Medal } from 'lucide-react';
 import { usePro } from '@/contexts/ProContext';
 
 export function ProLifetimeBadge() {
-  const { isPro, isLoading } = usePro();
+  const { isPro } = usePro();
 
-  if (isLoading || !isPro) {
+  if (!isPro) {
     return null;
   }
 

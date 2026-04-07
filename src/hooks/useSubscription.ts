@@ -84,9 +84,11 @@ export function useSubscription(): UseSubscriptionReturn {
 
   const supabase = useMemo(() => createClient(), []);
 
-  const fetchSubscription = useCallback(async () => {
+  const fetchSubscription = useCallback(async (showLoading = true) => {
     try {
-      setIsLoading(true);
+      if (showLoading) {
+        setIsLoading(true);
+      }
       setError(null);
       const { data: { user } } = await supabase.auth.getUser();
 
@@ -95,7 +97,9 @@ export function useSubscription(): UseSubscriptionReturn {
         setProfile(null);
         setOptimisticIsPro(false);
         writePendingProActivation(false);
-        setIsLoading(false);
+        if (showLoading) {
+          setIsLoading(false);
+        }
         return;
       }
 
@@ -126,7 +130,9 @@ export function useSubscription(): UseSubscriptionReturn {
       setError(err instanceof Error ? err : new Error('Failed to fetch user profile'));
       setProfile(null);
     } finally {
-      setIsLoading(false);
+      if (showLoading) {
+        setIsLoading(false);
+      }
     }
   }, [supabase]);
 
@@ -145,7 +151,7 @@ export function useSubscription(): UseSubscriptionReturn {
         if (cancelled) {
           return;
         }
-        await fetchSubscription();
+        await fetchSubscription(false);
       }
     };
 
@@ -159,7 +165,7 @@ export function useSubscription(): UseSubscriptionReturn {
   useEffect(() => {
     fetchSubscription();
     const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(() => {
-      void fetchSubscription();
+      void fetchSubscription(false);
     });
 
     return () => {
