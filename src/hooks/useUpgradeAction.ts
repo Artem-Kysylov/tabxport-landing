@@ -5,8 +5,11 @@ import { initializePaddle, type PaddleEventData } from '@paddle/paddle-js';
 import { usePro } from '@/contexts/ProContext';
 import { useGoogleAuth } from '@/hooks/useGoogleAuth';
 
-const PADDLE_PRICE_ID = process.env.NEXT_PUBLIC_PADDLE_PRICE_ID ?? 'pri_01kmzphzgfw9gecj77dp5apxve';
-const PADDLE_CLIENT_TOKEN = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN ?? process.env.NEXT_PUBLIC_PADDLE_SANDBOX_CLIENT_TOKEN ?? '';
+const PADDLE_PRICE_ID = process.env.NEXT_PUBLIC_PADDLE_PRICE_ID ?? '';
+const PADDLE_CLIENT_TOKEN = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN ?? '';
+const PADDLE_ENVIRONMENT = process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT === 'production' 
+  ? 'live' 
+  : (process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT as 'sandbox' | 'live' | undefined) ?? 'sandbox';
 const REFETCH_ATTEMPTS = 6;
 
 interface StartUpgradeOptions {
@@ -56,7 +59,11 @@ export function useUpgradeAction() {
 
     try {
       if (!PADDLE_CLIENT_TOKEN) {
-        throw new Error('Missing Paddle client token. Add NEXT_PUBLIC_PADDLE_CLIENT_TOKEN for Sandbox checkout.');
+        throw new Error('Missing Paddle client token. Add NEXT_PUBLIC_PADDLE_CLIENT_TOKEN.');
+      }
+
+      if (!PADDLE_PRICE_ID) {
+        throw new Error('Missing Paddle price ID. Add NEXT_PUBLIC_PADDLE_PRICE_ID.');
       }
 
       if (!user?.id) {
@@ -64,7 +71,7 @@ export function useUpgradeAction() {
       }
 
       const paddle = await initializePaddle({
-        environment: 'sandbox',
+        environment: PADDLE_ENVIRONMENT,
         token: PADDLE_CLIENT_TOKEN,
         eventCallback: (event: PaddleEventData) => {
           if (event.name === 'checkout.completed') {
