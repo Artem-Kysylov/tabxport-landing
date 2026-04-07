@@ -7,9 +7,10 @@ import { useGoogleAuth } from '@/hooks/useGoogleAuth';
 
 const PADDLE_PRICE_ID = process.env.NEXT_PUBLIC_PADDLE_PRICE_ID ?? '';
 const PADDLE_CLIENT_TOKEN = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN ?? '';
-const PADDLE_ENVIRONMENT: Environments = (process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT === 'production' 
-  ? 'live' 
-  : process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT ?? 'sandbox') as Environments;
+const rawPaddleEnvironment = process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT;
+const PADDLE_ENVIRONMENT: Environments = rawPaddleEnvironment === 'live' || rawPaddleEnvironment === 'production'
+  ? 'production'
+  : 'sandbox';
 const REFETCH_ATTEMPTS = 6;
 
 interface StartUpgradeOptions {
