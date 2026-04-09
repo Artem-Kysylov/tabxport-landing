@@ -67,6 +67,11 @@ function verifyPaddleSignature(rawBody: string, signatureHeader: string, secret:
 export async function POST(request: NextRequest) {
   const webhookSecret = process.env.PADDLE_WEBHOOK_SECRET;
 
+  console.log('[Paddle webhook] Request received', {
+    method: request.method,
+    url: request.url,
+  });
+
   if (!webhookSecret) {
     return NextResponse.json({ error: 'Missing PADDLE_WEBHOOK_SECRET.' }, { status: 500 });
   }
@@ -79,9 +84,17 @@ export async function POST(request: NextRequest) {
 
   const rawBody = await request.text();
 
+  console.log('[Paddle webhook] Raw body received', {
+    rawBodyLength: rawBody.length,
+    hasSignatureHeader: Boolean(signatureHeader),
+  });
+
   if (!verifyPaddleSignature(rawBody, signatureHeader, webhookSecret)) {
+    console.error('[Paddle webhook] Signature verification failed');
     return NextResponse.json({ error: 'Invalid webhook signature.' }, { status: 401 });
   }
+
+  console.log('[Paddle webhook] Signature verification passed');
 
   let parsedJson: unknown;
 
@@ -98,6 +111,11 @@ export async function POST(request: NextRequest) {
   }
 
   const event = parsedEvent.data;
+
+  console.log('[Paddle webhook] Event parsed', {
+    eventId: event.event_id,
+    eventType: event.event_type,
+  });
 
   if (event.event_type !== 'transaction.completed') {
     return NextResponse.json({ received: true, ignored: true });
@@ -143,6 +161,10 @@ export async function POST(request: NextRequest) {
 
   try {
     const customerId = event.data.customer_id;
+    console.log('[Paddle webhook] Resolving email for completed transaction', {
+      userId,
+      customerId: customerId ?? null,
+    });
     
     if (customerId) {
       const paddleApiKey = process.env.PADDLE_API_KEY;
@@ -163,7 +185,17 @@ export async function POST(request: NextRequest) {
           
           if (parsedCustomer.success) {
             userEmail = parsedCustomer.data.email;
+            console.log('[Paddle webhook] Resolved email from Paddle customer API', {
+              userId,
+              userEmail,
+            });
           }
+        } else {
+          console.warn('[Paddle webhook] Failed to fetch Paddle customer', {
+            customerId,
+            status: customerResponse.status,
+            statusText: customerResponse.statusText,
+          });
         }
       }
     }
@@ -171,10 +203,19 @@ export async function POST(request: NextRequest) {
     if (!userEmail) {
       const { data: userData } = await supabaseAdmin.auth.admin.getUserById(userId);
       userEmail = userData?.user?.email || null;
+      console.log('[Paddle webhook] Fallback email lookup via Supabase admin completed', {
+        userId,
+        userEmail,
+      });
     }
 
     if (userEmail) {
       const templateId = parseInt(process.env.BREVO_TEMPLATE_ID || '3', 10);
+      console.log('[Paddle webhook] Sending Brevo email', {
+        userId,
+        userEmail,
+        templateId,
+      });
       
       const emailResult = await sendBrevoEmail({
         to: userEmail,
