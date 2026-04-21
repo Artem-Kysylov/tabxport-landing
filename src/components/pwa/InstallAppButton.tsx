@@ -2,8 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { PWAInstallPrompt } from './PWAInstallPrompt';
-import { BeforeInstallPromptEvent } from '@/types/pwa';
 import { cn } from '@/lib/utils';
+import {
+  attachGlobalInstallPromptListeners,
+  triggerNativeInstallPrompt,
+} from '@/lib/pwa/deferredInstallPromptStore';
 
 const detectIOSDevice = (): boolean => {
   if (typeof window === 'undefined') return false;
@@ -30,32 +33,28 @@ export const InstallAppButton: React.FC<InstallAppButtonProps> = ({
   const [showPrompt, setShowPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+
+  useEffect(() => {
+    attachGlobalInstallPromptListeners();
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     setIsIOS(detectIOSDevice());
 
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
-                         window.navigator.standalone === true;
+    const isStandalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true;
     setIsInstalled(isStandalone);
-
-    const handleBeforeInstallPrompt = (event: BeforeInstallPromptEvent) => {
-      event.preventDefault();
-      setDeferredPrompt(event);
-    };
 
     const handleAppInstalled = () => {
       setIsInstalled(true);
-      setDeferredPrompt(null);
     };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, []);
@@ -70,21 +69,18 @@ export const InstallAppButton: React.FC<InstallAppButtonProps> = ({
       return;
     }
 
-    if (deferredPrompt) {
-      const nativePrompt = deferredPrompt;
-      setDeferredPrompt(null);
-      await nativePrompt.prompt();
-      const choiceResult = await nativePrompt.userChoice;
+    const { outcome } = await triggerNativeInstallPrompt();
 
-      if (choiceResult.outcome === 'accepted') {
-        setIsInstalled(true);
-      }
+    if (outcome === 'accepted') {
+      setIsInstalled(true);
       return;
     }
 
-    if (isIOS) {
-      setShowPrompt(true);
+    if (outcome === 'dismissed') {
+      return;
     }
+
+    setShowPrompt(true);
   };
 
   if (isInstalled) {
@@ -100,10 +96,10 @@ export const InstallAppButton: React.FC<InstallAppButtonProps> = ({
       >
         {label}
       </button>
-      <PWAInstallPrompt 
+      <PWAInstallPrompt
         trigger={showPrompt}
         forceShow={true}
-        onClose={() => setShowPrompt(false)} 
+        onClose={() => setShowPrompt(false)}
       />
     </>
   );

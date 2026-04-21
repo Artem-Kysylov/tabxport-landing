@@ -4,8 +4,12 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, Download } from 'lucide-react';
 import Image from 'next/image';
-import { BeforeInstallPromptEvent } from '@/types/pwa';
 import { IOSInstallSheet } from './IOSInstallSheet';
+import {
+  getDeferredInstallPrompt,
+  subscribeDeferredInstallPrompt,
+  triggerNativeInstallPrompt,
+} from '@/lib/pwa/deferredInstallPromptStore';
 
 const detectIOSDevice = (): boolean => {
   if (typeof window === 'undefined') return false;
@@ -26,13 +30,19 @@ interface PWAInstallPromptProps {
   forceShow?: boolean;
 }
 
-export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onClose, trigger = false, forceShow = false }) => {
+export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
+  onClose,
+  trigger = false,
+  forceShow = false,
+}) => {
   const [isVisible, setIsVisible] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [deferredPromptReady, setDeferredPromptReady] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [showIOSSheet, setShowIOSSheet] = useState(false);
 
-  const canShowCustomPrompt = isIOS || deferredPrompt !== null;
+  const syncDeferred = () => {
+    setDeferredPromptReady(getDeferredInstallPrompt() !== null);
+  };
 
   const hidePrompt = () => {
     setIsVisible(false);
@@ -59,28 +69,25 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onClose, tri
       return;
     }
 
-    if (!deferredPrompt) {
+    const { outcome } = await triggerNativeInstallPrompt();
+
+    if (outcome === 'accepted') {
+      try {
+        localStorage.setItem('tx_pwa_installed', 'true');
+      } catch {
+        // ignore
+      }
       hidePrompt();
       return;
     }
 
-    try {
+    if (outcome === 'dismissed') {
       hidePrompt();
-      const nativePrompt = deferredPrompt;
-      setDeferredPrompt(null);
-      await nativePrompt.prompt();
-      const choiceResult = await nativePrompt.userChoice;
-
-      if (choiceResult.outcome === 'accepted') {
-        try {
-          localStorage.setItem('tx_pwa_installed', 'true');
-        } catch {
-          // ignore
-        }
-      }
-    } catch (error) {
-      console.error('Install prompt error:', error);
+      return;
     }
+
+    // No native prompt (e.g. Firefox, or criteria not met) — keep panel open with manual hints
+    syncDeferred();
   };
 
   useEffect(() => {
@@ -88,10 +95,7 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onClose, tri
 
     setIsIOS(detectIOSDevice());
 
-    const handleBeforeInstallPrompt = (event: BeforeInstallPromptEvent) => {
-      event.preventDefault();
-      setDeferredPrompt(event);
-    };
+    const unsub = subscribeDeferredInstallPrompt(syncDeferred);
 
     const handleAppInstalled = () => {
       try {
@@ -99,41 +103,49 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onClose, tri
       } catch (error) {
         console.error('Install state error:', error);
       }
-      setDeferredPrompt(null);
+      syncDeferred();
     };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      unsub();
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, []);
 
   useEffect(() => {
-    if (trigger) {
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-      const canOpenPrompt = isIOS || deferredPrompt !== null;
-      
-      // If forceShow is true (from footer button), ignore dismissed status
-      if (forceShow) {
-        if (!isStandalone && canOpenPrompt) {
-          setIsVisible(true);
-        }
-      } else {
-        // Normal flow - check dismissed status
-        const isDismissed = localStorage.getItem('tx_pwa_prompt_dismissed') === 'true';
-        if (!isStandalone && !isDismissed && canOpenPrompt) {
-          setIsVisible(true);
-        }
-      }
+    if (typeof window === 'undefined') {
+      return;
     }
-  }, [trigger, forceShow, isIOS, deferredPrompt]);
+
+    if (!trigger) {
+      setIsVisible(false);
+      return;
+    }
+
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    const hasNativeInstall = getDeferredInstallPrompt() !== null;
+    const canOpenPrompt = isIOS || hasNativeInstall;
+
+    if (forceShow) {
+      if (!isStandalone) {
+        setIsVisible(true);
+      }
+      return;
+    }
+
+    const isDismissed = localStorage.getItem('tx_pwa_prompt_dismissed') === 'true';
+    if (!isStandalone && !isDismissed && canOpenPrompt) {
+      setIsVisible(true);
+    }
+  }, [trigger, forceShow, isIOS, deferredPromptReady]);
+
+  const showDesktopManualHint = !isIOS && !deferredPromptReady && isVisible;
 
   return (
     <>
-      {isVisible && canShowCustomPrompt && (
+      {isVisible && (
         <motion.div
           initial={{ opacity: 0, y: 20, x: 20 }}
           animate={{ opacity: 1, y: 0, x: 0 }}
@@ -157,7 +169,6 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onClose, tri
               position: 'relative',
             }}
           >
-            {/* Close button */}
             <button
               onClick={handleClose}
               style={{
@@ -187,7 +198,6 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onClose, tri
             </button>
 
             <div style={{ textAlign: 'center' }}>
-              {/* Logo */}
               <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}>
                 <Image
                   src="/logo-dark.svg"
@@ -220,6 +230,23 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onClose, tri
                 Install TableXport for instant access from your dock or home screen.
               </p>
 
+              {showDesktopManualHint && (
+                <p
+                  style={{
+                    fontSize: '12px',
+                    color: '#062013',
+                    margin: '0 0 16px 0',
+                    lineHeight: '1.5',
+                    opacity: 0.85,
+                    textAlign: 'left',
+                  }}
+                >
+                  <strong>Chrome or Edge (desktop):</strong> open the install menu (⊕ or ⋮ in the address bar) and
+                  choose <em>Install TableXport</em>. If you don&apos;t see it, the site may need a moment after load —
+                  try refreshing once.
+                </p>
+              )}
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <button
                   onClick={handleInstall}
@@ -247,7 +274,7 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onClose, tri
                   }}
                 >
                   <Download size={16} />
-                  Install
+                  {deferredPromptReady ? 'Install' : isIOS ? 'Install' : 'Try install prompt'}
                 </button>
 
                 <button
@@ -278,13 +305,12 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onClose, tri
         </motion.div>
       )}
 
-      {/* iOS Install Sheet */}
-      <IOSInstallSheet 
-        isOpen={showIOSSheet} 
+      <IOSInstallSheet
+        isOpen={showIOSSheet}
         onClose={() => {
           setShowIOSSheet(false);
           onClose?.();
-        }} 
+        }}
       />
     </>
   );
