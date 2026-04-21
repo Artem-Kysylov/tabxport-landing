@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react'
+import React, { useEffect } from 'react'
 import Link from 'next/link'
 import { AnimatedSection, FadeInUp } from '@/components/animations'
 import { SmartDropzone } from '@/components/UniversalConverter/SmartDropzone'
@@ -9,6 +9,36 @@ import { useTableParser } from '@/hooks/useTableParser'
 
 const Hero = () => {
   const { parsedTables, isLoading, error, parseFromText, appendFromText, clearTable } = useTableParser();
+
+  // Logic for auto-pasting from clipboard
+  useEffect(() => {
+    const handleAutoPaste = async () => {
+      // Ensure this runs only in the browser (client-side)
+      if (typeof window === 'undefined') return;
+
+      const urlParams = new URLSearchParams(window.location.search);
+      
+      if (urlParams.get('autoPaste') === 'true') {
+        try {
+          // 1. Read data from the clipboard
+          const clipboardData = await navigator.clipboard.readText();
+          
+          if (clipboardData) {
+            // 2. Feed the data to the parser
+            parseFromText(clipboardData);
+            
+            // 3. Clean up the URL to prevent re-pasting on page reload
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, newUrl);
+          }
+        } catch (err) {
+          console.error("Failed to read clipboard for auto-paste:", err);
+        }
+      }
+    };
+
+    handleAutoPaste();
+  }, [parseFromText]);
 
   return (
     <AnimatedSection className='standalone-hero-shell'>
