@@ -998,7 +998,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                 <thead>
                   <tr style={{ backgroundColor: brandColor }}>
                     {activeTable.data.headers.map((header, index) => (
-                      <th key={index} className="sticky top-0 z-10 px-3 py-2 text-left text-xs font-bold text-white border border-gray-200" style={{ backgroundColor: brandColor }}>
+                      <th key={index} className="px-3 py-2 text-left text-xs font-bold text-white border border-gray-200 whitespace-nowrap" style={{ backgroundColor: brandColor }}>
                         {header}
                       </th>
                     ))}
@@ -1054,7 +1054,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                 <thead>
                   <tr className="bg-white">
                     {activeTable.data.headers.map((header, index) => (
-                      <th key={index} className="sticky top-0 z-10 bg-white px-3 py-2 text-left text-xs font-bold text-secondary border-b-2 border-gray-200">
+                      <th key={index} className="bg-white px-3 py-2 text-left text-xs font-bold text-secondary border-b-2 border-gray-200 whitespace-nowrap">
                         {header}
                       </th>
                     ))}
@@ -1079,11 +1079,11 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
     }
 
     return (
-      <table className="w-full">
+      <table className="w-full min-w-full table-auto">
         <thead>
           <tr className="bg-primary">
             {activeTable.data.headers.map((header, index) => (
-              <th key={index} className="sticky top-0 z-10 bg-primary px-4 py-3 text-left text-sm font-bold text-white border border-gray-200">
+              <th key={index} className="bg-primary px-4 py-3 text-left text-sm font-bold text-white border border-gray-200 whitespace-nowrap">
                 {header}
               </th>
             ))}
@@ -1567,6 +1567,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
               transition={{ duration: 0.2 }}
               className="overflow-x-auto mb-6 mt-6 rounded-xl border-2 border-gray-200 relative"
             >
+              <div className="flex min-w-full w-max flex-col">
               {localTables.length === 1 && (
                 <div className="border-b border-gray-200">
                   <div>
@@ -1635,6 +1636,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                   Showing 3 of {activeTable.rowCount} rows
                 </div>
               )}
+              </div>
             </motion.div>
           )}
 
