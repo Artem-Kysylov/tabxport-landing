@@ -2,71 +2,96 @@ import type { BeforeInstallPromptEvent } from '@/types/pwa';
 
 type Listener = () => void;
 
-let deferred: BeforeInstallPromptEvent | null = null;
+// Extend Window to expose the early-captured prompt
+declare global {
+  interface Window {
+    __deferredInstallPrompt?: BeforeInstallPromptEvent | null;
+  }
+}
+
 const listeners = new Set<Listener>();
-let listenersAttached = false;
+let storeListenersAttached = false;
 
 function emit(): void {
-  listeners.forEach((listener) => {
-    listener();
+  listeners.forEach((l) => l());
+}
+
+function readWindowPrompt(): BeforeInstallPromptEvent | null {
+  if (typeof window === 'undefined') return null;
+  return window.__deferredInstallPrompt ?? null;
+}
+
+function clearWindowPrompt(): void {
+  if (typeof window !== 'undefined') {
+    window.__deferredInstallPrompt = null;
+  }
+}
+
+export function getDeferredInstallPrompt(): BeforeInstallPromptEvent | null {
+  return readWindowPrompt();
+}
+
+export function attachGlobalInstallPromptListeners(): void {
+  if (typeof window === 'undefined' || storeListenersAttached) return;
+  storeListenersAttached = true;
+
+  // The inline <head> script already listens for beforeinstallprompt and stores it
+  // in window.__deferredInstallPrompt. We listen for our custom signal event and
+  // also set up a fallback listener in case the script ran before this code loaded.
+
+  window.addEventListener('tx_pwa_prompt_ready', () => {
+    emit();
   });
+
+  // Fallback: register our own listener too (belt-and-suspenders)
+  window.addEventListener('beforeinstallprompt', (event: Event) => {
+    event.preventDefault();
+    window.__deferredInstallPrompt = event as BeforeInstallPromptEvent;
+    emit();
+  });
+
+  window.addEventListener('appinstalled', () => {
+    window.__deferredInstallPrompt = null;
+    emit();
+  });
+
+  // If the prompt was already captured before this ran, notify immediately
+  if (readWindowPrompt()) {
+    emit();
+  }
 }
 
 export function subscribeDeferredInstallPrompt(listener: Listener): () => void {
   attachGlobalInstallPromptListeners();
   listeners.add(listener);
+  // Fire immediately so component can sync its state on mount
   listener();
   return () => {
     listeners.delete(listener);
   };
 }
 
-export function getDeferredInstallPrompt(): BeforeInstallPromptEvent | null {
-  return deferred;
-}
-
-export function attachGlobalInstallPromptListeners(): void {
-  if (typeof window === 'undefined' || listenersAttached) {
-    return;
-  }
-  listenersAttached = true;
-
-  window.addEventListener('beforeinstallprompt', (event: Event) => {
-    event.preventDefault();
-    deferred = event as BeforeInstallPromptEvent;
-    emit();
-  });
-
-  window.addEventListener('appinstalled', () => {
-    deferred = null;
-    emit();
-  });
-}
-
 export async function triggerNativeInstallPrompt(): Promise<{
   outcome: 'accepted' | 'dismissed' | 'unavailable';
 }> {
   attachGlobalInstallPromptListeners();
-  
-  // Give a small delay for prompt to potentially appear if it was just captured
-  await new Promise(resolve => setTimeout(resolve, 100));
-  
-  const promptEvent = deferred;
+
+  const promptEvent = readWindowPrompt();
+
   if (!promptEvent) {
     return { outcome: 'unavailable' };
   }
 
-  // Clear the deferred prompt since we're about to use it
-  deferred = null;
+  // Consume the event — Chrome only allows calling .prompt() once
+  clearWindowPrompt();
   emit();
 
   try {
-    // Trigger the native install prompt
     await promptEvent.prompt();
     const choice = await promptEvent.userChoice;
     return { outcome: choice.outcome === 'accepted' ? 'accepted' : 'dismissed' };
   } catch (error) {
-    console.warn('PWA install prompt error:', error);
+    console.warn('[PWA] install prompt error:', error);
     return { outcome: 'unavailable' };
   }
 }

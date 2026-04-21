@@ -92,6 +92,21 @@ export default function RootLayout({
     <html lang="en" className={inter.variable}>
       <head>
         <link rel="apple-touch-icon" href="/icons/app-icons/apple-touch-icon.png" />
+        {/* Capture beforeinstallprompt before React hydration to avoid race condition */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                window.__deferredInstallPrompt = null;
+                window.addEventListener('beforeinstallprompt', function(e) {
+                  e.preventDefault();
+                  window.__deferredInstallPrompt = e;
+                  window.dispatchEvent(new CustomEvent('tx_pwa_prompt_ready'));
+                }, { once: false });
+              })();
+            `,
+          }}
+        />
       </head>
       <body className="font-inter flex flex-col min-h-screen">
         <ProProvider>

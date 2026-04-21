@@ -57,6 +57,13 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
     setDeferredPromptReady(getDeferredInstallPrompt() !== null);
   };
 
+  // Keep deferredPromptReady in sync as the shared store updates
+  useEffect(() => {
+    return subscribeDeferredInstallPrompt(syncDeferred);
+  // syncDeferred is stable (no deps) — intentional omission
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const hidePrompt = () => {
     setIsVisible(false);
     onClose?.();
@@ -120,8 +127,6 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
     setIsIOS(detectIOSDevice());
     setBrowserInfo(detectBrowser());
 
-    const unsub = subscribeDeferredInstallPrompt(syncDeferred);
-
     const handleAppInstalled = () => {
       try {
         localStorage.setItem('tx_pwa_installed', 'true');
@@ -134,9 +139,9 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
     window.addEventListener('appinstalled', handleAppInstalled);
 
     return () => {
-      unsub();
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
