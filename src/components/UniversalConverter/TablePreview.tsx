@@ -998,7 +998,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                 <thead>
                   <tr style={{ backgroundColor: brandColor }}>
                     {activeTable.data.headers.map((header, index) => (
-                      <th key={index} className="px-3 py-2 text-left text-xs font-bold text-white border border-gray-200">
+                      <th key={index} className="sticky top-0 z-10 px-3 py-2 text-left text-xs font-bold text-white border border-gray-200" style={{ backgroundColor: brandColor }}>
                         {header}
                       </th>
                     ))}
@@ -1054,7 +1054,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                 <thead>
                   <tr className="bg-white">
                     {activeTable.data.headers.map((header, index) => (
-                      <th key={index} className="px-3 py-2 text-left text-xs font-bold text-secondary border-b-2 border-gray-200">
+                      <th key={index} className="sticky top-0 z-10 bg-white px-3 py-2 text-left text-xs font-bold text-secondary border-b-2 border-gray-200">
                         {header}
                       </th>
                     ))}
@@ -1083,7 +1083,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
         <thead>
           <tr className="bg-primary">
             {activeTable.data.headers.map((header, index) => (
-              <th key={index} className="px-4 py-3 text-left text-sm font-bold text-white border border-gray-200">
+              <th key={index} className="sticky top-0 z-10 bg-primary px-4 py-3 text-left text-sm font-bold text-white border border-gray-200">
                 {header}
               </th>
             ))}
@@ -1565,7 +1565,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2 }}
-              className="overflow-x-auto mb-6 mt-6 rounded-xl border-2 border-gray-200"
+              className="overflow-x-auto mb-6 mt-6 rounded-xl border-2 border-gray-200 relative"
             >
               {localTables.length === 1 && (
                 <div className="border-b border-gray-200">
@@ -1648,19 +1648,19 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-2">
                 <textarea
                   value={appendText}
                   onChange={(e) => setAppendText(e.target.value)}
                   placeholder="Paste another table..."
                   disabled={isExporting}
                   rows={1}
-                  className="flex-1 h-10 min-h-10 max-h-10 rounded-md border border-primary-light bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+                  className="w-full md:flex-1 h-10 min-h-10 max-h-10 rounded-md border border-primary-light bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
                 />
                 <Button
                   onClick={handleAppendTable}
                   disabled={isExporting || !appendText.trim()}
-                  className="h-10 px-4 bg-primary hover:bg-primary/90 text-white flex items-center gap-2"
+                  className="w-full md:w-auto h-10 px-4 bg-primary hover:bg-primary/90 text-white flex items-center justify-center gap-2"
                 >
                   <Plus size={16} />
                   Add table
@@ -1725,19 +1725,19 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-2">
                 <textarea
                   value={appendText}
                   onChange={(e) => setAppendText(e.target.value)}
                   placeholder="Paste another table..."
                   disabled={isExporting}
                   rows={1}
-                  className="flex-1 h-10 min-h-10 max-h-10 rounded-md border border-primary-light bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+                  className="w-full md:flex-1 h-10 min-h-10 max-h-10 rounded-md border border-primary-light bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
                 />
                 <Button
                   onClick={handleAppendTable}
                   disabled={isExporting || !appendText.trim()}
-                  className="h-10 px-4 bg-primary hover:bg-primary/90 text-white flex items-center gap-2"
+                  className="w-full md:w-auto h-10 px-4 bg-primary hover:bg-primary/90 text-white flex items-center justify-center gap-2"
                 >
                   <Plus size={16} />
                   Add table
