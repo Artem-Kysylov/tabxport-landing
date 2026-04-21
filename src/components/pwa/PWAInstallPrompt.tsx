@@ -24,6 +24,17 @@ const detectIOSDevice = (): boolean => {
   return isIOSUserAgent || isIPadOS;
 };
 
+const detectBrowser = (): { isChrome: boolean; isEdge: boolean; canInstallPWA: boolean } => {
+  if (typeof window === 'undefined') return { isChrome: false, isEdge: false, canInstallPWA: false };
+
+  const userAgent = window.navigator.userAgent;
+  const isChrome = /Chrome/.test(userAgent) && !/Edg/.test(userAgent);
+  const isEdge = /Edg/.test(userAgent);
+  const canInstallPWA = isChrome || isEdge;
+
+  return { isChrome, isEdge, canInstallPWA };
+};
+
 interface PWAInstallPromptProps {
   onClose?: () => void;
   trigger?: boolean;
@@ -39,6 +50,8 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
   const [deferredPromptReady, setDeferredPromptReady] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [showIOSSheet, setShowIOSSheet] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [browserInfo, setBrowserInfo] = useState({ isChrome: false, isEdge: false, canInstallPWA: false });
 
   const syncDeferred = () => {
     setDeferredPromptReady(getDeferredInstallPrompt() !== null);
@@ -69,31 +82,43 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
       return;
     }
 
-    const { outcome } = await triggerNativeInstallPrompt();
+    if (isProcessing) return;
 
-    if (outcome === 'accepted') {
-      try {
-        localStorage.setItem('tx_pwa_installed', 'true');
-      } catch {
-        // ignore
+    setIsProcessing(true);
+
+    try {
+      console.log('PWA Install: Attempting to trigger native install prompt...');
+      const { outcome } = await triggerNativeInstallPrompt();
+      console.log('PWA Install: Native prompt outcome:', outcome);
+
+      if (outcome === 'accepted') {
+        try {
+          localStorage.setItem('tx_pwa_installed', 'true');
+        } catch {
+          // ignore
+        }
+        hidePrompt();
+        return;
       }
-      hidePrompt();
-      return;
-    }
 
-    if (outcome === 'dismissed') {
-      hidePrompt();
-      return;
-    }
+      if (outcome === 'dismissed') {
+        hidePrompt();
+        return;
+      }
 
-    // No native prompt (e.g. Firefox, or criteria not met) — keep panel open with manual hints
-    syncDeferred();
+      // No native prompt available - stay open with manual instructions
+      console.log('PWA Install: Native prompt not available, showing manual instructions');
+      syncDeferred();
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     setIsIOS(detectIOSDevice());
+    setBrowserInfo(detectBrowser());
 
     const unsub = subscribeDeferredInstallPrompt(syncDeferred);
 
@@ -141,7 +166,8 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
     }
   }, [trigger, forceShow, isIOS, deferredPromptReady]);
 
-  const showDesktopManualHint = !isIOS && !deferredPromptReady && isVisible;
+  const showDesktopManualHint = !isIOS && !deferredPromptReady && isVisible && browserInfo.canInstallPWA;
+  const showUnsupportedBrowserHint = !isIOS && !deferredPromptReady && isVisible && !browserInfo.canInstallPWA;
 
   return (
     <>
@@ -231,35 +257,66 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
               </p>
 
               {showDesktopManualHint && (
-                <p
+                <div
                   style={{
                     fontSize: '12px',
                     color: '#062013',
                     margin: '0 0 16px 0',
                     lineHeight: '1.5',
-                    opacity: 0.85,
                     textAlign: 'left',
+                    backgroundColor: '#f0f9ff',
+                    padding: '12px',
+                    borderRadius: '6px',
+                    border: '1px solid #0ea5e9',
                   }}
                 >
-                  <strong>Chrome or Edge (desktop):</strong> open the install menu (⊕ or ⋮ in the address bar) and
-                  choose <em>Install TableXport</em>. If you don&apos;t see it, the site may need a moment after load —
-                  try refreshing once.
-                </p>
+                  <p style={{ margin: '0 0 8px 0', fontWeight: '600' }}>
+                    {browserInfo.isChrome ? '🔵 Chrome' : '🔷 Edge'} — Manual Installation:
+                  </p>
+                  <p style={{ margin: '0' }}>
+                    Look for the <strong>install icon</strong> (⊕ or download symbol) in your address bar and click it. 
+                    If it's not there, try refreshing the page or check the browser menu (⋮) for "Install app" option.
+                  </p>
+                </div>
+              )}
+
+              {showUnsupportedBrowserHint && (
+                <div
+                  style={{
+                    fontSize: '12px',
+                    color: '#062013',
+                    margin: '0 0 16px 0',
+                    lineHeight: '1.5',
+                    textAlign: 'left',
+                    backgroundColor: '#fef3c7',
+                    padding: '12px',
+                    borderRadius: '6px',
+                    border: '1px solid #f59e0b',
+                  }}
+                >
+                  <p style={{ margin: '0 0 8px 0', fontWeight: '600' }}>
+                    ⚠️ Browser not supported
+                  </p>
+                  <p style={{ margin: '0' }}>
+                    Your browser doesn't support app installation. Try using <strong>Chrome</strong> or <strong>Edge</strong> for the best experience with TableXport.
+                  </p>
+                </div>
               )}
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <button
                   onClick={handleInstall}
+                  disabled={isProcessing || showUnsupportedBrowserHint}
                   style={{
                     width: '100%',
-                    background: 'white',
+                    background: (isProcessing || showUnsupportedBrowserHint) ? '#f3f4f6' : 'white',
                     border: '1.5px solid #CDD2D0',
-                    color: '#062013',
+                    color: (isProcessing || showUnsupportedBrowserHint) ? '#9ca3af' : '#062013',
                     padding: '12px 20px',
                     borderRadius: '8px',
                     fontSize: '12px',
                     fontWeight: '600',
-                    cursor: 'pointer',
+                    cursor: (isProcessing || showUnsupportedBrowserHint) ? 'not-allowed' : 'pointer',
                     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                     display: 'flex',
                     alignItems: 'center',
@@ -267,14 +324,27 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
                     gap: '8px',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.opacity = '0.5';
+                    if (!isProcessing && !showUnsupportedBrowserHint) {
+                      e.currentTarget.style.opacity = '0.5';
+                    }
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.opacity = '1';
+                    if (!isProcessing && !showUnsupportedBrowserHint) {
+                      e.currentTarget.style.opacity = '1';
+                    }
                   }}
                 >
                   <Download size={16} />
-                  {deferredPromptReady ? 'Install' : isIOS ? 'Install' : 'Try install prompt'}
+                  {isProcessing 
+                    ? 'Opening install prompt...' 
+                    : deferredPromptReady 
+                      ? 'Install Now'
+                      : isIOS
+                        ? 'Show Instructions'
+                        : showUnsupportedBrowserHint
+                          ? 'Not Available'
+                          : 'Try Browser Install'
+                  }
                 </button>
 
                 <button
