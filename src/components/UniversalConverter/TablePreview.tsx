@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import Image from 'next/image';
-import { Sparkles, Plus, Upload, X, Palette, LogIn } from 'lucide-react';
+import { Sparkles, Plus, Upload, X, Palette, LogIn, ChevronDown } from 'lucide-react';
 import { ParsedTable, ExportFormat, ExportDestination, PDFBrandingSettings } from '@/types/table';
 import {
   exportTable,
@@ -40,6 +40,12 @@ interface FormatOption {
 }
 
 type PostAuthIntent = 'signin' | 'locked_feature' | null;
+
+const triggerHaptic = () => {
+  if (typeof window === 'undefined') return;
+  const nav = window.navigator as Navigator & { vibrate?: (pattern: number | number[]) => boolean };
+  nav.vibrate?.(10);
+};
 
 function getRecordValue(record: unknown, key: string): unknown {
   if (!record || typeof record !== 'object') {
@@ -97,6 +103,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeFeature, setUpgradeFeature] = useState<string>('');
   const [postAuthIntent, setPostAuthIntent] = useState<PostAuthIntent>(null);
+  const [showAllFormats, setShowAllFormats] = useState(false);
 
   const { isAuthenticated, hasRequiredScopes, user, signOut, getAccessToken } = useGoogleAuth();
   const { isPro, isLoading: isProLoading } = usePro();
@@ -1104,90 +1111,17 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
       transition={{ duration: 0.5 }}
       className="w-full max-w-5xl mx-auto"
     >
-      <div className="standalone-preview-card bg-white rounded-2xl shadow-lg border-2 border-primary-light p-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h3 className="text-2xl font-bold text-secondary">Table Preview</h3>
-            <p className="text-sm text-secondary/60 mt-1">
-              {localTables.length} tables detected
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            onClick={onClear}
-            className="h-8 py-1 px-3 text-sm hover:bg-destructive hover:text-white hover:border-destructive"
-          >
-            Clear
-          </Button>
-        </div>
-
+      <div className="standalone-preview-card bg-white rounded-2xl shadow-lg border-2 border-primary-light p-5 sm:p-8 pb-20 sm:pb-8">
         <div>
-          {/* Export Destination Switcher */}
-          <div className="mb-6 flex items-center justify-between">
-            <div className="flex items-center gap-2 bg-primary-light/30 p-1 rounded-lg">
-              <button
-                type="button"
-                onClick={() => {
-                  setExportDestination('local');
-                  try {
-                    localStorage.setItem('tx_export_destination', 'local');
-                  } catch {
-                    // ignore
-                  }
-                }}
-                className={`flex items-center gap-2 px-6 py-3 rounded-md text-sm font-semibold transition-all cursor-pointer border-2 ${
-                  exportDestination === 'local'
-                    ? 'bg-white text-secondary border-primary'
-                    : 'text-secondary/60 hover:text-secondary border-transparent'
-                }`}
-              >
-                <Image src="/icons/icon-device.svg" alt="Local" width={20} height={20} />
-                Local Download
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (isProLoading) {
-                    return;
-                  }
-
-                  if (isProLocked) {
-                    persistTablesSnapshot();
-                    showUpgradePrompt('');
-                    return;
-                  }
-
-                  if (!isAuthenticated || !hasRequiredScopes) {
-                    openAuthPopup('signin');
-                    return;
-                  }
-
-                  setExportDestination('google_drive');
-                }}
-                className={`relative flex items-center gap-2 px-6 py-3 rounded-md text-sm font-semibold transition-all cursor-pointer border-2 ${
-                  exportDestination === 'google_drive'
-                    ? 'bg-white text-secondary border-primary'
-                    : 'text-secondary/60 hover:text-secondary border-transparent'
-                } ${isProLocked ? 'grayscale opacity-60' : ''}`}
-              >
-                <Image src="/icons/icon-google-drive.svg" alt="Google Drive" width={20} height={20} />
-                Google Drive
-                {isProLocked && (
-                  <div className="ml-1">
-                    <ProBadge variant="badge" />
-                  </div>
-                )}
-              </button>
-            </div>
-
-            {/* Google User Badge */}
+          {/* 1. User / Auth section — first inside the card */}
+          <div className="mb-4 flex items-center justify-end">
             {isAuthenticated && user ? (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap justify-end">
                 {userAvatarUrl ? (
                   <img
                     src={userAvatarUrl}
                     alt={user.user_metadata?.full_name || user.user_metadata?.name || 'User'}
-                    className="w-6 h-6 rounded-full object-cover"
+                    className="w-7 h-7 rounded-full object-cover"
                     referrerPolicy="no-referrer"
                     crossOrigin="anonymous"
                   />
@@ -1221,6 +1155,80 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                 <span>Google Sign in</span>
               </button>
             )}
+          </div>
+
+          {/* 2. Export destination tabs */}
+          <div className="mb-5 grid grid-cols-2 gap-2 bg-primary-light/30 p-1 rounded-lg sm:inline-grid sm:w-auto">
+            <button
+              type="button"
+              onClick={() => {
+                setExportDestination('local');
+                try {
+                  localStorage.setItem('tx_export_destination', 'local');
+                } catch {
+                  // ignore
+                }
+              }}
+              className={`flex items-center justify-center gap-2 px-3 sm:px-6 py-2.5 sm:py-3 rounded-md text-sm font-semibold transition-all cursor-pointer border-2 ${
+                exportDestination === 'local'
+                  ? 'bg-white text-secondary border-primary'
+                  : 'text-secondary/60 hover:text-secondary border-transparent'
+              }`}
+            >
+              <Image src="/icons/icon-device.svg" alt="Local" width={20} height={20} />
+              <span className="whitespace-nowrap">Local Download</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (isProLoading) {
+                  return;
+                }
+
+                if (isProLocked) {
+                  persistTablesSnapshot();
+                  showUpgradePrompt('');
+                  return;
+                }
+
+                if (!isAuthenticated || !hasRequiredScopes) {
+                  openAuthPopup('signin');
+                  return;
+                }
+
+                setExportDestination('google_drive');
+              }}
+              className={`relative flex items-center justify-center gap-2 px-3 sm:px-6 py-2.5 sm:py-3 rounded-md text-sm font-semibold transition-all cursor-pointer border-2 ${
+                exportDestination === 'google_drive'
+                  ? 'bg-white text-secondary border-primary'
+                  : 'text-secondary/60 hover:text-secondary border-transparent'
+              } ${isProLocked ? 'grayscale opacity-60' : ''}`}
+            >
+              <Image src="/icons/icon-google-drive.svg" alt="Google Drive" width={20} height={20} />
+              <span className="whitespace-nowrap">Google Drive</span>
+              {isProLocked && (
+                <div className="ml-1">
+                  <ProBadge variant="badge" />
+                </div>
+              )}
+            </button>
+          </div>
+
+          {/* 3. Title + count + Clear */}
+          <div className="flex items-start justify-between gap-3 mb-6">
+            <div>
+              <h3 className="text-xl sm:text-2xl font-bold text-secondary">Table Preview</h3>
+              <p className="text-sm text-secondary/60 mt-1">
+                {localTables.length} tables detected
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={onClear}
+              className="h-8 py-1 px-3 text-sm hover:bg-destructive hover:text-white hover:border-destructive shrink-0"
+            >
+              Clear
+            </Button>
           </div>
 
           {exportDestination === 'google_drive' && !isAuthenticated && (
@@ -1376,72 +1384,127 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
             </div>
           )}
 
-          {localTables.length === 1 && (
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {formatOptions.map((option) => {
-                const isSheetsDisabled = option.format === 'google_sheets' && exportDestination === 'local';
-                const isPdfLocked = option.format === 'pdf' && isProLocked;
-                const isGoogleSheetsLocked = option.format === 'google_sheets' && isProLocked;
-                const isLocked = isPdfLocked || isGoogleSheetsLocked;
-                
-                return (
-                  <motion.button
-                    key={option.format}
-                    onClick={() => {
-                      if (isSheetsDisabled) return;
-                      if (isLocked) {
-                        persistTablesSnapshot();
-                        showUpgradePrompt('');
-                        return;
-                      }
-                      setActiveFormat(option.format);
-                    }}
-                    disabled={isExporting}
-                    aria-disabled={isSheetsDisabled || isLocked}
-                    whileHover={{ scale: isLocked ? 1 : 1.05 }}
-                    whileTap={{ scale: isLocked ? 1 : 0.95 }}
-                    className={`
-                      relative p-2 rounded-xl border-2 transition-all duration-200
-                      ${
-                        activeFormat === option.format
-                          ? 'border-primary bg-primary-light/30 shadow-[0_0_0_3px_rgba(27,147,88,0.08)]'
-                          : 'border-primary-light bg-white hover:border-primary hover:bg-primary-light/10'
-                      }
-                      ${
-                        isExporting || isSheetsDisabled
-                          ? 'opacity-50 cursor-not-allowed'
-                          : isLocked
-                            ? 'cursor-pointer'
-                            : 'cursor-pointer'
-                      }
-                      ${isLocked ? 'grayscale opacity-60' : ''}
-                      disabled:opacity-50 disabled:cursor-not-allowed
-                    `}
-                    title={
-                      isSheetsDisabled
-                        ? 'Switch to Google Drive to export as Google Sheets'
-                        : isLocked
-                          ? 'Pro feature - Click to upgrade'
-                          : undefined
+          {localTables.length === 1 && (() => {
+            const renderFormatButton = (option: FormatOption) => {
+              const isSheetsDisabled = option.format === 'google_sheets' && exportDestination === 'local';
+              const isPdfLocked = option.format === 'pdf' && isProLocked;
+              const isGoogleSheetsLocked = option.format === 'google_sheets' && isProLocked;
+              const isLocked = isPdfLocked || isGoogleSheetsLocked;
+
+              return (
+                <motion.button
+                  key={option.format}
+                  onClick={() => {
+                    if (isSheetsDisabled) return;
+                    if (isLocked) {
+                      persistTablesSnapshot();
+                      showUpgradePrompt('');
+                      return;
                     }
-                  >
-                    {isLocked && (
-                      <div className="absolute top-2 right-2 z-10">
-                        <ProBadge variant="badge" />
-                      </div>
-                    )}
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="text-primary">{option.icon}</div>
-                      <div className="text-center">
-                        <p className="font-bold text-secondary">{option.label}</p>
-                        <p className="text-xs text-secondary/60 mt-1">{option.description}</p>
-                      </div>
+                    setActiveFormat(option.format);
+                  }}
+                  disabled={isExporting}
+                  aria-disabled={isSheetsDisabled || isLocked}
+                  whileHover={{ scale: isLocked ? 1 : 1.05 }}
+                  whileTap={{ scale: isLocked ? 1 : 0.95 }}
+                  className={`
+                    relative p-2 rounded-xl border-2 transition-all duration-200
+                    ${
+                      activeFormat === option.format
+                        ? 'border-primary bg-primary-light/30 shadow-[0_0_0_3px_rgba(27,147,88,0.08)]'
+                        : 'border-primary-light bg-white hover:border-primary hover:bg-primary-light/10'
+                    }
+                    ${
+                      isExporting || isSheetsDisabled
+                        ? 'opacity-50 cursor-not-allowed'
+                        : 'cursor-pointer'
+                    }
+                    ${isLocked ? 'grayscale opacity-60' : ''}
+                    disabled:opacity-50 disabled:cursor-not-allowed
+                  `}
+                  title={
+                    isSheetsDisabled
+                      ? 'Switch to Google Drive to export as Google Sheets'
+                      : isLocked
+                        ? 'Pro feature - Click to upgrade'
+                        : undefined
+                  }
+                >
+                  {isLocked && (
+                    <div className="absolute top-2 right-2 z-10">
+                      <ProBadge variant="badge" />
                     </div>
-                  </motion.button>
-                );
-              })}
-            </div>
-          )}
+                  )}
+                  <div className="flex flex-col items-center gap-2 sm:gap-3 py-2">
+                    <div className="text-primary">{option.icon}</div>
+                    <div className="text-center">
+                      <p className="font-bold text-secondary text-sm sm:text-base">{option.label}</p>
+                      <p className="text-xs text-secondary/60 mt-1">{option.description}</p>
+                    </div>
+                  </div>
+                </motion.button>
+              );
+            };
+
+            const primaryFormats = formatOptions.slice(0, 4);
+            const secondaryFormats = formatOptions.slice(4);
+
+            return (
+              <div>
+                {/* Mobile: 2-col grid, first 4 + accordion */}
+                <div className="md:hidden">
+                  <div className="grid grid-cols-2 gap-3">
+                    {primaryFormats.map(renderFormatButton)}
+                  </div>
+
+                  <AnimatePresence initial={false}>
+                    {showAllFormats && (
+                      <motion.div
+                        key="extra-formats"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                        className="overflow-hidden"
+                      >
+                        <div className="grid grid-cols-2 gap-3 pt-3">
+                          {secondaryFormats.map(renderFormatButton)}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {secondaryFormats.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        triggerHaptic();
+                        setShowAllFormats((prev) => !prev);
+                      }}
+                      aria-expanded={showAllFormats}
+                      className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-primary/40 bg-primary-light/20 px-4 py-3 text-sm font-semibold text-primary transition-colors active:bg-primary-light/40"
+                    >
+                      <span>
+                        {showAllFormats ? 'Show less formats' : 'Show more formats'}
+                      </span>
+                      <motion.span
+                        animate={{ rotate: showAllFormats ? 180 : 0 }}
+                        transition={{ duration: 0.25 }}
+                        className="inline-flex"
+                      >
+                        <ChevronDown size={18} />
+                      </motion.span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Desktop: full grid */}
+                <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {formatOptions.map(renderFormatButton)}
+                </div>
+              </div>
+            );
+          })()}
 
           {localTables.length > 1 && (
             <div className="mt-6 rounded-xl border-2 border-primary-light overflow-hidden">
