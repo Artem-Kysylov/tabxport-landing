@@ -7,6 +7,15 @@ import { SmartDropzone } from '@/components/UniversalConverter/SmartDropzone'
 import { TablePreview } from '@/components/UniversalConverter/TablePreview'
 import { useTableParser } from '@/hooks/useTableParser'
 
+function sanitizeMarkdown(text: string): string {
+  let cleaned = text
+  cleaned = cleaned.replace(/```[\w-]*\s*\n?[\s\S]*?```/g, '')
+  cleaned = cleaned.replace(/`{3,}/g, '')
+  cleaned = cleaned.replace(/\*\*([\s\S]+?)\*\*/g, '$1')
+  cleaned = cleaned.replace(/\*([^*\n]+?)\*/g, '$1')
+  return cleaned.trim()
+}
+
 const Hero = () => {
   const { parsedTables, isLoading, error, parseFromText, appendFromText, clearTable } = useTableParser();
 
@@ -25,7 +34,7 @@ const Hero = () => {
           
           if (clipboardData) {
             // 2. Feed the data to the parser
-            parseFromText(clipboardData);
+            parseFromText(sanitizeMarkdown(clipboardData));
             
             // 3. Clean up the URL to prevent re-pasting on page reload
             const newUrl = window.location.pathname;
@@ -63,7 +72,7 @@ const Hero = () => {
               <div id='dropzone'>
                 {!parsedTables || parsedTables.length === 0 ? (
                   <SmartDropzone 
-                    onDataReceived={parseFromText}
+                    onDataReceived={(data) => parseFromText(sanitizeMarkdown(data))}
                     isProcessing={isLoading}
                     errorMessage={error}
                   />
@@ -71,7 +80,7 @@ const Hero = () => {
                   <TablePreview 
                     tables={parsedTables}
                     onClear={clearTable}
-                    onAppend={appendFromText}
+                    onAppend={(data) => appendFromText(sanitizeMarkdown(data))}
                   />
                 )}
               </div>
