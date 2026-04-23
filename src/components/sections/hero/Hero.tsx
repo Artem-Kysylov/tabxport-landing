@@ -94,6 +94,16 @@ function sanitizeMarkdown(text: string): string {
 const Hero = () => {
   const { parsedTables, isLoading, error, parseFromText, appendFromText, clearTable } = useTableParser();
   const [showExtensionRatingBanner, setShowExtensionRatingBanner] = useState(false);
+  const [instantHeroAnimFromUrl] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return new URLSearchParams(window.location.search).get('autoPaste') === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const heroAnimInstant =
+    instantHeroAnimFromUrl || Boolean(parsedTables && parsedTables.length > 0);
 
   // Runs before auto-paste effect so URL params are still intact when autoPaste strips only itself.
   useEffect(() => {
@@ -143,17 +153,17 @@ const Hero = () => {
   }, [parseFromText]);
 
   return (
-    <AnimatedSection className='standalone-hero-shell'>
+    <AnimatedSection className='standalone-hero-shell' instant={heroAnimInstant}>
       <section className='standalone-hero-section'>
         <div className='container-custom standalone-hero-container'>
           <div className='standalone-hero flex flex-col items-center justify-center gap-4 pt-[48px] pb-[24px] md:pt-[60px] md:pb-[32px]'>
-            <FadeInUp delay={0.2} className='standalone-hero-copy'>
+            <FadeInUp delay={0.2} className='standalone-hero-copy' instant={heroAnimInstant}>
               <h1 className='text-center text-4xl md:text-5xl font-semibold leading-tight max-w-4xl'>
               From AI to <span className='text-primary'>Google Sheets in 1 Second.</span>
               </h1>
             </FadeInUp>
             
-            <FadeInUp delay={0.4} className='standalone-hero-copy'>
+            <FadeInUp delay={0.4} className='standalone-hero-copy' instant={heroAnimInstant}>
               <div className='flex flex-col items-center gap-3'>
                 <p className='text-center font-normal max-w-3xl'>
                 Don&apos;t wrestle with AI formatting. Paste your table here, edit it live, and export directly to Excel or Google Drive without the cleanup work.
@@ -161,21 +171,53 @@ const Hero = () => {
               </div>
             </FadeInUp>
             
-            <FadeInUp delay={0.6} className="w-full">
+            <FadeInUp delay={0.6} className="w-full" instant={heroAnimInstant}>
               <div id='dropzone'>
-                {!parsedTables || parsedTables.length === 0 ? (
-                  <SmartDropzone 
-                    onDataReceived={(data) => parseFromText(sanitizeMarkdown(data))}
-                    isProcessing={isLoading}
-                    errorMessage={error}
-                  />
-                ) : (
-                  <TablePreview 
-                    tables={parsedTables}
-                    onClear={clearTable}
-                    onAppend={(data) => appendFromText(sanitizeMarkdown(data))}
-                  />
-                )}
+                <motion.div
+                  layout
+                  className="w-full"
+                  transition={{ layout: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } }}
+                >
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    {!parsedTables || parsedTables.length === 0 ? (
+                      <motion.div
+                        key="empty-dropzone"
+                        layout
+                        initial={
+                          heroAnimInstant
+                            ? { opacity: 1, y: 0 }
+                            : { opacity: 0, y: 10 }
+                        }
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+                        className="w-full"
+                      >
+                        <SmartDropzone
+                          onDataReceived={(data) => parseFromText(sanitizeMarkdown(data))}
+                          isProcessing={isLoading}
+                          errorMessage={error}
+                        />
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="table-preview"
+                        layout
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                        className="w-full"
+                      >
+                        <TablePreview
+                          tables={parsedTables}
+                          onClear={clearTable}
+                          onAppend={(data) => appendFromText(sanitizeMarkdown(data))}
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
               </div>
             </FadeInUp>
           </div>

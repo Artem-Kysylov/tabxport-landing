@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import Image from 'next/image';
-import { Sparkles, Plus, Upload, X, Palette, LogIn, ChevronDown } from 'lucide-react';
+import { Sparkles, Plus, Upload, X, LogIn, ChevronDown } from 'lucide-react';
 import { ParsedTable, ExportFormat, ExportDestination, PDFBrandingSettings } from '@/types/table';
 import {
   exportTable,
@@ -98,7 +98,6 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
   const [exportDestination, setExportDestination] = useState<ExportDestination>('local');
   const [showAuthPopup, setShowAuthPopup] = useState(false);
   const [pdfBranding, setPdfBranding] = useState<PDFBrandingSettings>({});
-  const [showPdfSettings, setShowPdfSettings] = useState(false);
   const [showPwaPrompt, setShowPwaPrompt] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeFeature, setUpgradeFeature] = useState<string>('');
@@ -1273,117 +1272,6 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
             )}
           </div>
 
-          {/* PDF Settings */}
-          {localTables.length === 1 && activeFormat === 'pdf' && (
-            <div className="mb-6">
-              <button
-                onClick={() => setShowPdfSettings(!showPdfSettings)}
-                className="flex items-center gap-2 text-sm font-semibold text-secondary hover:text-primary transition-colors cursor-pointer"
-              >
-                <Palette size={16} />
-                PDF Branding Settings
-                <span className="text-xs text-secondary/60">({showPdfSettings ? 'Hide' : 'Show'})</span>
-              </button>
-              
-              {showPdfSettings && (
-                <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`relative ${isProLocked ? 'pointer-events-none' : ''}`}>
-                        <label className="block text-sm font-medium text-secondary mb-2">
-                          Logo (PNG/JPG)
-                        </label>
-                        {pdfBranding.logo ? (
-                          <div className="flex items-center gap-3">
-                            <img
-                              src={pdfBranding.logo}
-                              alt="Logo preview"
-                              className={`w-16 h-16 object-contain border border-gray-200 rounded bg-white p-1 ${isProLocked ? 'grayscale' : ''}`}
-                            />
-                            <button
-                              onClick={handleRemoveLogo}
-                              className="flex items-center gap-1 px-3 py-1.5 text-xs bg-red-50 text-red-600 hover:bg-red-100 rounded-md transition-colors"
-                            >
-                              <X size={14} />
-                              Remove
-                            </button>
-                          </div>
-                        ) : (
-                          <label 
-                            className={`flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md transition-colors ${isProLocked ? 'grayscale opacity-60 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-50'}`}
-                            onClick={(e) => {
-                              if (isProLoading || isProLocked) {
-                                e.preventDefault();
-                                persistTablesSnapshot();
-                                showUpgradePrompt('');
-                              }
-                            }}
-                          >
-                            <Upload size={16} className="text-secondary/60" />
-                            <span className="text-sm text-secondary">Upload Logo</span>
-                            {!isProLocked && (
-                              <input
-                                type="file"
-                                accept="image/png,image/jpeg,image/jpg"
-                                onChange={handleLogoUpload}
-                                className="hidden"
-                              />
-                            )}
-                          </label>
-                        )}
-                        {isProLocked && (
-                          <div className="absolute top-0 right-0">
-                            <ProBadge variant="icon" size={16} />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <div className={`relative ${isProLocked ? 'pointer-events-none' : ''}`}>
-                        <label className="block text-sm font-medium text-secondary mb-2">
-                          Header Color
-                        </label>
-                        <div className="flex items-center gap-3">
-                          <div 
-                            className={`relative ${isProLocked ? 'cursor-not-allowed' : ''}`}
-                            onClick={() => {
-                              if (isProLoading || isProLocked) {
-                                persistTablesSnapshot();
-                                showUpgradePrompt('');
-                              }
-                            }}
-                          >
-                            <input
-                              type="color"
-                              value={pdfBranding.brandColor || '#1B9358'}
-                              onChange={(e) => handleColorChange(e.target.value)}
-                              disabled={isProLoading || isProLocked}
-                              className={`w-12 h-12 rounded border border-gray-300 ${isProLocked ? 'grayscale opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
-                            />
-                          </div>
-                          <div className="flex flex-col">
-                            <span className={`text-sm text-secondary font-medium ${isProLocked ? 'opacity-60' : ''}`}>
-                              {pdfBranding.brandColor || '#1B9358'}
-                            </span>
-                            <span className="text-xs text-secondary/60">
-                              Customize PDF header branding
-                            </span>
-                          </div>
-                        </div>
-                        {isProLocked && (
-                          <div className="absolute top-0 right-0">
-                            <ProBadge variant="icon" size={16} />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
           {localTables.length === 1 && (() => {
             const renderFormatButton = (option: FormatOption) => {
               const isSheetsDisabled = option.format === 'google_sheets' && exportDestination === 'local';
@@ -1505,6 +1393,131 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
               </div>
             );
           })()}
+
+          {localTables.length === 1 && (
+            <AnimatePresence initial={false} mode="popLayout">
+              {(activeFormat === 'pdf' || activeFormat === 'json') && (
+                <motion.div
+                  key={`format-advanced-${activeFormat}`}
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+                  className="overflow-hidden"
+                >
+                  <motion.div
+                    initial={{ opacity: 0, y: -12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                    className="mt-4 rounded-lg border border-primary-light/50 bg-primary-light/20 p-4 sm:p-5 shadow-[0_2px_12px_-4px_rgba(6,32,19,0.12)]"
+                  >
+                    <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-secondary/70">
+                      Advanced options — {activeFormat === 'pdf' ? 'PDF export' : 'JSON export'}
+                    </p>
+                    {activeFormat === 'pdf' ? (
+                      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={`relative ${isProLocked ? 'pointer-events-none' : ''}`}>
+                            <label className="block text-sm font-medium text-secondary mb-2">
+                              Logo (PNG/JPG)
+                            </label>
+                            {pdfBranding.logo ? (
+                              <div className="flex items-center gap-3">
+                                <img
+                                  src={pdfBranding.logo}
+                                  alt="Logo preview"
+                                  className={`w-16 h-16 object-contain border border-gray-200 rounded bg-white p-1 ${isProLocked ? 'grayscale' : ''}`}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={handleRemoveLogo}
+                                  className="flex items-center gap-1 px-3 py-1.5 text-xs bg-red-50 text-red-600 hover:bg-red-100 rounded-md transition-colors"
+                                >
+                                  <X size={14} />
+                                  Remove
+                                </button>
+                              </div>
+                            ) : (
+                              <label
+                                className={`flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md transition-colors ${isProLocked ? 'grayscale opacity-60 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-50'}`}
+                                onClick={(e) => {
+                                  if (isProLoading || isProLocked) {
+                                    e.preventDefault();
+                                    persistTablesSnapshot();
+                                    showUpgradePrompt('');
+                                  }
+                                }}
+                              >
+                                <Upload size={16} className="text-secondary/60" />
+                                <span className="text-sm text-secondary">Upload Logo</span>
+                                {!isProLocked && (
+                                  <input
+                                    type="file"
+                                    accept="image/png,image/jpeg,image/jpg"
+                                    onChange={handleLogoUpload}
+                                    className="hidden"
+                                  />
+                                )}
+                              </label>
+                            )}
+                            {isProLocked && (
+                              <div className="absolute top-0 right-0">
+                                <ProBadge variant="icon" size={16} />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <div className={`relative ${isProLocked ? 'pointer-events-none' : ''}`}>
+                            <label className="block text-sm font-medium text-secondary mb-2">
+                              Header Color
+                            </label>
+                            <div className="flex items-center gap-3">
+                              <div
+                                className={`relative ${isProLocked ? 'cursor-not-allowed' : ''}`}
+                                onClick={() => {
+                                  if (isProLoading || isProLocked) {
+                                    persistTablesSnapshot();
+                                    showUpgradePrompt('');
+                                  }
+                                }}
+                              >
+                                <input
+                                  type="color"
+                                  value={pdfBranding.brandColor || '#1B9358'}
+                                  onChange={(e) => handleColorChange(e.target.value)}
+                                  disabled={isProLoading || isProLocked}
+                                  className={`w-12 h-12 rounded border border-gray-300 ${isProLocked ? 'grayscale opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                                />
+                              </div>
+                              <div className="flex flex-col">
+                                <span className={`text-sm text-secondary font-medium ${isProLocked ? 'opacity-60' : ''}`}>
+                                  {pdfBranding.brandColor || '#1B9358'}
+                                </span>
+                                <span className="text-xs text-secondary/60">
+                                  Customize PDF header branding
+                                </span>
+                              </div>
+                            </div>
+                            {isProLocked && (
+                              <div className="absolute top-0 right-0">
+                                <ProBadge variant="icon" size={16} />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm leading-relaxed text-secondary/80">
+                        JSON exports structured data only — no logo or header styling applies.
+                      </p>
+                    )}
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          )}
 
           {localTables.length > 1 && (
             <div className="mt-6 rounded-xl border-2 border-primary-light overflow-hidden">
