@@ -117,8 +117,8 @@ function NavbarAccountRow({ layout, onDrawerAction, onRequestUpgrade }: NavbarAc
             }}
             className={
               isToolbar
-                ? 'inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-md bg-primary px-2 py-1 text-[11px] font-semibold text-white transition-all hover:bg-primary/90 hover:shadow-md sm:py-1.5 sm:text-xs'
-                : 'inline-flex cursor-pointer items-center gap-1 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-primary/90'
+                ? 'inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-md bg-primary px-2 py-1 text-[11px] font-semibold text-white shadow-primary-btn transition-all duration-200 ease-out hover:-translate-y-px hover:bg-primary/90 hover:shadow-primary-btn-hover sm:py-1.5 sm:text-xs'
+                : 'inline-flex cursor-pointer items-center gap-1 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white shadow-primary-btn transition-all duration-200 ease-out hover:-translate-y-px hover:bg-primary/90 hover:shadow-primary-btn-hover'
             }
           >
             <Sparkles size={isToolbar ? 12 : 14} />

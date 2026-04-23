@@ -107,7 +107,7 @@ export function SuccessState({ onClose }: SuccessStateProps) {
       >
         <Button
           onClick={onClose}
-          className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
+          className="w-full bg-primary text-white font-semibold py-6 rounded-xl shadow-primary-btn transition-all duration-200 ease-out hover:-translate-y-px hover:bg-primary/90 hover:shadow-primary-btn-hover"
         >
           Return to TableXport
         </Button>

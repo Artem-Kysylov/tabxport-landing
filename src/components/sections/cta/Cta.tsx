@@ -36,7 +36,7 @@ const Cta = () => {
               Works on Mac, Windows, iOS, and Android. No App Store needed. Just click Install and take your AI tables everywhere.
             </p>
             <InstallAppButton
-              className='w-[260px] px-5 py-5 rounded-[8px] bg-primary text-white font-bold hover:bg-primary/90 hover:text-white hover:scale-105 transition-all duration-200'
+              className='w-[260px] px-5 py-5 rounded-[8px] bg-primary text-white font-bold shadow-primary-btn transition-all duration-200 ease-out hover:-translate-y-px hover:scale-105 hover:bg-primary/90 hover:text-white hover:shadow-primary-btn-hover'
               label='Install TableXport'
             />
             <span className='text-sm text-secondary/65'>iOS user? Tap Share, then Add to Home Screen.</span>

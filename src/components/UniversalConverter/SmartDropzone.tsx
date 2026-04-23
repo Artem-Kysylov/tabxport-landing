@@ -254,7 +254,7 @@ export const SmartDropzone: React.FC<SmartDropzoneProps> = ({
               <Button
                 onClick={handleManualSubmit}
                 disabled={isProcessing || !value.trim()}
-                className="h-9 px-4 bg-primary hover:bg-primary/90 text-white"
+                className="h-9 px-4 bg-primary text-white shadow-primary-btn transition-all duration-200 ease-out hover:-translate-y-px hover:bg-primary/90 hover:shadow-primary-btn-hover"
               >
                 {submitLabel || (mode === 'append' ? 'Add table' : 'Process')}
               </Button>

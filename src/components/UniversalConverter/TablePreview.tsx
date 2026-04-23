@@ -1579,7 +1579,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                 <Button
                   onClick={handleAppendTable}
                   disabled={isExporting || !appendText.trim()}
-                  className="w-full md:w-auto h-10 px-4 bg-primary hover:bg-primary/90 text-white flex items-center justify-center gap-2"
+                  className="w-full md:w-auto h-10 px-4 bg-primary text-white shadow-primary-btn transition-all duration-200 ease-out hover:-translate-y-px hover:bg-primary/90 hover:shadow-primary-btn-hover flex items-center justify-center gap-2"
                 >
                   <Plus size={16} />
                   Add table
@@ -1622,7 +1622,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                   <Button
                     onClick={handleBatchExport}
                     disabled={isExporting}
-                    className="h-9 px-4 bg-primary hover:bg-primary/90 text-white"
+                    className="h-9 px-4 bg-primary text-white shadow-primary-btn transition-all duration-200 ease-out hover:-translate-y-px hover:bg-primary/90 hover:shadow-primary-btn-hover"
                   >
                     Bulk Export
                   </Button>
@@ -1656,7 +1656,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                 <Button
                   onClick={handleAppendTable}
                   disabled={isExporting || !appendText.trim()}
-                  className="w-full md:w-auto h-10 px-4 bg-primary hover:bg-primary/90 text-white flex items-center justify-center gap-2"
+                  className="w-full md:w-auto h-10 px-4 bg-primary text-white shadow-primary-btn transition-all duration-200 ease-out hover:-translate-y-px hover:bg-primary/90 hover:shadow-primary-btn-hover flex items-center justify-center gap-2"
                 >
                   <Plus size={16} />
                   Add table
@@ -1677,7 +1677,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                   <Button
                     onClick={() => handleExportSingle(activeFormat)}
                     disabled={isExporting}
-                    className="h-10 px-6 bg-primary hover:bg-primary/90 text-white"
+                    className="h-10 px-6 bg-primary text-white shadow-primary-btn transition-all duration-200 ease-out hover:-translate-y-px hover:bg-primary/90 hover:shadow-primary-btn-hover"
                   >
                     {exportDestination === 'google_drive'
                       ? `Export ${getFormatLabel(activeFormat)} to Google Drive`
