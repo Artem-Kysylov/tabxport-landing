@@ -4,6 +4,7 @@ import { inter } from "./fonts";
 
 import { Toaster } from "sonner";
 import { ProProvider } from "@/contexts/ProContext";
+import { GoogleAuthUiProvider } from "@/contexts/GoogleAuthUiContext";
 import { ProLifetimeBadge } from "@/components/ui/ProLifetimeBadge";
 
 // Import components 
@@ -110,9 +111,11 @@ export default function RootLayout({
       </head>
       <body className="font-inter flex flex-col min-h-screen">
         <ProProvider>
-          <GlobalAnnouncementBar />
-          <NavbarWrapper />
-          {children}
+          <GoogleAuthUiProvider>
+            <GlobalAnnouncementBar />
+            <NavbarWrapper />
+            {children}
+          </GoogleAuthUiProvider>
           <FooterWrapper />
           <ProLifetimeBadge />
           <Toaster 

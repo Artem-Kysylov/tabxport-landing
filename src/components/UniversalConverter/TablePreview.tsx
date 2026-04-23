@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import Image from 'next/image';
-import { Sparkles, Plus, Upload, X, LogIn, ChevronDown } from 'lucide-react';
+import { Sparkles, Plus, Upload, X, ChevronDown } from 'lucide-react';
 import { ParsedTable, ExportFormat, ExportDestination, PDFBrandingSettings } from '@/types/table';
 import {
   exportTable,
@@ -16,7 +16,7 @@ import {
 import { ExcelIcon, CSVIcon, DocxIcon, PDFIcon, JSONIcon, MarkdownIcon, SQLIcon, GoogleSheetsIcon } from '@/components/icons/FormatIcons';
 import { Button } from '@/components/ui/button';
 import { useGoogleAuth } from '@/hooks/useGoogleAuth';
-import { GoogleAuthPopup } from '@/components/auth/GoogleAuthPopup';
+import { useGoogleAuthUi } from '@/contexts/GoogleAuthUiContext';
 import { PWAInstallPrompt } from '@/components/pwa/PWAInstallPrompt';
 import { exportTableToGoogleSheets } from '@/services/googleSheetsService';
 import { getOrCreateTableXportFolder, uploadFileToDrive, getFolderLink } from '@/services/googleDriveService';
@@ -47,41 +47,6 @@ const triggerHaptic = () => {
   nav.vibrate?.(10);
 };
 
-function getRecordValue(record: unknown, key: string): unknown {
-  if (!record || typeof record !== 'object') {
-    return undefined;
-  }
-
-  return (record as Record<string, unknown>)[key];
-}
-
-function getStringValue(record: unknown, key: string): string | null {
-  const value = getRecordValue(record, key);
-  return typeof value === 'string' && value.length > 0 ? value : null;
-}
-
-function getUserAvatarUrl(user: unknown): string | null {
-  const directSources = [
-    getStringValue(getRecordValue(user, 'user_metadata'), 'avatar_url'),
-    getStringValue(getRecordValue(user, 'user_metadata'), 'picture'),
-  ];
-
-  const identities = getRecordValue(user, 'identities');
-  const identitySources = Array.isArray(identities)
-    ? identities.flatMap((identity) => {
-        const identityData = getRecordValue(identity, 'identity_data');
-        return [
-          getStringValue(identityData, 'avatar_url'),
-          getStringValue(identityData, 'picture'),
-          getStringValue(identityData, 'photo_url'),
-        ];
-      })
-    : [];
-
-  const avatarUrl = [...directSources, ...identitySources].find((value): value is string => typeof value === 'string' && value.length > 0) ?? null;
-  return avatarUrl;
-}
-
 export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onAppend }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [autoSumEnabled, setAutoSumEnabled] = useState(false);
@@ -96,7 +61,6 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
   const [batchFormat, setBatchFormat] = useState<ExportFormat>('xlsx');
   const [batchMode, setBatchMode] = useState<'separate' | 'xlsx_tabs' | 'zip'>('separate');
   const [exportDestination, setExportDestination] = useState<ExportDestination>('local');
-  const [showAuthPopup, setShowAuthPopup] = useState(false);
   const [pdfBranding, setPdfBranding] = useState<PDFBrandingSettings>({});
   const [showPwaPrompt, setShowPwaPrompt] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -104,11 +68,11 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
   const [postAuthIntent, setPostAuthIntent] = useState<PostAuthIntent>(null);
   const [showAllFormats, setShowAllFormats] = useState(false);
 
-  const { isAuthenticated, hasRequiredScopes, user, signOut, getAccessToken } = useGoogleAuth();
+  const { isAuthenticated, hasRequiredScopes, getAccessToken } = useGoogleAuth();
+  const { openGoogleAuthPopup } = useGoogleAuthUi();
   const { isPro, isLoading: isProLoading } = usePro();
   const { startUpgrade } = useUpgradeAction();
   const isProLocked = !isProLoading && !isPro;
-  const userAvatarUrl = getUserAvatarUrl(user);
 
   const persistTablesSnapshot = () => {
     try {
@@ -127,22 +91,6 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
       }
     } catch {
       // ignore
-    }
-  };
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      toast.success('Signed out successfully');
-      setExportDestination('local');
-      try {
-        localStorage.setItem('tx_export_destination', 'local');
-      } catch {
-        // ignore
-      }
-    } catch (error) {
-      console.error('Sign out error:', error);
-      toast.error('Failed to sign out');
     }
   };
 
@@ -310,8 +258,8 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
 
   const openAuthPopup = useCallback((intent: PostAuthIntent = 'signin') => {
     setPostAuthIntent(intent);
-    setShowAuthPopup(true);
-  }, []);
+    openGoogleAuthPopup();
+  }, [openGoogleAuthPopup]);
 
   const { isResumingUpgrade } = useUpgradeAutoResume({
     enabled: localTables.length > 0,
@@ -329,8 +277,6 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
     if (!isAuthenticated) {
       return;
     }
-
-    setShowAuthPopup(false);
 
     if (postAuthIntent === 'locked_feature' && !isProLoading && !isPro) {
       showUpgradePrompt('Unlock Google Drive and premium exports with Pro.');
@@ -507,7 +453,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
     if (format === 'google_sheets') {
       if (!isAuthenticated || !hasRequiredScopes) {
         persistTablesSnapshot();
-        setShowAuthPopup(true);
+        openGoogleAuthPopup();
         return;
       }
 
@@ -519,7 +465,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
         if (!accessToken) {
           toast.message('Please sign in again to continue', { duration: 2000 });
           persistTablesSnapshot();
-          setShowAuthPopup(true);
+          openGoogleAuthPopup();
           return;
         }
 
@@ -1112,51 +1058,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
     >
       <div className="standalone-preview-card bg-white rounded-2xl shadow-lg border-2 border-primary-light p-5 sm:p-8 pb-20 sm:pb-8">
         <div>
-          {/* 1. User / Auth section — first inside the card */}
-          <div className="mb-4 flex items-center justify-end">
-            {isAuthenticated && user ? (
-              <div className="flex items-center gap-2 flex-wrap justify-end">
-                {userAvatarUrl ? (
-                  <img
-                    src={userAvatarUrl}
-                    alt={user.user_metadata?.full_name || user.user_metadata?.name || 'User'}
-                    className="w-7 h-7 rounded-full object-cover"
-                    referrerPolicy="no-referrer"
-                    crossOrigin="anonymous"
-                  />
-                ) : null}
-                <span className="text-xs text-secondary font-medium max-w-[120px] truncate">
-                  {user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User'}
-                </span>
-                {!isPro && !isProLoading && (
-                  <button
-                    onClick={() => setShowUpgradeModal(true)}
-                    className="inline-flex cursor-pointer items-center gap-1 rounded-md bg-primary px-2 py-1 text-xs font-semibold text-white transition-all hover:bg-primary/90 hover:shadow-md"
-                  >
-                    <Sparkles size={12} />
-                    Upgrade to Pro
-                  </button>
-                )}
-                <button
-                  onClick={handleSignOut}
-                  className="cursor-pointer text-xs text-secondary/60 hover:text-secondary underline transition-colors"
-                >
-                  Sign out
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => openAuthPopup('signin')}
-                className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-secondary/20 bg-white px-3 py-2 text-xs font-medium text-secondary transition-colors hover:border-secondary/35 hover:bg-secondary/5"
-              >
-                <LogIn size={14} className="text-secondary/70" />
-                <span>Google Sign in</span>
-              </button>
-            )}
-          </div>
-
-          {/* 2. Export destination tabs */}
+          {/* 1. Export destination tabs */}
           <div className="mb-5 grid grid-cols-2 gap-2 bg-primary-light/30 p-1 rounded-lg sm:inline-grid sm:w-auto">
             <button
               type="button"
@@ -1213,7 +1115,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
             </button>
           </div>
 
-          {/* 3. Title + count + Clear */}
+          {/* 2. Title + count + Clear */}
           <div className="flex items-start justify-between gap-3 mb-6">
             <div>
               <h3 className="text-xl sm:text-2xl font-bold text-secondary">Table Preview</h3>
@@ -1785,12 +1687,6 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
           )}
         </div>
       </div>
-
-      {/* Google Auth Popup */}
-      <GoogleAuthPopup 
-        trigger={showAuthPopup} 
-        onClose={() => setShowAuthPopup(false)} 
-      />
 
       {isResumingUpgrade && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-white/92 backdrop-blur-sm px-6">
