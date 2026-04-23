@@ -1058,61 +1058,63 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
     >
       <div className="standalone-preview-card bg-white rounded-2xl shadow-lg border-2 border-primary-light p-5 sm:p-8 pb-20 sm:pb-8">
         <div>
-          {/* 1. Export destination tabs */}
-          <div className="mb-5 grid grid-cols-2 gap-2 bg-primary-light/30 p-1 rounded-lg sm:inline-grid sm:w-auto">
-            <button
-              type="button"
-              onClick={() => {
-                setExportDestination('local');
-                try {
-                  localStorage.setItem('tx_export_destination', 'local');
-                } catch {
-                  // ignore
-                }
-              }}
-              className={`flex items-center justify-center gap-2 px-3 sm:px-6 py-2.5 sm:py-3 rounded-md text-sm font-semibold transition-all cursor-pointer border-2 ${
-                exportDestination === 'local'
-                  ? 'bg-white text-secondary border-primary'
-                  : 'text-secondary/60 hover:text-secondary border-transparent'
-              }`}
-            >
-              <Image src="/icons/icon-device.svg" alt="Local" width={20} height={20} />
-              <span className="whitespace-nowrap">Local Download</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (isProLoading) {
-                  return;
-                }
+          {/* 1. Export destination tabs — centered in preview card */}
+          <div className="mb-5 flex w-full justify-center">
+            <div className="grid w-[min(100%,32rem)] grid-cols-2 gap-2 rounded-lg bg-primary-light/30 p-1 sm:inline-grid sm:w-auto">
+              <button
+                type="button"
+                onClick={() => {
+                  setExportDestination('local');
+                  try {
+                    localStorage.setItem('tx_export_destination', 'local');
+                  } catch {
+                    // ignore
+                  }
+                }}
+                className={`flex cursor-pointer items-center justify-center gap-2 rounded-md border-2 px-3 py-2.5 text-sm font-semibold transition-all sm:px-6 sm:py-3 ${
+                  exportDestination === 'local'
+                    ? 'border-primary bg-white text-secondary'
+                    : 'border-transparent text-secondary/60 hover:text-secondary'
+                }`}
+              >
+                <Image src="/icons/icon-device.svg" alt="Local" width={20} height={20} />
+                <span className="whitespace-nowrap">Local Download</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (isProLoading) {
+                    return;
+                  }
 
-                if (isProLocked) {
-                  persistTablesSnapshot();
-                  showUpgradePrompt('');
-                  return;
-                }
+                  if (isProLocked) {
+                    persistTablesSnapshot();
+                    showUpgradePrompt('');
+                    return;
+                  }
 
-                if (!isAuthenticated || !hasRequiredScopes) {
-                  openAuthPopup('signin');
-                  return;
-                }
+                  if (!isAuthenticated || !hasRequiredScopes) {
+                    openAuthPopup('signin');
+                    return;
+                  }
 
-                setExportDestination('google_drive');
-              }}
-              className={`relative flex items-center justify-center gap-2 px-3 sm:px-6 py-2.5 sm:py-3 rounded-md text-sm font-semibold transition-all cursor-pointer border-2 ${
-                exportDestination === 'google_drive'
-                  ? 'bg-white text-secondary border-primary'
-                  : 'text-secondary/60 hover:text-secondary border-transparent'
-              } ${isProLocked ? 'grayscale opacity-60' : ''}`}
-            >
-              <Image src="/icons/icon-google-drive.svg" alt="Google Drive" width={20} height={20} />
-              <span className="whitespace-nowrap">Google Drive</span>
-              {isProLocked && (
-                <div className="ml-1">
-                  <ProBadge variant="badge" />
-                </div>
-              )}
-            </button>
+                  setExportDestination('google_drive');
+                }}
+                className={`relative flex cursor-pointer items-center justify-center gap-2 rounded-md border-2 px-3 py-2.5 text-sm font-semibold transition-all sm:px-6 sm:py-3 ${
+                  exportDestination === 'google_drive'
+                    ? 'border-primary bg-white text-secondary'
+                    : 'border-transparent text-secondary/60 hover:text-secondary'
+                } ${isProLocked ? 'grayscale opacity-60' : ''}`}
+              >
+                <Image src="/icons/icon-google-drive.svg" alt="Google Drive" width={20} height={20} />
+                <span className="whitespace-nowrap">Google Drive</span>
+                {isProLocked && (
+                  <div className="ml-1">
+                    <ProBadge variant="badge" />
+                  </div>
+                )}
+              </button>
+            </div>
           </div>
 
           {/* 2. Title + count + Clear */}

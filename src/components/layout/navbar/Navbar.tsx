@@ -68,14 +68,14 @@ function NavbarAccountRow({ layout, onDrawerAction, onRequestUpgrade }: NavbarAc
       <div
         className={
           isToolbar
-            ? 'flex min-w-0 max-w-[min(100%,320px)] items-center gap-2 sm:gap-3'
+            ? 'flex min-w-0 max-w-[min(100%,440px)] items-center gap-2 sm:gap-2.5'
             : 'flex w-full max-w-[280px] flex-col items-center gap-3'
         }
       >
         <div
           className={
             isToolbar
-              ? 'flex min-w-0 items-center gap-2'
+              ? 'flex min-w-0 flex-1 items-center gap-2'
               : 'flex flex-col items-center gap-2'
           }
         >
@@ -95,16 +95,19 @@ function NavbarAccountRow({ layout, onDrawerAction, onRequestUpgrade }: NavbarAc
           <span
             className={
               isToolbar
-                ? 'truncate text-xs font-medium text-secondary sm:max-w-[140px] sm:text-sm'
+                ? 'max-w-[6.5rem] truncate text-xs font-medium text-secondary sm:max-w-[8.5rem] sm:text-[13px]'
                 : 'text-center text-sm font-medium text-secondary'
             }
           >
             {displayName}
           </span>
-          {isPro && !isProLoading ? (
-            <ProBadge variant="badge" />
+          {isToolbar && isPro && !isProLoading ? (
+            <span className="shrink-0">
+              <ProBadge variant="badge" />
+            </span>
           ) : null}
         </div>
+        {!isToolbar && isPro && !isProLoading ? <ProBadge variant="badge" /> : null}
         {!isPro && !isProLoading ? (
           <button
             type="button"
@@ -114,7 +117,7 @@ function NavbarAccountRow({ layout, onDrawerAction, onRequestUpgrade }: NavbarAc
             }}
             className={
               isToolbar
-                ? 'inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-md bg-primary px-2 py-1.5 text-xs font-semibold text-white transition-all hover:bg-primary/90 hover:shadow-md'
+                ? 'inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-md bg-primary px-2 py-1 text-[11px] font-semibold text-white transition-all hover:bg-primary/90 hover:shadow-md sm:py-1.5 sm:text-xs'
                 : 'inline-flex cursor-pointer items-center gap-1 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-primary/90'
             }
           >
@@ -127,7 +130,7 @@ function NavbarAccountRow({ layout, onDrawerAction, onRequestUpgrade }: NavbarAc
           onClick={() => void handleSignOut()}
           className={
             isToolbar
-              ? 'shrink-0 cursor-pointer text-xs text-secondary/60 underline transition-colors hover:text-secondary'
+              ? 'shrink-0 cursor-pointer text-[11px] text-secondary/60 underline transition-colors hover:text-secondary sm:text-xs'
               : 'cursor-pointer text-sm text-secondary/60 underline transition-colors hover:text-secondary'
           }
         >
@@ -204,23 +207,48 @@ const Navbar = () => {
           <Image src='/logo-dark.svg' alt='logo' width={141} height={58} />
         </Link>
 
-        <div className='hidden min-w-0 flex-1 items-center justify-end gap-8 md:flex'>
-          <nav>
-            <ul className='flex items-center gap-10'>
+        <div className='hidden min-w-0 flex-1 items-center justify-end gap-4 md:flex lg:gap-5'>
+          <nav className="min-w-0">
+            <ul className='flex flex-nowrap items-center justify-end gap-x-5 lg:gap-x-7'>
               <li>
-                <Link href='/#features' className='transition-colors duration-300 ease-in-out hover:text-primary'>Why TableXport?</Link>
+                <Link
+                  href='/#features'
+                  className='whitespace-nowrap text-[13px] font-medium text-secondary transition-colors duration-300 ease-in-out hover:text-primary lg:text-sm'
+                >
+                  Why TableXport?
+                </Link>
               </li>
               <li>
-                <Link href='/#demo' className='transition-colors duration-300 ease-in-out hover:text-primary'>See TableXport in action</Link>
+                <Link
+                  href='/#demo'
+                  className='whitespace-nowrap text-[13px] font-medium text-secondary transition-colors duration-300 ease-in-out hover:text-primary lg:text-sm'
+                >
+                  See TableXport in action
+                </Link>
               </li>
               <li>
-                <Link href='/#price-plans' className='transition-colors duration-300 ease-in-out hover:text-primary'>Simple Pricing</Link>
+                <Link
+                  href='/#price-plans'
+                  className='whitespace-nowrap text-[13px] font-medium text-secondary transition-colors duration-300 ease-in-out hover:text-primary lg:text-sm'
+                >
+                  Simple Pricing
+                </Link>
               </li>
               <li>
-                <Link href='/#faq' className='transition-colors duration-300 ease-in-out hover:text-primary'>FAQ</Link>
+                <Link
+                  href='/#faq'
+                  className='whitespace-nowrap text-[13px] font-medium text-secondary transition-colors duration-300 ease-in-out hover:text-primary lg:text-sm'
+                >
+                  FAQ
+                </Link>
               </li>
               <li>
-                <Link href='/#about' className='transition-colors duration-300 ease-in-out hover:text-primary'>About</Link>
+                <Link
+                  href='/#about'
+                  className='whitespace-nowrap text-[13px] font-medium text-secondary transition-colors duration-300 ease-in-out hover:text-primary lg:text-sm'
+                >
+                  About
+                </Link>
               </li>
             </ul>
           </nav>
