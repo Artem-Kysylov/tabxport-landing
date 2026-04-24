@@ -1,4 +1,5 @@
 import { TableData, TableDataSchema, ParserResult, ParsedTable } from '@/types/table';
+import { sanitizeTableData } from '@/utils/markdownParser';
 
 /**
  * Парсит таблицу из текста с разделителями (табуляция, запятая, пайп)
@@ -284,7 +285,9 @@ export function parseTable(input: string): ParserResult {
     const htmlTables = parseHTMLTables(trimmedInput);
     if (htmlTables.length > 0) {
       try {
-        const validated = htmlTables.map((t) => TableDataSchema.parse(t));
+        const validated = htmlTables.map((t) =>
+          TableDataSchema.parse(sanitizeTableData(t)),
+        );
         return {
           success: true,
           tables: toParsedTables(validated),
@@ -323,7 +326,9 @@ export function parseTable(input: string): ParserResult {
 
   if (collected.length > 0) {
     try {
-      const validated = collected.map((t) => TableDataSchema.parse(t));
+      const validated = collected.map((t) =>
+        TableDataSchema.parse(sanitizeTableData(t)),
+      );
       return {
         success: true,
         tables: toParsedTables(validated),

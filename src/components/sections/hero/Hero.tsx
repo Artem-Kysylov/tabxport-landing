@@ -6,6 +6,7 @@ import { AnimatedSection, FadeInUp } from '@/components/animations'
 import { SmartDropzone } from '@/components/UniversalConverter/SmartDropzone'
 import { TablePreview } from '@/components/UniversalConverter/TablePreview'
 import { useTableParser } from '@/hooks/useTableParser'
+import { sanitizeCellMarkdown } from '@/utils/markdownParser'
 
 const RATED_STORAGE_KEY = 'tablexport_rated' as const
 
@@ -82,15 +83,6 @@ function ExtensionRatingBanner({ onDismiss }: { readonly onDismiss: () => void }
   )
 }
 
-function sanitizeMarkdown(text: string): string {
-  let cleaned = text
-  cleaned = cleaned.replace(/```[\w-]*\s*\n?[\s\S]*?```/g, '')
-  cleaned = cleaned.replace(/`{3,}/g, '')
-  cleaned = cleaned.replace(/\*\*([\s\S]+?)\*\*/g, '$1')
-  cleaned = cleaned.replace(/\*([^*\n]+?)\*/g, '$1')
-  return cleaned.trim()
-}
-
 const Hero = () => {
   const { parsedTables, isLoading, error, parseFromText, appendFromText, clearTable } = useTableParser();
   const [showExtensionRatingBanner, setShowExtensionRatingBanner] = useState(false);
@@ -133,7 +125,7 @@ const Hero = () => {
           
           if (clipboardData) {
             // 2. Feed the data to the parser
-            parseFromText(sanitizeMarkdown(clipboardData));
+            parseFromText(sanitizeCellMarkdown(clipboardData));
             
             // 3. Remove autoPaste only so exportSource (e.g. rating banner) stays in the bar until user navigates
             urlParams.delete('autoPaste');
@@ -194,7 +186,7 @@ const Hero = () => {
                         className="w-full"
                       >
                         <SmartDropzone
-                          onDataReceived={(data) => parseFromText(sanitizeMarkdown(data))}
+                          onDataReceived={(data) => parseFromText(sanitizeCellMarkdown(data))}
                           isProcessing={isLoading}
                           errorMessage={error}
                         />
@@ -212,7 +204,7 @@ const Hero = () => {
                         <TablePreview
                           tables={parsedTables}
                           onClear={clearTable}
-                          onAppend={(data) => appendFromText(sanitizeMarkdown(data))}
+                          onAppend={(data) => appendFromText(sanitizeCellMarkdown(data))}
                         />
                       </motion.div>
                     )}
