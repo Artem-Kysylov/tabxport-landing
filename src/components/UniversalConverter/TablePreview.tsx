@@ -68,7 +68,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
   const [postAuthIntent, setPostAuthIntent] = useState<PostAuthIntent>(null);
   const [showAllFormats, setShowAllFormats] = useState(false);
 
-  const { isAuthenticated, hasRequiredScopes, getAccessToken } = useGoogleAuth();
+  const { isAuthenticated, getGoogleAccessForDrive, signIn } = useGoogleAuth();
   const { openGoogleAuthPopup } = useGoogleAuthUi();
   const { isPro, isLoading: isProLoading } = usePro();
   const { startUpgrade } = useUpgradeAction();
@@ -451,24 +451,25 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
 
     // Handle Google Sheets export
     if (format === 'google_sheets') {
-      if (!isAuthenticated || !hasRequiredScopes) {
+      const driveAccess = await getGoogleAccessForDrive();
+      if (driveAccess.status === 'needs_reauthorization') {
         persistTablesSnapshot();
-        openGoogleAuthPopup();
+        toast.message('Restoring Google access…', { duration: 2000 });
+        await signIn();
         return;
       }
+      if (driveAccess.status === 'needs_sign_in' || driveAccess.status === 'needs_google_connect') {
+        persistTablesSnapshot();
+        openAuthPopup('signin');
+        return;
+      }
+
+      const accessToken = driveAccess.accessToken;
 
       toast.message('Preparing Google Sheets export...', { duration: 1500 });
       setIsExporting(true);
 
       try {
-        const accessToken = await getAccessToken();
-        if (!accessToken) {
-          toast.message('Please sign in again to continue', { duration: 2000 });
-          persistTablesSnapshot();
-          openGoogleAuthPopup();
-          return;
-        }
-
         const folderId = await getOrCreateTableXportFolder(accessToken);
         const folderUrl = await getFolderLink(accessToken, folderId);
         const result = await exportTableToGoogleSheets(accessToken, activeTable, folderId);
@@ -529,17 +530,19 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
             return;
           }
 
-          if (!isAuthenticated || !hasRequiredScopes) {
+          const driveAccess = await getGoogleAccessForDrive();
+          if (driveAccess.status === 'needs_reauthorization') {
+            persistTablesSnapshot();
+            toast.message('Restoring Google access…', { duration: 2000 });
+            await signIn();
+            return;
+          }
+          if (driveAccess.status === 'needs_sign_in' || driveAccess.status === 'needs_google_connect') {
             persistTablesSnapshot();
             openAuthPopup('signin');
             return;
           }
-
-          const accessToken = await getAccessToken();
-          if (!accessToken) {
-            toast.error('Failed to get access token');
-            return;
-          }
+          const accessToken = driveAccess.accessToken;
 
           const folderId = await getOrCreateTableXportFolder(accessToken);
           const folderUrl = await getFolderLink(accessToken, folderId);
@@ -646,20 +649,22 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
 
     // Check if exporting to Google Drive
     if (exportDestination === 'google_drive') {
-      if (!isAuthenticated || !hasRequiredScopes) {
+      const driveAccess = await getGoogleAccessForDrive();
+      if (driveAccess.status === 'needs_reauthorization') {
+        persistTablesSnapshot();
+        toast.message('Restoring Google access…', { duration: 2000 });
+        await signIn();
+        return;
+      }
+      if (driveAccess.status === 'needs_sign_in' || driveAccess.status === 'needs_google_connect') {
         persistTablesSnapshot();
         openAuthPopup('signin');
         return;
       }
+      const accessToken = driveAccess.accessToken;
 
       setIsExporting(true);
       try {
-        const accessToken = await getAccessToken();
-        if (!accessToken) {
-          toast.error('Failed to get access token');
-          return;
-        }
-
         // Handle multi-sheet Google Sheets export
         if (batchMode === 'xlsx_tabs' || batchFormat === 'google_sheets') {
           const { createMultiSheetSpreadsheet } = await import('@/services/googleSheetsService');
@@ -1090,11 +1095,6 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                   if (isProLocked) {
                     persistTablesSnapshot();
                     showUpgradePrompt('');
-                    return;
-                  }
-
-                  if (!isAuthenticated || !hasRequiredScopes) {
-                    openAuthPopup('signin');
                     return;
                   }
 

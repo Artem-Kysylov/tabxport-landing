@@ -39,6 +39,19 @@ export function getGoogleUserAvatarUrl(user: User | null): string | null {
   return avatarUrl;
 }
 
+/**
+ * True if the user can use Google OAuth (linked Google identity or Google-only sign-in).
+ * Do not rely on app_metadata.provider alone — Supabase can expose Google via identities[].
+ */
+export function userHasGoogleIdentity(user: User | null | undefined): boolean {
+  if (!user) return false;
+  if (user.app_metadata?.provider === 'google') return true;
+  const providers = user.app_metadata?.providers;
+  if (Array.isArray(providers) && providers.includes('google')) return true;
+  if (user.identities?.some((i) => i.provider === 'google')) return true;
+  return false;
+}
+
 export function getGoogleUserDisplayName(user: User): string {
   const meta = user.user_metadata as Record<string, unknown> | undefined;
   const fullName = meta?.full_name;
