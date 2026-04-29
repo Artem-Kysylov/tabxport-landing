@@ -1,13 +1,15 @@
 // Import components  
 import Hero from "@/components/sections/hero/Hero";
+import Extensions from "@/components/sections/extensions/Extensions";
 import Features from "@/components/sections/features/Features";
-import Faq from "@/components/sections/faq/Faq";
-import Cta from "@/components/sections/cta/Cta";
 import Demo from "@/components/sections/demo/Demo";
-// import PricePlans from "@/components/sections/price-plans/PricePlans";
 import FreePlan from "@/components/sections/free-plan/FreePlan";
-import About from "@/components/sections/about/About";
 import LabsTeaserSection from "@/components/sections/labs-teaser/LabsTeaserSection";
+import Faq from "@/components/sections/faq/Faq";
+import About from "@/components/sections/about/About";
+import Roadmap from "@/components/sections/roadmap/Roadmap";
+import Cta from "@/components/sections/cta/Cta";
+// import PricePlans from "@/components/sections/price-plans/PricePlans";
 
 import Image from 'next/image'
 
@@ -27,10 +29,13 @@ export default function Home() {
       </div>
       <Hero />
       <div className='standalone-hidden'>
-        <Features />
+        <Extensions />
       </div>
       <div className='standalone-hidden'>
         <Demo />
+      </div>
+      <div className='standalone-hidden'>
+        <Features />
       </div>
       <div className='standalone-hidden'>
         <FreePlan />
@@ -44,6 +49,9 @@ export default function Home() {
       </div>
       <div className='standalone-hidden'>
         <About />
+      </div>
+      <div className='standalone-hidden'>
+        <Roadmap />
       </div>
       <div className='standalone-hidden'>
         <Cta />

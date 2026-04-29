@@ -8,6 +8,8 @@ interface StaggerContainerProps {
   className?: string;
   staggerDelay?: number;
   duration?: number;
+  /** Applied to each staggered item wrapper (e.g. `h-full` for equal-height grid cards) */
+  itemClassName?: string;
 }
 
 export default function StaggerContainer({
@@ -15,6 +17,7 @@ export default function StaggerContainer({
   className = "",
   staggerDelay = 0.15,
   duration = 0.6,
+  itemClassName = "",
 }: StaggerContainerProps) {
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
@@ -54,7 +57,7 @@ export default function StaggerContainer({
       className={className}
     >
       {childrenArray.map((child, index) => (
-        <motion.div key={index} variants={itemVariants}>
+        <motion.div key={index} variants={itemVariants} className={itemClassName}>
           {child}
         </motion.div>
       ))}
