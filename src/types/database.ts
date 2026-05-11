@@ -4,6 +4,39 @@ export type SubscriptionPlan = 'free' | 'pro' | 'enterprise';
 export type SubscriptionStatus = 'active' | 'cancelled' | 'expired' | 'trialing' | 'past_due';
 export type PaymentStatus = 'succeeded' | 'failed' | 'pending' | 'cancelled';
 
+export type FeatureRequestStatus = 'Under Review' | 'Planned' | 'In Progress' | 'Completed';
+
+export interface FeatureRequest {
+  id: string;
+  title: string;
+  description: string;
+  votes_count: number;
+  status: FeatureRequestStatus;
+  created_at: string;
+}
+
+export interface ExportFixStats {
+  markdown: number;
+  spaces: number;
+  numeric: number;
+  links: number;
+}
+
+export interface ExportTableData {
+  headers: string[];
+  rows: string[][];
+}
+
+export interface ExportRecord {
+  id: string;
+  user_id: string;
+  table_name: string;
+  data: ExportTableData;
+  fix_stats: ExportFixStats;
+  source_url: string | null;
+  created_at: string;
+}
+
 // Основные интерфейсы таблиц
 export interface UserProfile {
   id: string;
@@ -125,6 +158,16 @@ export interface Database {
         Row: ExportHistory;
         Insert: Omit<ExportHistory, 'id' | 'created_at'>;
         Update: Partial<Omit<ExportHistory, 'id' | 'created_at'>>;
+      };
+      exports: {
+        Row: ExportRecord;
+        Insert: Omit<ExportRecord, 'id' | 'created_at'>;
+        Update: Partial<Omit<ExportRecord, 'id' | 'created_at'>>;
+      };
+      feature_requests: {
+        Row: FeatureRequest;
+        Insert: Omit<FeatureRequest, 'id' | 'created_at' | 'votes_count'> & { votes_count?: number };
+        Update: Partial<Omit<FeatureRequest, 'id' | 'created_at'>>;
       };
       usage_quotas: {
         Row: UsageQuota;

@@ -1,5 +1,12 @@
 import { User } from '@supabase/supabase-js';
 
+/** Result of resolving Google access for Drive / Sheets export */
+export type GoogleDriveAccessResult =
+  | { status: 'ready'; accessToken: string }
+  | { status: 'needs_sign_in' }
+  | { status: 'needs_google_connect' }
+  | { status: 'needs_reauthorization' };
+
 export interface GoogleAuthStatus {
   isAuthenticated: boolean;
   hasRequiredScopes: boolean;

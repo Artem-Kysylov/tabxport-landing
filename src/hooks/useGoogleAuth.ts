@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { GoogleAuthStatus } from '@/types/google';
+import { userHasGoogleIdentity } from '@/lib/google-user-profile';
+import { GoogleAuthStatus, type GoogleDriveAccessResult } from '@/types/google';
 
 interface SignInOptions {
   action?: 'upgrade';
@@ -23,7 +24,7 @@ export function useGoogleAuth() {
     const checkAuthStatus = async () => {
       try {
         const { data: { user }, error } = await supabase.auth.getUser();
-        
+
         if (error || !user) {
           setAuthStatus({
             isAuthenticated: false,
@@ -34,14 +35,22 @@ export function useGoogleAuth() {
           return;
         }
 
-        const { data: { session } } = await supabase.auth.getSession();
+        let { data: { session } } = await supabase.auth.getSession();
         const authUser = session?.user ?? user;
-        const hasGoogleProvider = session?.user?.app_metadata?.provider === 'google';
-        const hasProviderToken = !!session?.provider_token;
+        const hasGoogle = userHasGoogleIdentity(authUser);
+        let hasProviderToken = !!session?.provider_token;
+
+        if (hasGoogle && !hasProviderToken) {
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+          if (!refreshError && refreshData.session) {
+            session = refreshData.session;
+            hasProviderToken = !!refreshData.session.provider_token;
+          }
+        }
 
         setAuthStatus({
           isAuthenticated: true,
-          hasRequiredScopes: hasGoogleProvider && hasProviderToken,
+          hasRequiredScopes: hasGoogle && hasProviderToken,
           user: authUser,
           loading: false,
         });
@@ -59,26 +68,37 @@ export function useGoogleAuth() {
     checkAuthStatus();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-          const hasGoogleProvider = session.user.app_metadata?.provider === 'google';
-          const hasProviderToken = !!session.provider_token;
-
-          setAuthStatus({
-            isAuthenticated: true,
-            hasRequiredScopes: hasGoogleProvider && hasProviderToken,
-            user: session.user,
-            loading: false,
-          });
-        } else if (event === 'SIGNED_OUT') {
+      (event, session) => {
+        if (event === 'SIGNED_OUT') {
           setAuthStatus({
             isAuthenticated: false,
             hasRequiredScopes: false,
             user: null,
             loading: false,
           });
+          return;
         }
-      }
+
+        if (!session?.user) {
+          return;
+        }
+
+        if (
+          event === 'SIGNED_IN' ||
+          event === 'INITIAL_SESSION' ||
+          event === 'TOKEN_REFRESHED' ||
+          event === 'USER_UPDATED'
+        ) {
+          const hasGoogle = userHasGoogleIdentity(session.user);
+          const hasProviderToken = !!session.provider_token;
+          setAuthStatus({
+            isAuthenticated: true,
+            hasRequiredScopes: hasGoogle && hasProviderToken,
+            user: session.user,
+            loading: false,
+          });
+        }
+      },
     );
 
     return () => {
@@ -90,7 +110,12 @@ export function useGoogleAuth() {
     try {
       setAuthStatus(prev => ({ ...prev, loading: true }));
 
+      if (typeof window === 'undefined') {
+        throw new Error('Google sign-in must run in the browser');
+      }
+
       const baseUrl = window.location.origin;
+
       const nextUrl = new URL(options?.nextPath ?? `${window.location.pathname}${window.location.search}`, baseUrl);
 
       if (options?.action === 'upgrade') {
@@ -108,7 +133,8 @@ export function useGoogleAuth() {
             access_type: 'offline',
             prompt: 'consent',
           },
-          scopes: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets',
+          scopes:
+            'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets',
         },
       });
 
@@ -151,10 +177,49 @@ export function useGoogleAuth() {
     }
   }, [supabase]);
 
+  /**
+   * For Drive/Sheets export: prefer session + refresh, then re-auth with OAuth if a Google
+   * identity exists but the Drive scope token is missing.
+   */
+  const getGoogleAccessForDrive = useCallback(async (): Promise<GoogleDriveAccessResult> => {
+    try {
+      const { data: { session: initial } } = await supabase.auth.getSession();
+      if (!initial?.user) {
+        return { status: 'needs_sign_in' };
+      }
+
+      const readToken = (s: typeof initial) =>
+        s?.provider_token && s.provider_token.length > 0 ? s.provider_token : null;
+
+      let token = readToken(initial);
+      if (token) {
+        return { status: 'ready', accessToken: token };
+      }
+
+      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+      if (!refreshError && refreshData.session) {
+        token = readToken(refreshData.session);
+        if (token) {
+          return { status: 'ready', accessToken: token };
+        }
+      }
+
+      if (userHasGoogleIdentity(initial.user)) {
+        return { status: 'needs_reauthorization' };
+      }
+
+      return { status: 'needs_google_connect' };
+    } catch (error) {
+      console.error('getGoogleAccessForDrive error:', error);
+      return { status: 'needs_sign_in' };
+    }
+  }, [supabase]);
+
   return {
     ...authStatus,
     signIn,
     signOut,
     getAccessToken,
+    getGoogleAccessForDrive,
   };
 }

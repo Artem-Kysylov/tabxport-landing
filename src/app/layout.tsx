@@ -4,6 +4,7 @@ import { inter } from "./fonts";
 
 import { Toaster } from "sonner";
 import { ProProvider } from "@/contexts/ProContext";
+import { GoogleAuthUiProvider } from "@/contexts/GoogleAuthUiContext";
 import { ProLifetimeBadge } from "@/components/ui/ProLifetimeBadge";
 
 // Import components 
@@ -15,6 +16,10 @@ export const metadata: Metadata = {
   title: "TableXport: Export tables from ChatGPT to Excel in 1 click",
   description: "Export tables from ChatGPT, Claude, and other AI chats to Excel, CSV, or Google Sheets. No more manual copying — just click Export!",
   keywords: "ChatGPT export, table export, Excel export, CSV export, Google Sheets, AI chat export, Claude export, Gemini export, data export",
+
+  verification: {
+    google: 'yKwtmSMlcL6XYe0jkxbHW9kilWaESWjqHOBphH9EI8A',
+  },
   
   // PWA Configuration
   manifest: '/manifest.json',
@@ -88,12 +93,29 @@ export default function RootLayout({
     <html lang="en" className={inter.variable}>
       <head>
         <link rel="apple-touch-icon" href="/icons/app-icons/apple-touch-icon.png" />
+        {/* Capture beforeinstallprompt before React hydration to avoid race condition */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                window.__deferredInstallPrompt = null;
+                window.addEventListener('beforeinstallprompt', function(e) {
+                  e.preventDefault();
+                  window.__deferredInstallPrompt = e;
+                  window.dispatchEvent(new CustomEvent('tx_pwa_prompt_ready'));
+                }, { once: false });
+              })();
+            `,
+          }}
+        />
       </head>
-      <body className="font-inter">
+      <body className="font-inter flex flex-col min-h-screen">
         <ProProvider>
-          <GlobalAnnouncementBar />
-          <NavbarWrapper />
-          {children}
+          <GoogleAuthUiProvider>
+            <GlobalAnnouncementBar />
+            <NavbarWrapper />
+            {children}
+          </GoogleAuthUiProvider>
           <FooterWrapper />
           <ProLifetimeBadge />
           <Toaster 
@@ -101,7 +123,7 @@ export default function RootLayout({
             richColors 
             toastOptions={{
               className:
-                'py-5 px-8 min-w-[340px] sm:min-w-[420px] text-[20px] font-bold text-center items-center',
+                'justify-center py-5 px-8 min-w-[340px] sm:min-w-[420px] text-[20px] font-bold text-center items-center',
               descriptionClassName: 'text-[20px] font-bold text-center',
             }}
           />

@@ -7,7 +7,6 @@ import FreePlan from "@/components/sections/free-plan/FreePlan";
 import LabsTeaserSection from "@/components/sections/labs-teaser/LabsTeaserSection";
 import Faq from "@/components/sections/faq/Faq";
 import About from "@/components/sections/about/About";
-import Roadmap from "@/components/sections/roadmap/Roadmap";
 import Cta from "@/components/sections/cta/Cta";
 // import PricePlans from "@/components/sections/price-plans/PricePlans";
 
@@ -49,9 +48,6 @@ export default function Home() {
       </div>
       <div className='standalone-hidden'>
         <About />
-      </div>
-      <div className='standalone-hidden'>
-        <Roadmap />
       </div>
       <div className='standalone-hidden'>
         <Cta />

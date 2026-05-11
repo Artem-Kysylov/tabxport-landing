@@ -2,6 +2,9 @@
 @import "tw-animate-css";
 
 @theme inline {
+  /* Match tablexport-bridge-btn / extension popup primary buttons */
+  --shadow-primary-btn: 0 4px 12px rgba(27, 147, 88, 0.3);
+  --shadow-primary-btn-hover: 0 6px 16px rgba(27, 147, 88, 0.6);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
@@ -159,11 +162,24 @@
   min-width: 340px !important;
   padding: 20px 32px !important;
   border-radius: 12px !important;
+  justify-content: center !important;
 }
 
 [data-sonner-toaster] [data-sonner-toast] [data-icon],
 [data-sonner-toaster] [data-sonner-toast] .sonner-icon {
   display: none !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast] [data-content] {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  text-align: center !important;
+  width: 100%;
+}
+
+[data-sonner-toaster] [data-sonner-toast] [data-content] > * {
+  text-align: center !important;
 }
 
 @media (min-width: 640px) {

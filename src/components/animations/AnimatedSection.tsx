@@ -10,6 +10,8 @@ interface AnimatedSectionProps {
   duration?: number;
   y?: number;
   scale?: number;
+  /** When true, animate on mount (no scroll-in). */
+  instant?: boolean;
 }
 
 export default function AnimatedSection({
@@ -19,6 +21,7 @@ export default function AnimatedSection({
   duration = 0.6,
   y = 30,
   scale,
+  instant = false,
 }: AnimatedSectionProps) {
   const initialProps = {
     opacity: 0,
@@ -32,16 +35,33 @@ export default function AnimatedSection({
     ...(scale && { scale: 1 }),
   };
 
+  const transition = {
+    duration: duration,
+    ease: "easeOut" as const,
+    delay: delay,
+  };
+
+  const viewport = { once: true, amount: 0.1 as const };
+
+  if (instant) {
+    return (
+      <motion.div
+        initial={initialProps}
+        animate={animateProps}
+        transition={transition}
+        className={className}
+      >
+        {children}
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
       initial={initialProps}
       whileInView={animateProps}
-      transition={{
-        duration: duration,
-        ease: "easeOut",
-        delay: delay,
-      }}
-      viewport={{ once: true, amount: 0.2 }}
+      transition={transition}
+      viewport={viewport}
       className={className}
     >
       {children}

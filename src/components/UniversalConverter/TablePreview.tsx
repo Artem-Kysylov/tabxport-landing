@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import Image from 'next/image';
-import { Sparkles, Plus, Upload, X, Palette, LogIn } from 'lucide-react';
+import { Sparkles, Plus, Upload, X, Palette, Copy, CheckCircle2, Wand2, Pencil } from 'lucide-react';
+import { sanitizeTableData, tableToCopyText, sumFixStats, SanitizedTableData } from '@/lib/sanitizer';
 import { ParsedTable, ExportFormat, ExportDestination, PDFBrandingSettings } from '@/types/table';
 import {
   exportTable,
@@ -16,10 +17,11 @@ import {
 import { ExcelIcon, CSVIcon, DocxIcon, PDFIcon, JSONIcon, MarkdownIcon, SQLIcon, GoogleSheetsIcon } from '@/components/icons/FormatIcons';
 import { Button } from '@/components/ui/button';
 import { useGoogleAuth } from '@/hooks/useGoogleAuth';
-import { GoogleAuthPopup } from '@/components/auth/GoogleAuthPopup';
+import { useGoogleAuthUi } from '@/contexts/GoogleAuthUiContext';
 import { PWAInstallPrompt } from '@/components/pwa/PWAInstallPrompt';
 import { exportTableToGoogleSheets } from '@/services/googleSheetsService';
 import { getOrCreateTableXportFolder, uploadFileToDrive, getFolderLink } from '@/services/googleDriveService';
+import { saveExport } from '@/services/exportHistoryService';
 import { usePro } from '@/contexts/ProContext';
 import { ProBadge } from '@/components/ui/ProBadge';
 import { UpgradeModal } from '@/components/modals/UpgradeModal';
@@ -41,41 +43,6 @@ interface FormatOption {
 
 type PostAuthIntent = 'signin' | 'locked_feature' | null;
 
-function getRecordValue(record: unknown, key: string): unknown {
-  if (!record || typeof record !== 'object') {
-    return undefined;
-  }
-
-  return (record as Record<string, unknown>)[key];
-}
-
-function getStringValue(record: unknown, key: string): string | null {
-  const value = getRecordValue(record, key);
-  return typeof value === 'string' && value.length > 0 ? value : null;
-}
-
-function getUserAvatarUrl(user: unknown): string | null {
-  const directSources = [
-    getStringValue(getRecordValue(user, 'user_metadata'), 'avatar_url'),
-    getStringValue(getRecordValue(user, 'user_metadata'), 'picture'),
-  ];
-
-  const identities = getRecordValue(user, 'identities');
-  const identitySources = Array.isArray(identities)
-    ? identities.flatMap((identity) => {
-        const identityData = getRecordValue(identity, 'identity_data');
-        return [
-          getStringValue(identityData, 'avatar_url'),
-          getStringValue(identityData, 'picture'),
-          getStringValue(identityData, 'photo_url'),
-        ];
-      })
-    : [];
-
-  const avatarUrl = [...directSources, ...identitySources].find((value): value is string => typeof value === 'string' && value.length > 0) ?? null;
-  return avatarUrl;
-}
-
 export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onAppend }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [autoSumEnabled, setAutoSumEnabled] = useState(false);
@@ -84,25 +51,43 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
   const [activeTableId, setActiveTableId] = useState<string | null>(null);
   const [selectedTableIds, setSelectedTableIds] = useState<Set<string>>(new Set());
   const [appendText, setAppendText] = useState('');
-  const [editingTableId, setEditingTableId] = useState<string | null>(null);
-  const [editedName, setEditedName] = useState('');
+  const [localTableName, setLocalTableName] = useState<string>('');
 
   const [batchFormat, setBatchFormat] = useState<ExportFormat>('xlsx');
   const [batchMode, setBatchMode] = useState<'separate' | 'xlsx_tabs' | 'zip'>('separate');
   const [exportDestination, setExportDestination] = useState<ExportDestination>('local');
-  const [showAuthPopup, setShowAuthPopup] = useState(false);
   const [pdfBranding, setPdfBranding] = useState<PDFBrandingSettings>({});
   const [showPdfSettings, setShowPdfSettings] = useState(false);
   const [showPwaPrompt, setShowPwaPrompt] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeFeature, setUpgradeFeature] = useState<string>('');
   const [postAuthIntent, setPostAuthIntent] = useState<PostAuthIntent>(null);
+  const [showConfidencePopover, setShowConfidencePopover] = useState(false);
+  const confidencePopoverRef = useRef<HTMLDivElement>(null);
+  const confidencePopoverCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { isAuthenticated, hasRequiredScopes, user, signOut, getAccessToken } = useGoogleAuth();
+  const clearConfidencePopoverCloseTimer = () => {
+    if (confidencePopoverCloseTimerRef.current) {
+      clearTimeout(confidencePopoverCloseTimerRef.current);
+      confidencePopoverCloseTimerRef.current = null;
+    }
+  };
+
+  const openConfidencePopover = () => {
+    clearConfidencePopoverCloseTimer();
+    setShowConfidencePopover(true);
+  };
+
+  const scheduleCloseConfidencePopover = () => {
+    clearConfidencePopoverCloseTimer();
+    confidencePopoverCloseTimerRef.current = setTimeout(() => setShowConfidencePopover(false), 140);
+  };
+
+  const { isAuthenticated, hasRequiredScopes, getAccessToken, loading: authLoading } = useGoogleAuth();
+  const { openGoogleAuthPopup } = useGoogleAuthUi();
   const { isPro, isLoading: isProLoading } = usePro();
   const { startUpgrade } = useUpgradeAction();
   const isProLocked = !isProLoading && !isPro;
-  const userAvatarUrl = getUserAvatarUrl(user);
 
   const persistTablesSnapshot = () => {
     try {
@@ -121,22 +106,6 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
       }
     } catch {
       // ignore
-    }
-  };
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      toast.success('Signed out successfully');
-      setExportDestination('local');
-      try {
-        localStorage.setItem('tx_export_destination', 'local');
-      } catch {
-        // ignore
-      }
-    } catch (error) {
-      console.error('Sign out error:', error);
-      toast.error('Failed to sign out');
     }
   };
 
@@ -304,8 +273,8 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
 
   const openAuthPopup = useCallback((intent: PostAuthIntent = 'signin') => {
     setPostAuthIntent(intent);
-    setShowAuthPopup(true);
-  }, []);
+    openGoogleAuthPopup();
+  }, [openGoogleAuthPopup]);
 
   const { isResumingUpgrade } = useUpgradeAutoResume({
     enabled: localTables.length > 0,
@@ -323,8 +292,6 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
     if (!isAuthenticated) {
       return;
     }
-
-    setShowAuthPopup(false);
 
     if (postAuthIntent === 'locked_feature' && !isProLoading && !isPro) {
       showUpgradePrompt('Unlock Google Drive and premium exports with Pro.');
@@ -359,7 +326,21 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
   }, []);
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!isAuthenticated && exportDestination === 'google_drive') {
+      setExportDestination('local');
+      try {
+        localStorage.setItem('tx_export_destination', 'local');
+      } catch {
+        // ignore
+      }
+    }
+  }, [authLoading, isAuthenticated, exportDestination]);
+
+  useEffect(() => {
     setLocalTables(tables);
+    // Reset localTableName when new tables are loaded
+    setLocalTableName('');
   }, [tables]);
 
   const tableIdsKey = localTables.map((t) => t.id).join('|');
@@ -391,6 +372,20 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
 
   const activeTable = localTables.find((t) => t.id === activeTableId) ?? localTables[0];
   const effectiveFormat: ExportFormat = localTables.length > 1 ? batchFormat : activeFormat;
+  
+  // Initialize localTableName when activeTable changes
+  useEffect(() => {
+    if (activeTable) {
+      setLocalTableName(activeTable.name);
+    }
+  }, [activeTable]); // Depend on entire activeTable object
+
+  const sanitizationResult = useMemo((): SanitizedTableData | null => {
+    if (!activeTable) return null;
+    return sanitizeTableData(activeTable.data.headers, activeTable.data.rows);
+  }, [activeTable]);
+
+  const totalFixes = sanitizationResult ? sumFixStats(sanitizationResult.fixStats) : 0;
 
   // Status badge detection utility
   const detectStatusBadge = (cellValue: string): { type: 'success' | 'warning' | 'error' | 'neutral' | null; text: string } => {
@@ -501,7 +496,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
     if (format === 'google_sheets') {
       if (!isAuthenticated || !hasRequiredScopes) {
         persistTablesSnapshot();
-        setShowAuthPopup(true);
+        openAuthPopup('signin');
         return;
       }
 
@@ -513,16 +508,35 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
         if (!accessToken) {
           toast.message('Please sign in again to continue', { duration: 2000 });
           persistTablesSnapshot();
-          setShowAuthPopup(true);
+          openAuthPopup('signin');
           return;
         }
 
         const folderId = await getOrCreateTableXportFolder(accessToken);
         const folderUrl = await getFolderLink(accessToken, folderId);
-        const result = await exportTableToGoogleSheets(accessToken, activeTable, folderId);
+        // Use localTableName if available, otherwise fallback to activeTable.name
+        const finalTableName = localTableName?.trim() || activeTable.name;
+        const tableWithCustomName = {
+          ...activeTable,
+          name: finalTableName
+        };
+        const result = await exportTableToGoogleSheets(accessToken, tableWithCustomName, folderId);
 
         if (result.success && result.spreadsheetUrl) {
           trackFirstExport();
+          
+          // Save to export history
+          if (sanitizationResult && isAuthenticated) {
+            try {
+              await saveExport({
+                table: tableWithCustomName,
+                fixStats: sanitizationResult.fixStats,
+              });
+            } catch (error) {
+              console.error('Failed to save export to history:', error);
+            }
+          }
+          
           toast.success(
             <div>
               <span>Exported to Google Sheets ✨</span>
@@ -591,7 +605,8 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
 
           const folderId = await getOrCreateTableXportFolder(accessToken);
           const folderUrl = await getFolderLink(accessToken, folderId);
-          const baseName = activeTable.name.replace(/\s+/g, '_').toLowerCase();
+          const finalTableName = localTableName?.trim() || activeTable.name;
+          const baseName = finalTableName.replace(/\s+/g, '_').toLowerCase();
 
           const mimeTypes: Record<string, string> = {
             xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -611,6 +626,23 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
 
           if (uploadResult.success && uploadResult.fileUrl) {
             trackFirstExport();
+            
+            // Save to export history
+            if (sanitizationResult && isAuthenticated) {
+              try {
+                const tableWithCustomName = {
+                  ...activeTable,
+                  name: finalTableName
+                };
+                await saveExport({
+                  table: tableWithCustomName,
+                  fixStats: sanitizationResult.fixStats,
+                });
+              } catch (error) {
+                console.error('Failed to save export to history:', error);
+              }
+            }
+            
             toast.success(
               <div>
                 <span>Uploaded to Google Drive ✨</span>
@@ -639,8 +671,26 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
             toast.error(uploadResult.error || 'Failed to upload to Google Drive');
           }
         } else {
-          downloadBlob(result.blob, `${activeTable.name.replace(/\s+/g, '_').toLowerCase()}`, format);
+          const finalTableName = localTableName?.trim() || activeTable.name;
+          downloadBlob(result.blob, `${finalTableName.replace(/\s+/g, '_').toLowerCase()}`, format);
           trackFirstExport();
+          
+          // Save to export history
+          if (sanitizationResult && isAuthenticated) {
+            try {
+              const tableWithCustomName = {
+                ...activeTable,
+                name: finalTableName
+              };
+              await saveExport({
+                table: tableWithCustomName,
+                fixStats: sanitizationResult.fixStats,
+              });
+            } catch (error) {
+              console.error('Failed to save export to history:', error);
+            }
+          }
+          
           toast.success(`Successfully exported to ${format.toUpperCase()} ✨`, {
             duration: 2500,
           });
@@ -875,6 +925,43 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
       setIsExporting(false);
     }
   };
+
+  useEffect(() => () => clearConfidencePopoverCloseTimer(), []);
+
+  useEffect(() => {
+    if (!showConfidencePopover) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (confidencePopoverRef.current && !confidencePopoverRef.current.contains(e.target as Node)) {
+        clearConfidencePopoverCloseTimer();
+        setShowConfidencePopover(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showConfidencePopover]);
+
+  useEffect(() => {
+    if (!showConfidencePopover) return;
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        clearConfidencePopoverCloseTimer();
+        setShowConfidencePopover(false);
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [showConfidencePopover]);
+
+  const handleCopyCleanText = useCallback(async () => {
+    if (!activeTable) return;
+    const text = tableToCopyText(activeTable.data.headers, activeTable.data.rows);
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success('Clean text copied to clipboard ✨', { duration: 2000 });
+    } catch {
+      toast.error('Failed to copy to clipboard');
+    }
+  }, [activeTable]);
 
   const handleToggleAutoSum = () => {
     setAutoSumEnabled((prev) => {
@@ -1123,7 +1210,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
 
         <div>
           {/* Export Destination Switcher */}
-          <div className="mb-6 flex items-center justify-between">
+          <div className="mb-6 flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2 bg-primary-light/30 p-1 rounded-lg">
               <button
                 type="button"
@@ -1179,48 +1266,6 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                 )}
               </button>
             </div>
-
-            {/* Google User Badge */}
-            {isAuthenticated && user ? (
-              <div className="flex items-center gap-2">
-                {userAvatarUrl ? (
-                  <img
-                    src={userAvatarUrl}
-                    alt={user.user_metadata?.full_name || user.user_metadata?.name || 'User'}
-                    className="w-6 h-6 rounded-full object-cover"
-                    referrerPolicy="no-referrer"
-                    crossOrigin="anonymous"
-                  />
-                ) : null}
-                <span className="text-xs text-secondary font-medium max-w-[120px] truncate">
-                  {user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User'}
-                </span>
-                {!isPro && !isProLoading && (
-                  <button
-                    onClick={() => setShowUpgradeModal(true)}
-                    className="inline-flex cursor-pointer items-center gap-1 rounded-md bg-primary px-2 py-1 text-xs font-semibold text-white transition-all hover:bg-primary/90 hover:shadow-md"
-                  >
-                    <Sparkles size={12} />
-                    Upgrade to Pro
-                  </button>
-                )}
-                <button
-                  onClick={handleSignOut}
-                  className="cursor-pointer text-xs text-secondary/60 hover:text-secondary underline transition-colors"
-                >
-                  Sign out
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => openAuthPopup('signin')}
-                className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-secondary/20 bg-white px-3 py-2 text-xs font-medium text-secondary transition-colors hover:border-secondary/35 hover:bg-secondary/5"
-              >
-                <LogIn size={14} className="text-secondary/70" />
-                <span>Google Sign in</span>
-              </button>
-            )}
           </div>
 
           {exportDestination === 'google_drive' && !isAuthenticated && (
@@ -1375,6 +1420,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
               )}
             </div>
           )}
+
 
           {localTables.length === 1 && (
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -1545,24 +1591,38 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                 </div>
               )}
 
-              {/* Claude-style header */}
-              <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-200">
-                <input
-                  type="text"
-                  value={editingTableId === activeTable.id ? editedName : activeTable.name}
-                  onChange={(e) => {
-                    setEditedName(e.target.value);
-                    setEditingTableId(activeTable.id);
-                  }}
-                  onBlur={() => {
-                    if (editingTableId && editedName.trim()) {
-                      // Update table name in parent component if needed
-                      // For now, just reset editing state
-                    }
-                    setEditingTableId(null);
-                  }}
-                  className="text-sm font-semibold text-secondary bg-transparent border-none focus:outline-none focus:ring-0 px-0"
-                />
+              {/* Table header with editable name */}
+              <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+                <div className="relative group">
+                  <input
+                    type="text"
+                    value={localTableName}
+                    onChange={(e) => setLocalTableName(e.target.value)}
+                    onBlur={(e) => {
+                      const trimmedValue = e.target.value.trim();
+                      if (!trimmedValue && activeTable) {
+                        setLocalTableName(activeTable.name);
+                      } else if (trimmedValue && activeTable) {
+                        // Also update the actual table name in localTables for consistency
+                        setLocalTables((prev) =>
+                          prev.map((t) =>
+                            t.id === activeTable.id ? { ...t, name: trimmedValue } : t
+                          )
+                        );
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.currentTarget.blur();
+                      }
+                    }}
+                    disabled={isExporting}
+                    className="w-full px-3 py-2 pr-8 text-sm font-semibold text-secondary bg-white/60 border border-primary-light/50 rounded-[6px] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed backdrop-blur-sm hover:bg-white/80 hover:border-primary-light"
+                  />
+                  <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <Pencil size={14} className="text-secondary/40 group-focus-within:text-primary/60 transition-colors" />
+                  </div>
+                </div>
               </div>
 
               {renderPreviewBody(effectiveFormat)}
@@ -1684,8 +1744,97 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
           )}
 
 
+          {/* Confidence Layer — Data Quality Report */}
+          {localTables.length === 1 && sanitizationResult && (
+            <div className="mt-5 flex items-center justify-between gap-3 flex-wrap">
+              <div
+                className="relative"
+                ref={confidencePopoverRef}
+                onMouseEnter={openConfidencePopover}
+                onMouseLeave={scheduleCloseConfidencePopover}
+              >
+                <button
+                  type="button"
+                  aria-expanded={showConfidencePopover}
+                  aria-haspopup="dialog"
+                  onClick={() => {
+                    clearConfidencePopoverCloseTimer();
+                    setShowConfidencePopover((prev) => !prev);
+                  }}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-xs font-semibold border transition-all cursor-pointer ${
+                    totalFixes === 0
+                      ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
+                      : 'bg-primary-light/50 text-secondary border-primary-light hover:bg-primary-light'
+                  }`}
+                >
+                  {totalFixes === 0 ? (
+                    <>
+                      <CheckCircle2 size={13} aria-hidden />
+                      Structure Verified
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 size={13} aria-hidden />
+                      Data Optimized
+                      <span className="ml-0.5 opacity-70">({totalFixes})</span>
+                    </>
+                  )}
+                </button>
+
+                <div
+                  className={`absolute left-0 top-full z-20 min-w-[230px] pt-2 transition-[opacity,transform] duration-150 ease-out ${
+                    showConfidencePopover
+                      ? 'pointer-events-auto visible translate-y-0 opacity-100'
+                      : 'pointer-events-none invisible -translate-y-0.5 opacity-0'
+                  }`}
+                  onMouseEnter={openConfidencePopover}
+                  onMouseLeave={scheduleCloseConfidencePopover}
+                  aria-hidden={!showConfidencePopover}
+                >
+                  <div className="rounded-xl border border-primary-light bg-white p-4 shadow-lg">
+                    <div className="mb-2 text-xs font-semibold text-secondary">Sanitization Report</div>
+                    {totalFixes === 0 ? (
+                      <p className="text-xs text-secondary/70">No issues detected. Data is clean.</p>
+                    ) : (
+                      <ul className="space-y-1.5">
+                        {sanitizationResult.fixStats.markdown > 0 && (
+                          <li className="text-xs text-secondary/80">
+                            🧹 Cleaned {sanitizationResult.fixStats.markdown} markdown artifact{sanitizationResult.fixStats.markdown > 1 ? 's' : ''}
+                          </li>
+                        )}
+                        {sanitizationResult.fixStats.numeric > 0 && (
+                          <li className="text-xs text-secondary/80">
+                            📊 Normalized {sanitizationResult.fixStats.numeric} numeric value{sanitizationResult.fixStats.numeric > 1 ? 's' : ''}
+                          </li>
+                        )}
+                        {sanitizationResult.fixStats.spaces > 0 && (
+                          <li className="text-xs text-secondary/80">🔇 Invisible noise removed</li>
+                        )}
+                        {sanitizationResult.fixStats.links > 0 && (
+                          <li className="text-xs text-secondary/80">
+                            🔗 Cleaned {sanitizationResult.fixStats.links} link artifact{sanitizationResult.fixStats.links > 1 ? 's' : ''}
+                          </li>
+                        )}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleCopyCleanText}
+                disabled={isExporting}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-xs font-semibold border border-secondary/20 text-secondary/70 bg-white hover:bg-secondary/5 hover:text-secondary transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Copy size={13} />
+                Copy Clean Text
+              </button>
+            </div>
+          )}
+
           {localTables.length === 1 && (
-            <div className="mt-6">
+            <div className="mt-4">
               {activeFormat === 'google_sheets' && exportDestination === 'local' ? (
                 <div className="text-center text-xs text-secondary/60">
                   Switch to Google Drive to export as Google Sheets
@@ -1707,12 +1856,6 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
           )}
         </div>
       </div>
-
-      {/* Google Auth Popup */}
-      <GoogleAuthPopup 
-        trigger={showAuthPopup} 
-        onClose={() => setShowAuthPopup(false)} 
-      />
 
       {isResumingUpgrade && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-white/92 backdrop-blur-sm px-6">
