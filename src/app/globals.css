@@ -200,6 +200,21 @@
   opacity: 1 !important;
 }
 
+/* Line clamp utilities */
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
 /* Mobile h1 and h2 styling */
 @media (max-width: 767px) {
   h1 {
@@ -317,3 +332,47 @@
      padding-bottom: 1rem !important;
    }
  }
+
+/* ─── Cookbook MDX ────────────────────────────────────────────────────────── */
+
+/* Nested list rhythm */
+.cookbook-mdx li > ul,
+.cookbook-mdx li > ol {
+  margin-top: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+/*
+ * rehype-pretty-code / shiki token colors.
+ * shiki emits inline `color` styles on <span> elements; these rules
+ * ensure the JetBrains Mono font applies throughout and remove any
+ * background the theme might set on <code> (CodeBlock provides it).
+ */
+.cookbook-code-figure code,
+.cookbook-code-figure code span {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace !important;
+  background-color: transparent !important;
+}
+
+/* Prevent double-padding if prose is present in a parent */
+.cookbook-mdx .cookbook-code-figure {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+/* Line highlight from rehype-pretty-code [!code highlight] */
+.cookbook-code-figure [data-highlighted-line] {
+  background-color: rgba(255, 255, 255, 0.07);
+  border-left: 2px solid rgba(255, 255, 255, 0.3);
+  padding-left: calc(1.25rem - 2px);
+  margin-left: -1.25rem;
+  margin-right: -1.25rem;
+  padding-right: 1.25rem;
+}
+
+/* Word highlight */
+.cookbook-code-figure [data-highlighted-chars] {
+  background-color: rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+  padding: 0 2px;
+}

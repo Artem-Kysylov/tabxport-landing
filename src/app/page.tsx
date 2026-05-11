@@ -5,14 +5,18 @@ import Features from "@/components/sections/features/Features";
 import Demo from "@/components/sections/demo/Demo";
 import FreePlan from "@/components/sections/free-plan/FreePlan";
 import LabsTeaserSection from "@/components/sections/labs-teaser/LabsTeaserSection";
+import CookbookPreview from "@/components/sections/cookbook/CookbookPreview";
 import Faq from "@/components/sections/faq/Faq";
 import About from "@/components/sections/about/About";
 import Cta from "@/components/sections/cta/Cta";
 // import PricePlans from "@/components/sections/price-plans/PricePlans";
 
 import Image from 'next/image'
+import { getFeaturedRecipes } from '@/lib/cookbook';
 
 export default function Home() {
+  const featuredRecipes = getFeaturedRecipes(3);
+
   return (
     <main className='relative min-h-screen standalone-app-shell'>
       <div className='absolute -top-20 left-0 w-full h-[800px] -z-10 standalone-hidden'>
@@ -42,6 +46,9 @@ export default function Home() {
       {/* <PricePlans /> */}
       <div className='standalone-hidden'>
         <LabsTeaserSection />
+      </div>
+      <div className='standalone-hidden'>
+        <CookbookPreview recipes={featuredRecipes} />
       </div>
       <div className='standalone-hidden'>
         <Faq />

@@ -1,0 +1,84 @@
+---
+title: "Import CSV Data into SQL Databases"
+description: "Learn how to convert CSV files into properly formatted SQL INSERT statements for seamless database imports."
+category: "Database Integration"
+date: "2026-05-09"  
+keywords: ["csv", "sql", "database", "import", "insert statements", "data migration"]
+---
+
+Moving data from CSV files into SQL databases is a common task, but manual conversion can be error-prone and time-consuming. This guide shows you how to automate the process and generate clean SQL statements.
+
+## Understanding the Challenge
+
+CSV files and SQL databases have different requirements:
+
+- **Data types**: CSV treats everything as text, SQL needs proper types
+- **Null values**: Different representations (`NULL` vs empty string)
+- **Escaping**: Special characters need proper SQL escaping
+- **Table structure**: You need CREATE TABLE statements
+
+## Step 1: Prepare Your CSV Data
+
+Ensure your CSV is clean and well-structured:
+
+### Check Data Quality
+- Consistent delimiters (commas, semicolons)
+- Proper quote handling
+- No missing headers
+- Consistent data types per column
+
+### Handle Special Cases
+- Date formats should be standardized
+- Boolean values (true/false, 1/0, yes/no)
+- Null value representation
+
+## Step 2: Convert to SQL
+
+1. **Upload your CSV** to TableXport
+2. **Review the parsed data** in the preview
+3. **Select SQL** as your export format
+4. **Download** your generated SQL file
+
+## What You Get
+
+TableXport generates complete SQL for database import:
+
+### CREATE TABLE Statement
+```sql
+CREATE TABLE your_table (
+  id INTEGER PRIMARY KEY,
+  name VARCHAR(255),
+  email VARCHAR(255),
+  created_at DATETIME
+);
+```
+
+### INSERT Statements
+```sql
+INSERT INTO your_table (id, name, email, created_at) VALUES
+(1, 'John Doe', 'john@example.com', '2026-05-09'),
+(2, 'Jane Smith', 'jane@example.com', '2026-05-10');
+```
+
+## Database-Specific Tips
+
+### MySQL
+- Use `AUTO_INCREMENT` for ID columns
+- Consider `CHARSET utf8mb4` for Unicode support
+
+### PostgreSQL  
+- Use `SERIAL` for auto-incrementing IDs
+- Take advantage of advanced data types (JSON, arrays)
+
+### SQLite
+- Perfect for development and small applications
+- Minimal setup required
+
+## Best Practices
+
+1. **Test with small samples** first
+2. **Backup your database** before large imports
+3. **Use transactions** for data integrity
+4. **Validate data types** after import
+
+Your CSV data is now ready for seamless database integration with properly formatted SQL statements!

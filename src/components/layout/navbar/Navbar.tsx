@@ -34,7 +34,9 @@ function NavbarAccountRow({
   toolbarSurface = 'default',
 }: NavbarAccountRowProps) {
   const { user, isAuthenticated, signOut, loading } = useGoogleAuth();
-  const { isPro, isLoading: isProLoading } = usePro();
+  const { isPro, isLoading: isProLoading, hasKnownProPurchase } = usePro();
+  /** Pro badge stays stable during hydration and silent subscription refetches. */
+  const effectiveIsPro = isPro || (hasKnownProPurchase && isProLoading);
   const { openGoogleAuthPopup } = useGoogleAuthUi();
   const isToolbar = layout === 'toolbar';
 
@@ -132,7 +134,7 @@ function NavbarAccountRow({
 
   if (isAuthenticated && user) {
     const upgradeButtonToolbar =
-      !isPro && !isProLoading ? (
+      !effectiveIsPro && !isProLoading ? (
         <button
           type="button"
           onClick={() => onRequestUpgrade()}
@@ -144,7 +146,7 @@ function NavbarAccountRow({
       ) : null;
 
     const upgradeButtonDrawer =
-      !isPro && !isProLoading ? (
+      !effectiveIsPro && !isProLoading ? (
         <button
           type="button"
           onClick={() => {
@@ -170,8 +172,8 @@ function NavbarAccountRow({
           <>
             {upgradeButtonToolbar}
             <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
-              {isPro && !isProLoading ? (
-                <span className="shrink-0">
+              {effectiveIsPro ? (
+                <span className="shrink-0 transition-opacity duration-200 ease-out">
                   <ProBadge variant="badge" />
                 </span>
               ) : null}
@@ -253,7 +255,11 @@ function NavbarAccountRow({
           </>
         ) : (
           <>
-            {isPro && !isProLoading ? <ProBadge variant="badge" /> : null}
+            {effectiveIsPro ? (
+              <span className="transition-opacity duration-200 ease-out">
+                <ProBadge variant="badge" />
+              </span>
+            ) : null}
             <div className="flex flex-col items-center gap-2">
               {avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element -- Google avatar URLs are external OAuth assets
