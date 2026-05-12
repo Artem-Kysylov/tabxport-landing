@@ -113,31 +113,55 @@ const Hero = () => {
   // Logic for auto-pasting from clipboard
   useEffect(() => {
     const handleAutoPaste = async () => {
-      // Ensure this runs only in the browser (client-side)
       if (typeof window === 'undefined') return;
 
       const urlParams = new URLSearchParams(window.location.search);
-      
-      if (urlParams.get('autoPaste') === 'true') {
-        try {
-          // 1. Read data from the clipboard
-          const clipboardData = await navigator.clipboard.readText();
-          
-          if (clipboardData) {
-            // 2. Feed the data to the parser
-            parseFromText(sanitizeCellMarkdown(clipboardData));
-            
-            // 3. Remove autoPaste only so exportSource (e.g. rating banner) stays in the bar until user navigates
-            urlParams.delete('autoPaste');
-            const qs = urlParams.toString();
-            const newUrl = qs
-              ? `${window.location.pathname}?${qs}`
-              : window.location.pathname;
-            window.history.replaceState({}, document.title, newUrl);
+      if (urlParams.get('autoPaste') !== 'true') return;
+
+      const removeAutoPasteParam = () => {
+        urlParams.delete('autoPaste');
+        const qs = urlParams.toString();
+        const newUrl = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
+      };
+
+      try {
+        // Prefer the rich Clipboard API (exposes text/html with <table> tags).
+        // Falls back to readText() when the richer API is unavailable or denied.
+        if (typeof navigator.clipboard.read === 'function') {
+          const items = await navigator.clipboard.read();
+          let htmlData = '';
+          let plainData = '';
+
+          for (const item of items) {
+            if (item.types.includes('text/html')) {
+              const blob = await item.getType('text/html');
+              htmlData = await blob.text();
+            }
+            if (item.types.includes('text/plain')) {
+              const blob = await item.getType('text/plain');
+              plainData = await blob.text();
+            }
           }
-        } catch (err) {
-          console.error("Failed to read clipboard for auto-paste:", err);
+
+          const hasHtmlTable = htmlData.includes('<table');
+          const dataToProcess = hasHtmlTable ? htmlData : plainData;
+
+          if (dataToProcess) {
+            // Only sanitize plain text; HTML structure must be preserved for the parser
+            parseFromText(hasHtmlTable ? dataToProcess : sanitizeCellMarkdown(dataToProcess));
+            removeAutoPasteParam();
+          }
+        } else {
+          // Fallback: plain-text only
+          const clipboardData = await navigator.clipboard.readText();
+          if (clipboardData) {
+            parseFromText(sanitizeCellMarkdown(clipboardData));
+            removeAutoPasteParam();
+          }
         }
+      } catch (err) {
+        console.error('Failed to read clipboard for auto-paste:', err);
       }
     };
 

@@ -29,6 +29,7 @@ export interface ParserResult {
   success: boolean;
   tables?: ParsedTable[];
   error?: string;
+  suggestedName?: string;
 }
 
 export interface ExportOptions {

@@ -34,6 +34,8 @@ export const SmartDropzone: React.FC<SmartDropzoneProps> = ({
   const [value, setValue] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dragDepthRef = useRef(0);
+  // Stores the HTML from the last paste/drop so manual-submit mode can use it
+  const pendingHtmlRef = useRef<string>('');
 
   const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -65,22 +67,18 @@ export const SmartDropzone: React.FC<SmartDropzoneProps> = ({
       const htmlData = e.dataTransfer.getData('text/html');
       const textData = e.dataTransfer.getData('text/plain');
 
-      if (htmlData) {
-        if (submitBehavior === 'auto') {
-          onDataReceived(htmlData);
-        } else {
-          setValue(htmlData);
-          if (textareaRef.current) textareaRef.current.value = htmlData;
-        }
-        return;
-      }
+      const hasHtmlTable = htmlData.includes('<table');
+      const dataToProcess = hasHtmlTable ? htmlData : textData;
+      pendingHtmlRef.current = hasHtmlTable ? htmlData : '';
 
-      if (textData) {
+      if (dataToProcess) {
         if (submitBehavior === 'auto') {
-          onDataReceived(textData);
+          onDataReceived(dataToProcess);
         } else {
-          setValue(textData);
-          if (textareaRef.current) textareaRef.current.value = textData;
+          // Show plain text in textarea; the HTML is remembered for submit
+          const displayText = textData || dataToProcess;
+          setValue(displayText);
+          if (textareaRef.current) textareaRef.current.value = displayText;
         }
         return;
       }
@@ -105,13 +103,25 @@ export const SmartDropzone: React.FC<SmartDropzoneProps> = ({
 
   const handlePaste = useCallback(
     (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
-      const pastedText = e.clipboardData.getData('text/plain');
-      if (pastedText) {
-        if (submitBehavior === 'auto') {
-          onDataReceived(pastedText);
-        } else {
-          setValue(pastedText);
+      const htmlData = e.clipboardData.getData('text/html');
+      const plainText = e.clipboardData.getData('text/plain');
+
+      const hasHtmlTable = htmlData.includes('<table');
+      pendingHtmlRef.current = hasHtmlTable ? htmlData : '';
+
+      if (submitBehavior === 'auto') {
+        // Prevent native paste so the textarea shows the clean plain text,
+        // but pass the richer HTML to the parser when available.
+        e.preventDefault();
+        if (plainText && textareaRef.current) {
+          textareaRef.current.value = plainText;
+          setValue(plainText);
         }
+        const dataToProcess = hasHtmlTable ? htmlData : plainText;
+        if (dataToProcess) onDataReceived(dataToProcess);
+      } else {
+        // Manual mode: show plain text in textarea; HTML is stored for submit
+        if (plainText) setValue(plainText);
       }
     },
     [onDataReceived, submitBehavior]
@@ -157,9 +167,9 @@ export const SmartDropzone: React.FC<SmartDropzoneProps> = ({
   }, []);
 
   const handleManualSubmit = useCallback(() => {
-    const text = value.trim();
-    if (!text) return;
-    onDataReceived(text);
+    const dataToProcess = pendingHtmlRef.current || value.trim();
+    if (!dataToProcess) return;
+    onDataReceived(dataToProcess);
   }, [onDataReceived, value]);
 
   const handleTryExample = useCallback(() => {
@@ -262,8 +272,11 @@ export const SmartDropzone: React.FC<SmartDropzoneProps> = ({
           )}
 
           {errorMessage && (
-            <div className="mt-3 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-              {errorMessage}
+            <div className="mt-3 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive space-y-1">
+              <p>{errorMessage}</p>
+              <p className="text-destructive/70 text-xs">
+                Tip: Use the <strong>Copy</strong> button inside ChatGPT / Claude instead of mouse-selecting the table — it copies the full rich structure.
+              </p>
             </div>
           )}
 
