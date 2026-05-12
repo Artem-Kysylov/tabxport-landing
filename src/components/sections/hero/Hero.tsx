@@ -113,31 +113,55 @@ const Hero = () => {
   // Logic for auto-pasting from clipboard
   useEffect(() => {
     const handleAutoPaste = async () => {
-      // Ensure this runs only in the browser (client-side)
       if (typeof window === 'undefined') return;
 
       const urlParams = new URLSearchParams(window.location.search);
-      
-      if (urlParams.get('autoPaste') === 'true') {
-        try {
-          // 1. Read data from the clipboard
-          const clipboardData = await navigator.clipboard.readText();
-          
-          if (clipboardData) {
-            // 2. Feed the data to the parser
-            parseFromText(sanitizeCellMarkdown(clipboardData));
-            
-            // 3. Remove autoPaste only so exportSource (e.g. rating banner) stays in the bar until user navigates
-            urlParams.delete('autoPaste');
-            const qs = urlParams.toString();
-            const newUrl = qs
-              ? `${window.location.pathname}?${qs}`
-              : window.location.pathname;
-            window.history.replaceState({}, document.title, newUrl);
+      if (urlParams.get('autoPaste') !== 'true') return;
+
+      const removeAutoPasteParam = () => {
+        urlParams.delete('autoPaste');
+        const qs = urlParams.toString();
+        const newUrl = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
+      };
+
+      try {
+        // Prefer the rich Clipboard API (exposes text/html with <table> tags).
+        // Falls back to readText() when the richer API is unavailable or denied.
+        if (typeof navigator.clipboard.read === 'function') {
+          const items = await navigator.clipboard.read();
+          let htmlData = '';
+          let plainData = '';
+
+          for (const item of items) {
+            if (item.types.includes('text/html')) {
+              const blob = await item.getType('text/html');
+              htmlData = await blob.text();
+            }
+            if (item.types.includes('text/plain')) {
+              const blob = await item.getType('text/plain');
+              plainData = await blob.text();
+            }
           }
-        } catch (err) {
-          console.error("Failed to read clipboard for auto-paste:", err);
+
+          const hasHtmlTable = htmlData.includes('<table');
+          const dataToProcess = hasHtmlTable ? htmlData : plainData;
+
+          if (dataToProcess) {
+            // Only sanitize plain text; HTML structure must be preserved for the parser
+            parseFromText(hasHtmlTable ? dataToProcess : sanitizeCellMarkdown(dataToProcess));
+            removeAutoPasteParam();
+          }
+        } else {
+          // Fallback: plain-text only
+          const clipboardData = await navigator.clipboard.readText();
+          if (clipboardData) {
+            parseFromText(sanitizeCellMarkdown(clipboardData));
+            removeAutoPasteParam();
+          }
         }
+      } catch (err) {
+        console.error('Failed to read clipboard for auto-paste:', err);
       }
     };
 
@@ -151,14 +175,14 @@ const Hero = () => {
           <div className='standalone-hero flex flex-col items-center justify-center gap-4 pt-[48px] pb-[24px] md:pt-[60px] md:pb-[32px]'>
             <FadeInUp delay={0.2} className='standalone-hero-copy' instant={heroAnimInstant}>
               <h1 className='text-center text-4xl md:text-5xl font-semibold leading-tight max-w-4xl'>
-              From AI to <span className='text-primary'>Google Sheets in 1 Second.</span>
+              Stop Cleaning <span className='text-primary'>Messy Tables</span> by Hand.
               </h1>
             </FadeInUp>
             
             <FadeInUp delay={0.4} className='standalone-hero-copy' instant={heroAnimInstant}>
               <div className='flex flex-col items-center gap-3'>
                 <p className='text-center font-normal max-w-3xl'>
-                Don&apos;t wrestle with AI formatting. Paste your table here, edit it live, and export directly to Excel or Google Drive without the cleanup work.
+                TableXport turns raw AI output, Markdown, and broken web tables into structured exports ready for Excel, Google Sheets, PDFs, and databases.
                 </p>
               </div>
             </FadeInUp>

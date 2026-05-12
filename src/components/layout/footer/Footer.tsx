@@ -51,46 +51,21 @@ const Footer = () => {
             </div>
 
             <nav className='w-full md:w-auto'>
-              <ul className='flex flex-col items-center gap-4 text-white md:flex-row md:flex-nowrap md:justify-end md:gap-x-5 lg:gap-x-7'>
+              <ul className='flex flex-col md:flex-row items-center gap-6 md:gap-10 text-white'>
                 <li>
-                  <Link
-                    href='/#features'
-                    className='whitespace-nowrap text-[13px] font-medium transition-colors duration-300 ease-in-out hover:text-primary lg:text-sm'
-                  >
-                    Why TableXport?
-                  </Link>
+                  <Link href='/#features' className='transition-colors duration-300 ease-in-out hover:text-primary'>Why TableXport?</Link>
                 </li>
                 <li>
-                  <Link
-                    href='/#demo'
-                    className='whitespace-nowrap text-[13px] font-medium transition-colors duration-300 ease-in-out hover:text-primary lg:text-sm'
-                  >
-                    See TableXport in action
-                  </Link>
+                  <Link href='/#demo' className='transition-colors duration-300 ease-in-out hover:text-primary'>See TableXport in action</Link>
                 </li>
                 <li>
-                  <Link
-                    href='/#price-plans'
-                    className='whitespace-nowrap text-[13px] font-medium transition-colors duration-300 ease-in-out hover:text-primary lg:text-sm'
-                  >
-                    Simple Pricing
-                  </Link>
+                  <Link href='/#price-plans' className='transition-colors duration-300 ease-in-out hover:text-primary'>Simple Pricing</Link>
                 </li>
                 <li>
-                  <Link
-                    href='/#faq'
-                    className='whitespace-nowrap text-[13px] font-medium transition-colors duration-300 ease-in-out hover:text-primary lg:text-sm'
-                  >
-                    FAQ
-                  </Link>
+                  <Link href='/#faq' className='transition-colors duration-300 ease-in-out hover:text-primary'>FAQ</Link>
                 </li>
                 <li>
-                  <Link
-                    href='/#about'
-                    className='whitespace-nowrap text-[13px] font-medium transition-colors duration-300 ease-in-out hover:text-primary lg:text-sm'
-                  >
-                    About
-                  </Link>
+                  <Link href='/#about' className='transition-colors duration-300 ease-in-out hover:text-primary'>About</Link>
                 </li>
               </ul>
             </nav>
@@ -111,32 +86,14 @@ const Footer = () => {
           </div>
 
           {/* Bottom Links */}
-          <div className='flex w-full flex-col items-center gap-4 text-white md:flex-row md:justify-between md:gap-0'>
-            <div className='flex flex-col items-center gap-4 md:flex-row md:flex-nowrap md:gap-x-5 lg:gap-x-7'>
-              <Link
-                href='/privacy'
-                className='whitespace-nowrap text-[13px] font-medium transition-colors duration-300 ease-in-out hover:text-primary lg:text-sm'
-              >
-                Privacy policy
-              </Link>
-              <Link
-                href='/terms'
-                className='whitespace-nowrap text-[13px] font-medium transition-colors duration-300 ease-in-out hover:text-primary lg:text-sm'
-              >
-                Terms of Service
-              </Link>
-              <Link
-                href='/refund'
-                className='whitespace-nowrap text-[13px] font-medium transition-colors duration-300 ease-in-out hover:text-primary lg:text-sm'
-              >
-                Refund Policy
-              </Link>
-              <InstallAppButton
-                label='Install TableXport'
-                className='whitespace-nowrap text-[13px] font-medium lg:text-sm'
-              />
-              {/* <Link href='https://tablexport.gitbook.io/tablexport-docs/wkbciB0ogW3EFOM5Gwhg/' target='_blank' className='transition-colors duration-300 ease-in-out hover:text-primary'>Documentation</Link> */}
-            </div>
+            <div className='flex flex-col md:flex-row items-center gap-4 md:gap-0 md:justify-between text-white text-sm font-normal w-full'>
+              <div className='flex flex-col md:flex-row items-center gap-5 md:gap-5'>
+                <Link href='/privacy' className='transition-colors duration-300 ease-in-out hover:text-primary'>Privacy policy</Link>
+                <Link href='/terms' className='transition-colors duration-300 ease-in-out hover:text-primary'>Terms of Service</Link>
+                <Link href='/refund' className='transition-colors duration-300 ease-in-out hover:text-primary'>Refund Policy</Link>
+                <Link href='/features' className='transition-colors duration-300 ease-in-out hover:text-primary'>Feature Requests</Link>
+                <InstallAppButton label='Install TableXport' />
+              </div>
             <span className='mt-5 md:mt-0 opacity-60'>Proudly Indie-Built</span>
           </div>
         </div>

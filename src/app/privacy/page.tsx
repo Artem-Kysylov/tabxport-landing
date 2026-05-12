@@ -29,7 +29,7 @@ const PrivacyPolicy = () => {
             <h2>2. Information We Collect</h2>
             <ul>
               <li>
-                <strong>Table Data:</strong> We do not store your table content on our servers. Processing happens locally in your browser.
+                <strong>Table Data:</strong> Anonymous exports are processed in real time in your browser and are not stored on our servers. If you sign in and use the optional Export History feature, limited table-related data may be stored as described in section 3.
               </li>
               <li>
                 <strong>Payment Data:</strong> We do not collect or store credit card details. All payments are processed securely by Paddle.
@@ -39,7 +39,29 @@ const PrivacyPolicy = () => {
               </li>
             </ul>
 
-            <h2>3. Google API Disclosure</h2>
+            <h2>3. Data Storage & Security (Export History)</h2>
+            <p>
+              Export History is optional and only applies when you are signed in and choose to save exports for later. We aim to be transparent about what is stored and how it is protected.
+            </p>
+            <ul>
+              <li>
+                <strong>Purpose:</strong> We store only table data, source URLs, and cleanup statistics for accounts that use Export History—nothing beyond what the feature needs to show your saved exports.
+              </li>
+              <li>
+                <strong>Security:</strong> Storage runs on Supabase with Row Level Security (RLS). Your data is isolated and strictly accessible only by you. No one else, including Syntax Labs staff, can read your table contents.
+              </li>
+              <li>
+                <strong>Your control:</strong> Deleting an entry from your Export History dashboard removes it permanently from our database. We do not keep hidden or parallel backups of data you delete.
+              </li>
+              <li>
+                <strong>Anonymous exports:</strong> If you are not logged in, exports are handled in real time and are not written to our servers.
+              </li>
+              <li>
+                <strong>Feature voting:</strong> Feature requests and votes are stored anonymously—via your browser (such as localStorage) and public identifiers—to help us prioritize improvements without linking activity to your identity.
+              </li>
+            </ul>
+
+            <h2>4. Google API Disclosure</h2>
             <p>
               TableXport's use and transfer of information received from Google APIs to any other app will adhere to{' '}
               <a
@@ -57,12 +79,12 @@ const PrivacyPolicy = () => {
               <li>We do not share this data with third parties or use it for AI model training.</li>
             </ul>
 
-            <h2>4. Third-Party Services</h2>
+            <h2>5. Third-Party Services</h2>
             <p>
-              We use Paddle for payments and Supabase for authentication. Each service has its own privacy policy.
+              We use Paddle for payments and Supabase for authentication and optional Export History storage (see section 3). Each service has its own privacy policy.
             </p>
 
-            <h2>5. Contact</h2>
+            <h2>6. Contact</h2>
             <p>
               <a
                 href="mailto:hello@tablexport.com"

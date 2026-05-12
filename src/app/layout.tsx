@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import { inter } from "./fonts";
+import { inter, jetbrainsMono } from "./fonts";
 
 import { Toaster } from "sonner";
 import { ProProvider } from "@/contexts/ProContext";
@@ -90,7 +90,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
       <head>
         <link rel="apple-touch-icon" href="/icons/app-icons/apple-touch-icon.png" />
         {/* Capture beforeinstallprompt before React hydration to avoid race condition */}
@@ -123,7 +123,7 @@ export default function RootLayout({
             richColors 
             toastOptions={{
               className:
-                'py-5 px-8 min-w-[340px] sm:min-w-[420px] text-[20px] font-bold text-center items-center',
+                'justify-center py-5 px-8 min-w-[340px] sm:min-w-[420px] text-[20px] font-bold text-center items-center',
               descriptionClassName: 'text-[20px] font-bold text-center',
             }}
           />

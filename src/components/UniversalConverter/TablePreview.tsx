@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import Image from 'next/image';
-import { Sparkles, Plus, Upload, X, ChevronDown } from 'lucide-react';
+import { Sparkles, Plus, Upload, X, Palette, Copy, CheckCircle2, Wand2, Pencil } from 'lucide-react';
+import { sanitizeTableData, tableToCopyText, sumFixStats, SanitizedTableData } from '@/lib/sanitizer';
 import { ParsedTable, ExportFormat, ExportDestination, PDFBrandingSettings } from '@/types/table';
 import {
   exportTable,
@@ -20,6 +21,7 @@ import { useGoogleAuthUi } from '@/contexts/GoogleAuthUiContext';
 import { PWAInstallPrompt } from '@/components/pwa/PWAInstallPrompt';
 import { exportTableToGoogleSheets } from '@/services/googleSheetsService';
 import { getOrCreateTableXportFolder, uploadFileToDrive, getFolderLink } from '@/services/googleDriveService';
+import { saveExport } from '@/services/exportHistoryService';
 import { usePro } from '@/contexts/ProContext';
 import { ProBadge } from '@/components/ui/ProBadge';
 import { UpgradeModal } from '@/components/modals/UpgradeModal';
@@ -41,12 +43,6 @@ interface FormatOption {
 
 type PostAuthIntent = 'signin' | 'locked_feature' | null;
 
-const triggerHaptic = () => {
-  if (typeof window === 'undefined') return;
-  const nav = window.navigator as Navigator & { vibrate?: (pattern: number | number[]) => boolean };
-  nav.vibrate?.(10);
-};
-
 export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onAppend }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [autoSumEnabled, setAutoSumEnabled] = useState(false);
@@ -55,20 +51,39 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
   const [activeTableId, setActiveTableId] = useState<string | null>(null);
   const [selectedTableIds, setSelectedTableIds] = useState<Set<string>>(new Set());
   const [appendText, setAppendText] = useState('');
-  const [editingTableId, setEditingTableId] = useState<string | null>(null);
-  const [editedName, setEditedName] = useState('');
+  const [localTableName, setLocalTableName] = useState<string>('');
 
   const [batchFormat, setBatchFormat] = useState<ExportFormat>('xlsx');
   const [batchMode, setBatchMode] = useState<'separate' | 'xlsx_tabs' | 'zip'>('separate');
   const [exportDestination, setExportDestination] = useState<ExportDestination>('local');
   const [pdfBranding, setPdfBranding] = useState<PDFBrandingSettings>({});
+  const [showPdfSettings, setShowPdfSettings] = useState(false);
   const [showPwaPrompt, setShowPwaPrompt] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeFeature, setUpgradeFeature] = useState<string>('');
   const [postAuthIntent, setPostAuthIntent] = useState<PostAuthIntent>(null);
-  const [showAllFormats, setShowAllFormats] = useState(false);
+  const [showConfidencePopover, setShowConfidencePopover] = useState(false);
+  const confidencePopoverRef = useRef<HTMLDivElement>(null);
+  const confidencePopoverCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { isAuthenticated, getGoogleAccessForDrive, signIn } = useGoogleAuth();
+  const clearConfidencePopoverCloseTimer = () => {
+    if (confidencePopoverCloseTimerRef.current) {
+      clearTimeout(confidencePopoverCloseTimerRef.current);
+      confidencePopoverCloseTimerRef.current = null;
+    }
+  };
+
+  const openConfidencePopover = () => {
+    clearConfidencePopoverCloseTimer();
+    setShowConfidencePopover(true);
+  };
+
+  const scheduleCloseConfidencePopover = () => {
+    clearConfidencePopoverCloseTimer();
+    confidencePopoverCloseTimerRef.current = setTimeout(() => setShowConfidencePopover(false), 140);
+  };
+
+  const { isAuthenticated, hasRequiredScopes, getAccessToken, loading: authLoading } = useGoogleAuth();
   const { openGoogleAuthPopup } = useGoogleAuthUi();
   const { isPro, isLoading: isProLoading } = usePro();
   const { startUpgrade } = useUpgradeAction();
@@ -311,7 +326,21 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
   }, []);
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!isAuthenticated && exportDestination === 'google_drive') {
+      setExportDestination('local');
+      try {
+        localStorage.setItem('tx_export_destination', 'local');
+      } catch {
+        // ignore
+      }
+    }
+  }, [authLoading, isAuthenticated, exportDestination]);
+
+  useEffect(() => {
     setLocalTables(tables);
+    // Reset localTableName when new tables are loaded
+    setLocalTableName('');
   }, [tables]);
 
   const tableIdsKey = localTables.map((t) => t.id).join('|');
@@ -343,6 +372,20 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
 
   const activeTable = localTables.find((t) => t.id === activeTableId) ?? localTables[0];
   const effectiveFormat: ExportFormat = localTables.length > 1 ? batchFormat : activeFormat;
+  
+  // Initialize localTableName when activeTable changes
+  useEffect(() => {
+    if (activeTable) {
+      setLocalTableName(activeTable.name);
+    }
+  }, [activeTable]); // Depend on entire activeTable object
+
+  const sanitizationResult = useMemo((): SanitizedTableData | null => {
+    if (!activeTable) return null;
+    return sanitizeTableData(activeTable.data.headers, activeTable.data.rows);
+  }, [activeTable]);
+
+  const totalFixes = sanitizationResult ? sumFixStats(sanitizationResult.fixStats) : 0;
 
   // Status badge detection utility
   const detectStatusBadge = (cellValue: string): { type: 'success' | 'warning' | 'error' | 'neutral' | null; text: string } => {
@@ -451,31 +494,49 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
 
     // Handle Google Sheets export
     if (format === 'google_sheets') {
-      const driveAccess = await getGoogleAccessForDrive();
-      if (driveAccess.status === 'needs_reauthorization') {
-        persistTablesSnapshot();
-        toast.message('Restoring Google access…', { duration: 2000 });
-        await signIn();
-        return;
-      }
-      if (driveAccess.status === 'needs_sign_in' || driveAccess.status === 'needs_google_connect') {
+      if (!isAuthenticated || !hasRequiredScopes) {
         persistTablesSnapshot();
         openAuthPopup('signin');
         return;
       }
 
-      const accessToken = driveAccess.accessToken;
-
       toast.message('Preparing Google Sheets export...', { duration: 1500 });
       setIsExporting(true);
 
       try {
+        const accessToken = await getAccessToken();
+        if (!accessToken) {
+          toast.message('Please sign in again to continue', { duration: 2000 });
+          persistTablesSnapshot();
+          openAuthPopup('signin');
+          return;
+        }
+
         const folderId = await getOrCreateTableXportFolder(accessToken);
         const folderUrl = await getFolderLink(accessToken, folderId);
-        const result = await exportTableToGoogleSheets(accessToken, activeTable, folderId);
+        // Use localTableName if available, otherwise fallback to activeTable.name
+        const finalTableName = localTableName?.trim() || activeTable.name;
+        const tableWithCustomName = {
+          ...activeTable,
+          name: finalTableName
+        };
+        const result = await exportTableToGoogleSheets(accessToken, tableWithCustomName, folderId);
 
         if (result.success && result.spreadsheetUrl) {
           trackFirstExport();
+          
+          // Save to export history
+          if (sanitizationResult && isAuthenticated) {
+            try {
+              await saveExport({
+                table: tableWithCustomName,
+                fixStats: sanitizationResult.fixStats,
+              });
+            } catch (error) {
+              console.error('Failed to save export to history:', error);
+            }
+          }
+          
           toast.success(
             <div>
               <span>Exported to Google Sheets ✨</span>
@@ -530,23 +591,22 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
             return;
           }
 
-          const driveAccess = await getGoogleAccessForDrive();
-          if (driveAccess.status === 'needs_reauthorization') {
-            persistTablesSnapshot();
-            toast.message('Restoring Google access…', { duration: 2000 });
-            await signIn();
-            return;
-          }
-          if (driveAccess.status === 'needs_sign_in' || driveAccess.status === 'needs_google_connect') {
+          if (!isAuthenticated || !hasRequiredScopes) {
             persistTablesSnapshot();
             openAuthPopup('signin');
             return;
           }
-          const accessToken = driveAccess.accessToken;
+
+          const accessToken = await getAccessToken();
+          if (!accessToken) {
+            toast.error('Failed to get access token');
+            return;
+          }
 
           const folderId = await getOrCreateTableXportFolder(accessToken);
           const folderUrl = await getFolderLink(accessToken, folderId);
-          const baseName = activeTable.name.replace(/\s+/g, '_').toLowerCase();
+          const finalTableName = localTableName?.trim() || activeTable.name;
+          const baseName = finalTableName.replace(/\s+/g, '_').toLowerCase();
 
           const mimeTypes: Record<string, string> = {
             xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -566,6 +626,23 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
 
           if (uploadResult.success && uploadResult.fileUrl) {
             trackFirstExport();
+            
+            // Save to export history
+            if (sanitizationResult && isAuthenticated) {
+              try {
+                const tableWithCustomName = {
+                  ...activeTable,
+                  name: finalTableName
+                };
+                await saveExport({
+                  table: tableWithCustomName,
+                  fixStats: sanitizationResult.fixStats,
+                });
+              } catch (error) {
+                console.error('Failed to save export to history:', error);
+              }
+            }
+            
             toast.success(
               <div>
                 <span>Uploaded to Google Drive ✨</span>
@@ -594,8 +671,26 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
             toast.error(uploadResult.error || 'Failed to upload to Google Drive');
           }
         } else {
-          downloadBlob(result.blob, `${activeTable.name.replace(/\s+/g, '_').toLowerCase()}`, format);
+          const finalTableName = localTableName?.trim() || activeTable.name;
+          downloadBlob(result.blob, `${finalTableName.replace(/\s+/g, '_').toLowerCase()}`, format);
           trackFirstExport();
+          
+          // Save to export history
+          if (sanitizationResult && isAuthenticated) {
+            try {
+              const tableWithCustomName = {
+                ...activeTable,
+                name: finalTableName
+              };
+              await saveExport({
+                table: tableWithCustomName,
+                fixStats: sanitizationResult.fixStats,
+              });
+            } catch (error) {
+              console.error('Failed to save export to history:', error);
+            }
+          }
+          
           toast.success(`Successfully exported to ${format.toUpperCase()} ✨`, {
             duration: 2500,
           });
@@ -649,22 +744,20 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
 
     // Check if exporting to Google Drive
     if (exportDestination === 'google_drive') {
-      const driveAccess = await getGoogleAccessForDrive();
-      if (driveAccess.status === 'needs_reauthorization') {
-        persistTablesSnapshot();
-        toast.message('Restoring Google access…', { duration: 2000 });
-        await signIn();
-        return;
-      }
-      if (driveAccess.status === 'needs_sign_in' || driveAccess.status === 'needs_google_connect') {
+      if (!isAuthenticated || !hasRequiredScopes) {
         persistTablesSnapshot();
         openAuthPopup('signin');
         return;
       }
-      const accessToken = driveAccess.accessToken;
 
       setIsExporting(true);
       try {
+        const accessToken = await getAccessToken();
+        if (!accessToken) {
+          toast.error('Failed to get access token');
+          return;
+        }
+
         // Handle multi-sheet Google Sheets export
         if (batchMode === 'xlsx_tabs' || batchFormat === 'google_sheets') {
           const { createMultiSheetSpreadsheet } = await import('@/services/googleSheetsService');
@@ -833,6 +926,43 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
     }
   };
 
+  useEffect(() => () => clearConfidencePopoverCloseTimer(), []);
+
+  useEffect(() => {
+    if (!showConfidencePopover) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (confidencePopoverRef.current && !confidencePopoverRef.current.contains(e.target as Node)) {
+        clearConfidencePopoverCloseTimer();
+        setShowConfidencePopover(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showConfidencePopover]);
+
+  useEffect(() => {
+    if (!showConfidencePopover) return;
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        clearConfidencePopoverCloseTimer();
+        setShowConfidencePopover(false);
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [showConfidencePopover]);
+
+  const handleCopyCleanText = useCallback(async () => {
+    if (!activeTable) return;
+    const text = tableToCopyText(activeTable.data.headers, activeTable.data.rows);
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success('Clean text copied to clipboard ✨', { duration: 2000 });
+    } catch {
+      toast.error('Failed to copy to clipboard');
+    }
+  }, [activeTable]);
+
   const handleToggleAutoSum = () => {
     setAutoSumEnabled((prev) => {
       const next = !prev;
@@ -948,7 +1078,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                 <thead>
                   <tr style={{ backgroundColor: brandColor }}>
                     {activeTable.data.headers.map((header, index) => (
-                      <th key={index} className="px-3 py-2 text-left text-xs font-bold text-white border border-gray-200 whitespace-nowrap" style={{ backgroundColor: brandColor }}>
+                      <th key={index} className="px-3 py-2 text-left text-xs font-bold text-white border border-gray-200">
                         {header}
                       </th>
                     ))}
@@ -1004,7 +1134,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                 <thead>
                   <tr className="bg-white">
                     {activeTable.data.headers.map((header, index) => (
-                      <th key={index} className="bg-white px-3 py-2 text-left text-xs font-bold text-secondary border-b-2 border-gray-200 whitespace-nowrap">
+                      <th key={index} className="px-3 py-2 text-left text-xs font-bold text-secondary border-b-2 border-gray-200">
                         {header}
                       </th>
                     ))}
@@ -1029,11 +1159,11 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
     }
 
     return (
-      <table className="w-full min-w-full table-auto">
+      <table className="w-full">
         <thead>
           <tr className="bg-primary">
             {activeTable.data.headers.map((header, index) => (
-              <th key={index} className="bg-primary px-4 py-3 text-left text-sm font-bold text-white border border-gray-200 whitespace-nowrap">
+              <th key={index} className="px-4 py-3 text-left text-sm font-bold text-white border border-gray-200">
                 {header}
               </th>
             ))}
@@ -1061,11 +1191,27 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
       transition={{ duration: 0.5 }}
       className="w-full max-w-5xl mx-auto"
     >
-      <div className="standalone-preview-card bg-white rounded-2xl shadow-lg border-2 border-primary-light p-5 sm:p-8 pb-20 sm:pb-8">
+      <div className="standalone-preview-card bg-white rounded-2xl shadow-lg border-2 border-primary-light p-8">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="text-2xl font-bold text-secondary">Table Preview</h3>
+            <p className="text-sm text-secondary/60 mt-1">
+              {localTables.length} tables detected
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={onClear}
+            className="h-8 py-1 px-3 text-sm hover:bg-destructive hover:text-white hover:border-destructive"
+          >
+            Clear
+          </Button>
+        </div>
+
         <div>
-          {/* 1. Export destination tabs — centered in preview card */}
-          <div className="mb-5 flex w-full justify-center">
-            <div className="grid w-[min(100%,32rem)] grid-cols-2 gap-2 rounded-lg bg-primary-light/30 p-1 sm:inline-grid sm:w-auto">
+          {/* Export Destination Switcher */}
+          <div className="mb-6 flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2 bg-primary-light/30 p-1 rounded-lg">
               <button
                 type="button"
                 onClick={() => {
@@ -1076,14 +1222,14 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                     // ignore
                   }
                 }}
-                className={`flex cursor-pointer items-center justify-center gap-2 rounded-md border-2 px-3 py-2.5 text-sm font-semibold transition-all sm:px-6 sm:py-3 ${
+                className={`flex items-center gap-2 px-6 py-3 rounded-md text-sm font-semibold transition-all cursor-pointer border-2 ${
                   exportDestination === 'local'
-                    ? 'border-primary bg-white text-secondary'
-                    : 'border-transparent text-secondary/60 hover:text-secondary'
+                    ? 'bg-white text-secondary border-primary'
+                    : 'text-secondary/60 hover:text-secondary border-transparent'
                 }`}
               >
                 <Image src="/icons/icon-device.svg" alt="Local" width={20} height={20} />
-                <span className="whitespace-nowrap">Local Download</span>
+                Local Download
               </button>
               <button
                 type="button"
@@ -1098,16 +1244,21 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                     return;
                   }
 
+                  if (!isAuthenticated || !hasRequiredScopes) {
+                    openAuthPopup('signin');
+                    return;
+                  }
+
                   setExportDestination('google_drive');
                 }}
-                className={`relative flex cursor-pointer items-center justify-center gap-2 rounded-md border-2 px-3 py-2.5 text-sm font-semibold transition-all sm:px-6 sm:py-3 ${
+                className={`relative flex items-center gap-2 px-6 py-3 rounded-md text-sm font-semibold transition-all cursor-pointer border-2 ${
                   exportDestination === 'google_drive'
-                    ? 'border-primary bg-white text-secondary'
-                    : 'border-transparent text-secondary/60 hover:text-secondary'
+                    ? 'bg-white text-secondary border-primary'
+                    : 'text-secondary/60 hover:text-secondary border-transparent'
                 } ${isProLocked ? 'grayscale opacity-60' : ''}`}
               >
                 <Image src="/icons/icon-google-drive.svg" alt="Google Drive" width={20} height={20} />
-                <span className="whitespace-nowrap">Google Drive</span>
+                Google Drive
                 {isProLocked && (
                   <div className="ml-1">
                     <ProBadge variant="badge" />
@@ -1115,23 +1266,6 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                 )}
               </button>
             </div>
-          </div>
-
-          {/* 2. Title + count + Clear */}
-          <div className="flex items-start justify-between gap-3 mb-6">
-            <div>
-              <h3 className="text-xl sm:text-2xl font-bold text-secondary">Table Preview</h3>
-              <p className="text-sm text-secondary/60 mt-1">
-                {localTables.length} tables detected
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              onClick={onClear}
-              className="h-8 py-1 px-3 text-sm hover:bg-destructive hover:text-white hover:border-destructive shrink-0"
-            >
-              Clear
-            </Button>
           </div>
 
           {exportDestination === 'google_drive' && !isAuthenticated && (
@@ -1176,251 +1310,183 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
             )}
           </div>
 
-          {localTables.length === 1 && (() => {
-            const renderFormatButton = (option: FormatOption) => {
-              const isSheetsDisabled = option.format === 'google_sheets' && exportDestination === 'local';
-              const isPdfLocked = option.format === 'pdf' && isProLocked;
-              const isGoogleSheetsLocked = option.format === 'google_sheets' && isProLocked;
-              const isLocked = isPdfLocked || isGoogleSheetsLocked;
-
-              return (
-                <motion.button
-                  key={option.format}
-                  onClick={() => {
-                    if (isSheetsDisabled) return;
-                    if (isLocked) {
-                      persistTablesSnapshot();
-                      showUpgradePrompt('');
-                      return;
-                    }
-                    setActiveFormat(option.format);
-                  }}
-                  disabled={isExporting}
-                  aria-disabled={isSheetsDisabled || isLocked}
-                  whileHover={{ scale: isLocked ? 1 : 1.05 }}
-                  whileTap={{ scale: isLocked ? 1 : 0.95 }}
-                  className={`
-                    relative p-2 rounded-xl border-2 transition-all duration-200
-                    ${
-                      activeFormat === option.format
-                        ? 'border-primary bg-primary-light/30 shadow-[0_0_0_3px_rgba(27,147,88,0.08)]'
-                        : 'border-primary-light bg-white hover:border-primary hover:bg-primary-light/10'
-                    }
-                    ${
-                      isExporting || isSheetsDisabled
-                        ? 'opacity-50 cursor-not-allowed'
-                        : 'cursor-pointer'
-                    }
-                    ${isLocked ? 'grayscale opacity-60' : ''}
-                    disabled:opacity-50 disabled:cursor-not-allowed
-                  `}
-                  title={
-                    isSheetsDisabled
-                      ? 'Switch to Google Drive to export as Google Sheets'
-                      : isLocked
-                        ? 'Pro feature - Click to upgrade'
-                        : undefined
-                  }
-                >
-                  {isLocked && (
-                    <div className="absolute top-2 right-2 z-10">
-                      <ProBadge variant="badge" />
+          {/* PDF Settings */}
+          {localTables.length === 1 && activeFormat === 'pdf' && (
+            <div className="mb-6">
+              <button
+                onClick={() => setShowPdfSettings(!showPdfSettings)}
+                className="flex items-center gap-2 text-sm font-semibold text-secondary hover:text-primary transition-colors cursor-pointer"
+              >
+                <Palette size={16} />
+                PDF Branding Settings
+                <span className="text-xs text-secondary/60">({showPdfSettings ? 'Hide' : 'Show'})</span>
+              </button>
+              
+              {showPdfSettings && (
+                <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`relative ${isProLocked ? 'pointer-events-none' : ''}`}>
+                        <label className="block text-sm font-medium text-secondary mb-2">
+                          Logo (PNG/JPG)
+                        </label>
+                        {pdfBranding.logo ? (
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={pdfBranding.logo}
+                              alt="Logo preview"
+                              className={`w-16 h-16 object-contain border border-gray-200 rounded bg-white p-1 ${isProLocked ? 'grayscale' : ''}`}
+                            />
+                            <button
+                              onClick={handleRemoveLogo}
+                              className="flex items-center gap-1 px-3 py-1.5 text-xs bg-red-50 text-red-600 hover:bg-red-100 rounded-md transition-colors"
+                            >
+                              <X size={14} />
+                              Remove
+                            </button>
+                          </div>
+                        ) : (
+                          <label 
+                            className={`flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md transition-colors ${isProLocked ? 'grayscale opacity-60 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-50'}`}
+                            onClick={(e) => {
+                              if (isProLoading || isProLocked) {
+                                e.preventDefault();
+                                persistTablesSnapshot();
+                                showUpgradePrompt('');
+                              }
+                            }}
+                          >
+                            <Upload size={16} className="text-secondary/60" />
+                            <span className="text-sm text-secondary">Upload Logo</span>
+                            {!isProLocked && (
+                              <input
+                                type="file"
+                                accept="image/png,image/jpeg,image/jpg"
+                                onChange={handleLogoUpload}
+                                className="hidden"
+                              />
+                            )}
+                          </label>
+                        )}
+                        {isProLocked && (
+                          <div className="absolute top-0 right-0">
+                            <ProBadge variant="icon" size={16} />
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  )}
-                  <div className="flex flex-col items-center gap-2 sm:gap-3 py-2">
-                    <div className="text-primary">{option.icon}</div>
-                    <div className="text-center">
-                      <p className="font-bold text-secondary text-sm sm:text-base">{option.label}</p>
-                      <p className="text-xs text-secondary/60 mt-1">{option.description}</p>
-                    </div>
-                  </div>
-                </motion.button>
-              );
-            };
 
-            const primaryFormats = formatOptions.slice(0, 4);
-            const secondaryFormats = formatOptions.slice(4);
-
-            return (
-              <div>
-                {/* Mobile: 2-col grid, first 4 + accordion */}
-                <div className="md:hidden">
-                  <div className="grid grid-cols-2 gap-3">
-                    {primaryFormats.map(renderFormatButton)}
-                  </div>
-
-                  <AnimatePresence initial={false}>
-                    {showAllFormats && (
-                      <motion.div
-                        key="extra-formats"
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                        className="overflow-hidden"
-                      >
-                        <div className="grid grid-cols-2 gap-3 pt-3">
-                          {secondaryFormats.map(renderFormatButton)}
+                    <div className="flex items-center gap-3">
+                      <div className={`relative ${isProLocked ? 'pointer-events-none' : ''}`}>
+                        <label className="block text-sm font-medium text-secondary mb-2">
+                          Header Color
+                        </label>
+                        <div className="flex items-center gap-3">
+                          <div 
+                            className={`relative ${isProLocked ? 'cursor-not-allowed' : ''}`}
+                            onClick={() => {
+                              if (isProLoading || isProLocked) {
+                                persistTablesSnapshot();
+                                showUpgradePrompt('');
+                              }
+                            }}
+                          >
+                            <input
+                              type="color"
+                              value={pdfBranding.brandColor || '#1B9358'}
+                              onChange={(e) => handleColorChange(e.target.value)}
+                              disabled={isProLoading || isProLocked}
+                              className={`w-12 h-12 rounded border border-gray-300 ${isProLocked ? 'grayscale opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                            />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className={`text-sm text-secondary font-medium ${isProLocked ? 'opacity-60' : ''}`}>
+                              {pdfBranding.brandColor || '#1B9358'}
+                            </span>
+                            <span className="text-xs text-secondary/60">
+                              Customize PDF header branding
+                            </span>
+                          </div>
                         </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  {secondaryFormats.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        triggerHaptic();
-                        setShowAllFormats((prev) => !prev);
-                      }}
-                      aria-expanded={showAllFormats}
-                      className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-primary/40 bg-primary-light/20 px-4 py-3 text-sm font-semibold text-primary transition-colors active:bg-primary-light/40"
-                    >
-                      <span>
-                        {showAllFormats ? 'Show less formats' : 'Show more formats'}
-                      </span>
-                      <motion.span
-                        animate={{ rotate: showAllFormats ? 180 : 0 }}
-                        transition={{ duration: 0.25 }}
-                        className="inline-flex"
-                      >
-                        <ChevronDown size={18} />
-                      </motion.span>
-                    </button>
-                  )}
+                        {isProLocked && (
+                          <div className="absolute top-0 right-0">
+                            <ProBadge variant="icon" size={16} />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
+              )}
+            </div>
+          )}
 
-                {/* Desktop: full grid */}
-                <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {formatOptions.map(renderFormatButton)}
-                </div>
-              </div>
-            );
-          })()}
 
           {localTables.length === 1 && (
-            <AnimatePresence initial={false} mode="popLayout">
-              {(activeFormat === 'pdf' || activeFormat === 'json') && (
-                <motion.div
-                  key={`format-advanced-${activeFormat}`}
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-                  className="overflow-hidden"
-                >
-                  <motion.div
-                    initial={{ opacity: 0, y: -12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-                    className="mt-4 rounded-lg border border-primary-light/50 bg-primary-light/20 p-4 sm:p-5 shadow-[0_2px_12px_-4px_rgba(6,32,19,0.12)]"
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {formatOptions.map((option) => {
+                const isSheetsDisabled = option.format === 'google_sheets' && exportDestination === 'local';
+                const isPdfLocked = option.format === 'pdf' && isProLocked;
+                const isGoogleSheetsLocked = option.format === 'google_sheets' && isProLocked;
+                const isLocked = isPdfLocked || isGoogleSheetsLocked;
+                
+                return (
+                  <motion.button
+                    key={option.format}
+                    onClick={() => {
+                      if (isSheetsDisabled) return;
+                      if (isLocked) {
+                        persistTablesSnapshot();
+                        showUpgradePrompt('');
+                        return;
+                      }
+                      setActiveFormat(option.format);
+                    }}
+                    disabled={isExporting}
+                    aria-disabled={isSheetsDisabled || isLocked}
+                    whileHover={{ scale: isLocked ? 1 : 1.05 }}
+                    whileTap={{ scale: isLocked ? 1 : 0.95 }}
+                    className={`
+                      relative p-2 rounded-xl border-2 transition-all duration-200
+                      ${
+                        activeFormat === option.format
+                          ? 'border-primary bg-primary-light/30 shadow-[0_0_0_3px_rgba(27,147,88,0.08)]'
+                          : 'border-primary-light bg-white hover:border-primary hover:bg-primary-light/10'
+                      }
+                      ${
+                        isExporting || isSheetsDisabled
+                          ? 'opacity-50 cursor-not-allowed'
+                          : isLocked
+                            ? 'cursor-pointer'
+                            : 'cursor-pointer'
+                      }
+                      ${isLocked ? 'grayscale opacity-60' : ''}
+                      disabled:opacity-50 disabled:cursor-not-allowed
+                    `}
+                    title={
+                      isSheetsDisabled
+                        ? 'Switch to Google Drive to export as Google Sheets'
+                        : isLocked
+                          ? 'Pro feature - Click to upgrade'
+                          : undefined
+                    }
                   >
-                    <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-secondary/70">
-                      Advanced options — {activeFormat === 'pdf' ? 'PDF export' : 'JSON export'}
-                    </p>
-                    {activeFormat === 'pdf' ? (
-                      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className={`relative ${isProLocked ? 'pointer-events-none' : ''}`}>
-                            <label className="block text-sm font-medium text-secondary mb-2">
-                              Logo (PNG/JPG)
-                            </label>
-                            {pdfBranding.logo ? (
-                              <div className="flex items-center gap-3">
-                                <img
-                                  src={pdfBranding.logo}
-                                  alt="Logo preview"
-                                  className={`w-16 h-16 object-contain border border-gray-200 rounded bg-white p-1 ${isProLocked ? 'grayscale' : ''}`}
-                                />
-                                <button
-                                  type="button"
-                                  onClick={handleRemoveLogo}
-                                  className="flex items-center gap-1 px-3 py-1.5 text-xs bg-red-50 text-red-600 hover:bg-red-100 rounded-md transition-colors"
-                                >
-                                  <X size={14} />
-                                  Remove
-                                </button>
-                              </div>
-                            ) : (
-                              <label
-                                className={`flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md transition-colors ${isProLocked ? 'grayscale opacity-60 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-50'}`}
-                                onClick={(e) => {
-                                  if (isProLoading || isProLocked) {
-                                    e.preventDefault();
-                                    persistTablesSnapshot();
-                                    showUpgradePrompt('');
-                                  }
-                                }}
-                              >
-                                <Upload size={16} className="text-secondary/60" />
-                                <span className="text-sm text-secondary">Upload Logo</span>
-                                {!isProLocked && (
-                                  <input
-                                    type="file"
-                                    accept="image/png,image/jpeg,image/jpg"
-                                    onChange={handleLogoUpload}
-                                    className="hidden"
-                                  />
-                                )}
-                              </label>
-                            )}
-                            {isProLocked && (
-                              <div className="absolute top-0 right-0">
-                                <ProBadge variant="icon" size={16} />
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                          <div className={`relative ${isProLocked ? 'pointer-events-none' : ''}`}>
-                            <label className="block text-sm font-medium text-secondary mb-2">
-                              Header Color
-                            </label>
-                            <div className="flex items-center gap-3">
-                              <div
-                                className={`relative ${isProLocked ? 'cursor-not-allowed' : ''}`}
-                                onClick={() => {
-                                  if (isProLoading || isProLocked) {
-                                    persistTablesSnapshot();
-                                    showUpgradePrompt('');
-                                  }
-                                }}
-                              >
-                                <input
-                                  type="color"
-                                  value={pdfBranding.brandColor || '#1B9358'}
-                                  onChange={(e) => handleColorChange(e.target.value)}
-                                  disabled={isProLoading || isProLocked}
-                                  className={`w-12 h-12 rounded border border-gray-300 ${isProLocked ? 'grayscale opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
-                                />
-                              </div>
-                              <div className="flex flex-col">
-                                <span className={`text-sm text-secondary font-medium ${isProLocked ? 'opacity-60' : ''}`}>
-                                  {pdfBranding.brandColor || '#1B9358'}
-                                </span>
-                                <span className="text-xs text-secondary/60">
-                                  Customize PDF header branding
-                                </span>
-                              </div>
-                            </div>
-                            {isProLocked && (
-                              <div className="absolute top-0 right-0">
-                                <ProBadge variant="icon" size={16} />
-                              </div>
-                            )}
-                          </div>
-                        </div>
+                    {isLocked && (
+                      <div className="absolute top-2 right-2 z-10">
+                        <ProBadge variant="badge" />
                       </div>
-                    ) : (
-                      <p className="text-sm leading-relaxed text-secondary/80">
-                        JSON exports structured data only — no logo or header styling applies.
-                      </p>
                     )}
-                  </motion.div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="text-primary">{option.icon}</div>
+                      <div className="text-center">
+                        <p className="font-bold text-secondary">{option.label}</p>
+                        <p className="text-xs text-secondary/60 mt-1">{option.description}</p>
+                      </div>
+                    </div>
+                  </motion.button>
+                );
+              })}
+            </div>
           )}
 
           {localTables.length > 1 && (
@@ -1482,9 +1548,8 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2 }}
-              className="overflow-x-auto mb-6 mt-6 rounded-xl border-2 border-gray-200 relative"
+              className="overflow-x-auto mb-6 mt-6 rounded-xl border-2 border-gray-200"
             >
-              <div className="flex min-w-full w-max flex-col">
               {localTables.length === 1 && (
                 <div className="border-b border-gray-200">
                   <div>
@@ -1526,24 +1591,38 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                 </div>
               )}
 
-              {/* Claude-style header */}
-              <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-200">
-                <input
-                  type="text"
-                  value={editingTableId === activeTable.id ? editedName : activeTable.name}
-                  onChange={(e) => {
-                    setEditedName(e.target.value);
-                    setEditingTableId(activeTable.id);
-                  }}
-                  onBlur={() => {
-                    if (editingTableId && editedName.trim()) {
-                      // Update table name in parent component if needed
-                      // For now, just reset editing state
-                    }
-                    setEditingTableId(null);
-                  }}
-                  className="text-sm font-semibold text-secondary bg-transparent border-none focus:outline-none focus:ring-0 px-0"
-                />
+              {/* Table header with editable name */}
+              <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+                <div className="relative group">
+                  <input
+                    type="text"
+                    value={localTableName}
+                    onChange={(e) => setLocalTableName(e.target.value)}
+                    onBlur={(e) => {
+                      const trimmedValue = e.target.value.trim();
+                      if (!trimmedValue && activeTable) {
+                        setLocalTableName(activeTable.name);
+                      } else if (trimmedValue && activeTable) {
+                        // Also update the actual table name in localTables for consistency
+                        setLocalTables((prev) =>
+                          prev.map((t) =>
+                            t.id === activeTable.id ? { ...t, name: trimmedValue } : t
+                          )
+                        );
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.currentTarget.blur();
+                      }
+                    }}
+                    disabled={isExporting}
+                    className="w-full px-3 py-2 pr-8 text-sm font-semibold text-secondary bg-white/60 border border-primary-light/50 rounded-[6px] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed backdrop-blur-sm hover:bg-white/80 hover:border-primary-light"
+                  />
+                  <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <Pencil size={14} className="text-secondary/40 group-focus-within:text-primary/60 transition-colors" />
+                  </div>
+                </div>
               </div>
 
               {renderPreviewBody(effectiveFormat)}
@@ -1553,7 +1632,6 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                   Showing 3 of {activeTable.rowCount} rows
                 </div>
               )}
-              </div>
             </motion.div>
           )}
 
@@ -1567,19 +1645,19 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                   </div>
                 )}
               </div>
-              <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-2">
+              <div className="flex items-center gap-2">
                 <textarea
                   value={appendText}
                   onChange={(e) => setAppendText(e.target.value)}
                   placeholder="Paste another table..."
                   disabled={isExporting}
                   rows={1}
-                  className="w-full md:flex-1 h-10 min-h-10 max-h-10 rounded-md border border-primary-light bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+                  className="flex-1 h-10 min-h-10 max-h-10 rounded-md border border-primary-light bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
                 />
                 <Button
                   onClick={handleAppendTable}
                   disabled={isExporting || !appendText.trim()}
-                  className="w-full md:w-auto h-10 px-4 bg-primary text-white shadow-primary-btn transition-all duration-200 ease-out hover:-translate-y-px hover:bg-primary/90 hover:shadow-primary-btn-hover flex items-center justify-center gap-2"
+                  className="h-10 px-4 bg-primary hover:bg-primary/90 text-white flex items-center gap-2"
                 >
                   <Plus size={16} />
                   Add table
@@ -1622,7 +1700,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                   <Button
                     onClick={handleBatchExport}
                     disabled={isExporting}
-                    className="h-9 px-4 bg-primary text-white shadow-primary-btn transition-all duration-200 ease-out hover:-translate-y-px hover:bg-primary/90 hover:shadow-primary-btn-hover"
+                    className="h-9 px-4 bg-primary hover:bg-primary/90 text-white"
                   >
                     Bulk Export
                   </Button>
@@ -1644,19 +1722,19 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                   </div>
                 )}
               </div>
-              <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-2">
+              <div className="flex items-center gap-2">
                 <textarea
                   value={appendText}
                   onChange={(e) => setAppendText(e.target.value)}
                   placeholder="Paste another table..."
                   disabled={isExporting}
                   rows={1}
-                  className="w-full md:flex-1 h-10 min-h-10 max-h-10 rounded-md border border-primary-light bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+                  className="flex-1 h-10 min-h-10 max-h-10 rounded-md border border-primary-light bg-white px-3 py-2 text-sm text-secondary focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
                 />
                 <Button
                   onClick={handleAppendTable}
                   disabled={isExporting || !appendText.trim()}
-                  className="w-full md:w-auto h-10 px-4 bg-primary text-white shadow-primary-btn transition-all duration-200 ease-out hover:-translate-y-px hover:bg-primary/90 hover:shadow-primary-btn-hover flex items-center justify-center gap-2"
+                  className="h-10 px-4 bg-primary hover:bg-primary/90 text-white flex items-center gap-2"
                 >
                   <Plus size={16} />
                   Add table
@@ -1666,8 +1744,97 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
           )}
 
 
+          {/* Confidence Layer — Data Quality Report */}
+          {localTables.length === 1 && sanitizationResult && (
+            <div className="mt-5 flex items-center justify-between gap-3 flex-wrap">
+              <div
+                className="relative"
+                ref={confidencePopoverRef}
+                onMouseEnter={openConfidencePopover}
+                onMouseLeave={scheduleCloseConfidencePopover}
+              >
+                <button
+                  type="button"
+                  aria-expanded={showConfidencePopover}
+                  aria-haspopup="dialog"
+                  onClick={() => {
+                    clearConfidencePopoverCloseTimer();
+                    setShowConfidencePopover((prev) => !prev);
+                  }}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-xs font-semibold border transition-all cursor-pointer ${
+                    totalFixes === 0
+                      ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
+                      : 'bg-primary-light/50 text-secondary border-primary-light hover:bg-primary-light'
+                  }`}
+                >
+                  {totalFixes === 0 ? (
+                    <>
+                      <CheckCircle2 size={13} aria-hidden />
+                      Structure Verified
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 size={13} aria-hidden />
+                      Data Optimized
+                      <span className="ml-0.5 opacity-70">({totalFixes})</span>
+                    </>
+                  )}
+                </button>
+
+                <div
+                  className={`absolute left-0 top-full z-20 min-w-[230px] pt-2 transition-[opacity,transform] duration-150 ease-out ${
+                    showConfidencePopover
+                      ? 'pointer-events-auto visible translate-y-0 opacity-100'
+                      : 'pointer-events-none invisible -translate-y-0.5 opacity-0'
+                  }`}
+                  onMouseEnter={openConfidencePopover}
+                  onMouseLeave={scheduleCloseConfidencePopover}
+                  aria-hidden={!showConfidencePopover}
+                >
+                  <div className="rounded-xl border border-primary-light bg-white p-4 shadow-lg">
+                    <div className="mb-2 text-xs font-semibold text-secondary">Sanitization Report</div>
+                    {totalFixes === 0 ? (
+                      <p className="text-xs text-secondary/70">No issues detected. Data is clean.</p>
+                    ) : (
+                      <ul className="space-y-1.5">
+                        {sanitizationResult.fixStats.markdown > 0 && (
+                          <li className="text-xs text-secondary/80">
+                            🧹 Cleaned {sanitizationResult.fixStats.markdown} markdown artifact{sanitizationResult.fixStats.markdown > 1 ? 's' : ''}
+                          </li>
+                        )}
+                        {sanitizationResult.fixStats.numeric > 0 && (
+                          <li className="text-xs text-secondary/80">
+                            📊 Normalized {sanitizationResult.fixStats.numeric} numeric value{sanitizationResult.fixStats.numeric > 1 ? 's' : ''}
+                          </li>
+                        )}
+                        {sanitizationResult.fixStats.spaces > 0 && (
+                          <li className="text-xs text-secondary/80">🔇 Invisible noise removed</li>
+                        )}
+                        {sanitizationResult.fixStats.links > 0 && (
+                          <li className="text-xs text-secondary/80">
+                            🔗 Cleaned {sanitizationResult.fixStats.links} link artifact{sanitizationResult.fixStats.links > 1 ? 's' : ''}
+                          </li>
+                        )}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleCopyCleanText}
+                disabled={isExporting}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-xs font-semibold border border-secondary/20 text-secondary/70 bg-white hover:bg-secondary/5 hover:text-secondary transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Copy size={13} />
+                Copy Clean Text
+              </button>
+            </div>
+          )}
+
           {localTables.length === 1 && (
-            <div className="mt-6">
+            <div className="mt-4">
               {activeFormat === 'google_sheets' && exportDestination === 'local' ? (
                 <div className="text-center text-xs text-secondary/60">
                   Switch to Google Drive to export as Google Sheets
@@ -1677,7 +1844,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
                   <Button
                     onClick={() => handleExportSingle(activeFormat)}
                     disabled={isExporting}
-                    className="h-10 px-6 bg-primary text-white shadow-primary-btn transition-all duration-200 ease-out hover:-translate-y-px hover:bg-primary/90 hover:shadow-primary-btn-hover"
+                    className="h-10 px-6 bg-primary hover:bg-primary/90 text-white"
                   >
                     {exportDestination === 'google_drive'
                       ? `Export ${getFormatLabel(activeFormat)} to Google Drive`

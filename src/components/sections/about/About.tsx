@@ -11,17 +11,16 @@ const About = () => {
               <div className='w-full md:w-[50%]'>
                   <FadeInUp>
                     <h2 className='text-[40px] md:text-[55px] font-semibold mb-[30px]'>
-                    Hi, I&apos;m Artem — <span className='text-primary'>Creator of TableXport</span>
+                    Hi, I&apos;m Artem — <span className='text-primary'>Founder of TableXport</span>
                     </h2>
                   </FadeInUp>
                   
                   <FadeInUp delay={0.3}>
                     <p className='text-[20px] md:text-[24px]'>
-                        I built TableXport after watching myself and my teammates struggle with the same pain:
-                        AI-generated tables were always a mess to copy, fix, and organize.
-
-                        What started as a weekend experiment to save my own time quickly grew into a tool used by analysts, marketers, and anyone tired of manual table work.
-                        My goal is simple: help you spend less time cleaning tables and more time doing real work.
+                        I built TableXport after wasting too many hours fixing broken tables manually. What started as a small personal tool quickly became a workflow used by analysts, marketers, researchers, and power users who wanted cleaner exports with less friction.
+                    </p>
+                    <p className='text-[20px] md:text-[24px] font-semibold mt-4'>
+                        My goal is simple: make messy data actually usable.
                     </p>
                   </FadeInUp>
               </div>

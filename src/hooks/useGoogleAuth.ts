@@ -24,7 +24,7 @@ export function useGoogleAuth() {
     const checkAuthStatus = async () => {
       try {
         const { data: { user }, error } = await supabase.auth.getUser();
-        
+
         if (error || !user) {
           setAuthStatus({
             isAuthenticated: false,
@@ -98,7 +98,7 @@ export function useGoogleAuth() {
             loading: false,
           });
         }
-      }
+      },
     );
 
     return () => {
@@ -110,7 +110,12 @@ export function useGoogleAuth() {
     try {
       setAuthStatus(prev => ({ ...prev, loading: true }));
 
+      if (typeof window === 'undefined') {
+        throw new Error('Google sign-in must run in the browser');
+      }
+
       const baseUrl = window.location.origin;
+
       const nextUrl = new URL(options?.nextPath ?? `${window.location.pathname}${window.location.search}`, baseUrl);
 
       if (options?.action === 'upgrade') {
@@ -128,7 +133,8 @@ export function useGoogleAuth() {
             access_type: 'offline',
             prompt: 'consent',
           },
-          scopes: 'https://www.googleapis.com/auth/drive.file',
+          scopes:
+            'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets',
         },
       });
 

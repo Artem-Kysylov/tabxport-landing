@@ -1,8 +1,28 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 
+/**
+ * Use the host the user actually hit (localhost, preview URL, prod). Prefer proxy headers when present.
+ * Avoid redirecting to a hard-coded production domain during local development.
+ */
+function getOAuthSiteOrigin(request: NextRequest): string {
+  const requestUrl = new URL(request.url)
+  const forwardedHost = request.headers.get('x-forwarded-host')
+  const forwardedProto = request.headers.get('x-forwarded-proto')
+
+  if (forwardedHost) {
+    const host = forwardedHost.split(',')[0].trim()
+    const proto =
+      (forwardedProto?.split(',')[0].trim() ?? requestUrl.protocol.replace(':', '')) || 'https'
+    return `${proto}://${host}`
+  }
+
+  return requestUrl.origin
+}
+
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url)
+  const { searchParams } = new URL(request.url)
+  const origin = getOAuthSiteOrigin(request)
   const code = searchParams.get('code')
   const error = searchParams.get('error')
   const error_description = searchParams.get('error_description')

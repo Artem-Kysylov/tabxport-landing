@@ -162,11 +162,24 @@
   min-width: 340px !important;
   padding: 20px 32px !important;
   border-radius: 12px !important;
+  justify-content: center !important;
 }
 
 [data-sonner-toaster] [data-sonner-toast] [data-icon],
 [data-sonner-toaster] [data-sonner-toast] .sonner-icon {
   display: none !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast] [data-content] {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  text-align: center !important;
+  width: 100%;
+}
+
+[data-sonner-toaster] [data-sonner-toast] [data-content] > * {
+  text-align: center !important;
 }
 
 @media (min-width: 640px) {
@@ -187,17 +200,45 @@
   opacity: 1 !important;
 }
 
-/* Mobile h1 and h2 styling */
+/* Line clamp utilities */
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+/* Mobile h1 and h2 styling — excluded from cookbook content */
 @media (max-width: 767px) {
-  h1 {
+  h1:not(.cookbook-mdx h1):not(.cookbook-mdx *) {
     font-size: 52px !important;
     line-height: 1.1 !important;
   }
-  h2 {
+  h2:not(.cookbook-mdx h2):not(.cookbook-mdx *) {
     font-size: 40px !important;
     line-height: 1.1 !important;
   }
- }
+
+  .cookbook-mdx h1 {
+    font-size: 1.875rem !important;
+    line-height: 1.25 !important;
+  }
+  .cookbook-mdx h2 {
+    font-size: 1.375rem !important;
+    line-height: 1.3 !important;
+  }
+  .cookbook-mdx h3 {
+    font-size: 1.125rem !important;
+    line-height: 1.4 !important;
+  }
+}
 
  @media (display-mode: standalone) {
    html,
@@ -304,3 +345,44 @@
      padding-bottom: 1rem !important;
    }
  }
+
+/* ─── Cookbook MDX ────────────────────────────────────────────────────────── */
+
+/* Nested list rhythm */
+.cookbook-mdx li > ul,
+.cookbook-mdx li > ol {
+  margin-top: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+/*
+ * rehype-pretty-code / Shiki (github-light): mono stack + strip nested bg on spans.
+ * Token foreground stays inline from Shiki — tuned for light panel (#f8fafc).
+ */
+.cookbook-code-figure code,
+.cookbook-code-figure code span {
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace !important;
+  background-color: transparent !important;
+}
+
+/* Prevent double-padding if prose is present in a parent */
+.cookbook-mdx .cookbook-code-figure {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+/* Line highlight — light surfaces */
+.cookbook-code-figure [data-highlighted-line] {
+  background-color: rgba(27, 147, 88, 0.06);
+  border-left: 2px solid rgba(27, 147, 88, 0.35);
+  padding-left: calc(1.25rem - 2px);
+  margin-left: -1.25rem;
+  margin-right: -1.25rem;
+  padding-right: 1.25rem;
+}
+
+.cookbook-code-figure [data-highlighted-chars] {
+  background-color: rgba(27, 147, 88, 0.12);
+  border-radius: 3px;
+  padding: 0 2px;
+}

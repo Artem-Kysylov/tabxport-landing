@@ -45,26 +45,31 @@ export function useTableParser(): UseTableParserReturn {
     }
   }, [parsedTables]);
 
-  const normalizeMergedTables = useCallback((tables: ParsedTable[]): ParsedTable[] => {
-    const usedIds = new Set<string>();
-    const base = String(Date.now());
+  const normalizeMergedTables = useCallback(
+    (tables: ParsedTable[], suggestedName?: string): ParsedTable[] => {
+      const usedIds = new Set<string>();
+      const base = String(Date.now());
 
-    return tables.map((t, index) => {
-      let id = t.id;
-      if (usedIds.has(id)) {
-        id = `tbl_${base}_${index}`;
-      }
-      usedIds.add(id);
+      return tables.map((t, index) => {
+        let id = t.id;
+        if (usedIds.has(id)) {
+          id = `tbl_${base}_${index}`;
+        }
+        usedIds.add(id);
 
-      return {
-        ...t,
-        id,
-        name: `Table ${index + 1}`,
-        rowCount: t.data.rows.length,
-        columnCount: t.data.headers.length,
-      };
-    });
-  }, []);
+        const name = index === 0 && suggestedName ? suggestedName : `Table ${index + 1}`;
+
+        return {
+          ...t,
+          id,
+          name,
+          rowCount: t.data.rows.length,
+          columnCount: t.data.headers.length,
+        };
+      });
+    },
+    []
+  );
 
   const parseFromText = useCallback((text: string) => {
     setIsLoading(true);
@@ -74,7 +79,7 @@ export function useTableParser(): UseTableParserReturn {
       const result: ParserResult = parseTable(text);
 
       if (result.success && result.tables && result.tables.length > 0) {
-        setParsedTables(normalizeMergedTables(result.tables));
+        setParsedTables(normalizeMergedTables(result.tables, result.suggestedName));
         setError(null);
       } else {
         setParsedTables(null);
@@ -98,7 +103,7 @@ export function useTableParser(): UseTableParserReturn {
 
         const incoming = result.tables;
         if (result.success && incoming && incoming.length > 0) {
-          setParsedTables((prev) => normalizeMergedTables([...(prev ?? []), ...incoming]));
+          setParsedTables((prev) => normalizeMergedTables([...(prev ?? []), ...incoming], result.suggestedName));
           setError(null);
         } else {
           setError(result.error || 'Failed to parse table');

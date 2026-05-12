@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { SubscriptionPlan, UserProfile } from '@/types/database';
 
@@ -83,24 +83,27 @@ export function useSubscription(): UseSubscriptionReturn {
   const [hasKnownProPurchase, setHasKnownProPurchase] = useState<boolean>(() => readKnownProPurchase());
 
   const supabase = useMemo(() => createClient(), []);
+  /** Avoid toggling global loading on silent refetches (same signed-in user) — reduces UI flicker. */
+  const lastHydratedUserIdRef = useRef<string | null>(null);
 
-  const fetchSubscription = useCallback(async (showLoading = true) => {
+  const fetchSubscription = useCallback(async () => {
     try {
-      if (showLoading) {
-        setIsLoading(true);
-      }
       setError(null);
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
+        lastHydratedUserIdRef.current = null;
         setUserId(null);
         setProfile(null);
         setOptimisticIsPro(false);
         writePendingProActivation(false);
-        if (showLoading) {
-          setIsLoading(false);
-        }
+        setIsLoading(false);
         return;
+      }
+
+      const shouldShowBlockingLoader = lastHydratedUserIdRef.current !== user.id;
+      if (shouldShowBlockingLoader) {
+        setIsLoading(true);
       }
 
       setUserId(user.id);
@@ -114,6 +117,7 @@ export function useSubscription(): UseSubscriptionReturn {
       if (fetchError) {
         if (fetchError.code === 'PGRST116') {
           setProfile(null);
+          lastHydratedUserIdRef.current = user.id;
         } else {
           throw fetchError;
         }
@@ -124,15 +128,17 @@ export function useSubscription(): UseSubscriptionReturn {
           writePendingProActivation(false);
           setHasKnownProPurchase(true);
           writeKnownProPurchase(true);
+        } else {
+          setHasKnownProPurchase(false);
+          writeKnownProPurchase(false);
         }
+        lastHydratedUserIdRef.current = user.id;
       }
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch user profile'));
       setProfile(null);
     } finally {
-      if (showLoading) {
-        setIsLoading(false);
-      }
+      setIsLoading(false);
     }
   }, [supabase]);
 
@@ -151,7 +157,7 @@ export function useSubscription(): UseSubscriptionReturn {
         if (cancelled) {
           return;
         }
-        await fetchSubscription(false);
+        await fetchSubscription();
       }
     };
 
@@ -165,7 +171,7 @@ export function useSubscription(): UseSubscriptionReturn {
   useEffect(() => {
     fetchSubscription();
     const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(() => {
-      void fetchSubscription(false);
+      void fetchSubscription();
     });
 
     return () => {
