@@ -19,9 +19,7 @@ interface ExtensionItem {
   ctaLabel?: string;
 }
 
-interface ExtensionCardProps extends ExtensionItem {}
-
-const ExtensionCard: React.FC<ExtensionCardProps> = ({
+const ExtensionCard: React.FC<ExtensionItem> = ({
   name,
   subtitle,
   description,

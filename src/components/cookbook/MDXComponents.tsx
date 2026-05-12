@@ -10,8 +10,9 @@ import { MdxCallout } from './MdxCallout';
  * Extracts the language from a rehype-pretty-code <pre> element.
  * rehype-pretty-code sets `data-language` on <pre> after processing.
  */
-function extractLanguageFromPre(props: Record<string, unknown>): string | null {
-  const lang = props['data-language'];
+function extractLanguageFromPre(props: object): string | null {
+  if (!('data-language' in props)) return null;
+  const lang = Reflect.get(props, 'data-language');
   return typeof lang === 'string' ? lang : null;
 }
 
@@ -24,7 +25,7 @@ const MDXComponents = {
    *
    * We strip the outer <figure> so our CodeBlock provides the only wrapper.
    */
-  figure: ({ children, ...props }: any) => {
+  figure: ({ children, ...props }: React.ComponentPropsWithoutRef<'figure'>) => {
     if ('data-rehype-pretty-code-figure' in props) {
       return <>{children}</>;
     }
@@ -35,7 +36,7 @@ const MDXComponents = {
    * <pre> from rehype-pretty-code carries data-language.
    * We render our styled CodeBlock; the children are already highlighted <span>s.
    */
-  pre: ({ children, ...props }: any) => {
+  pre: ({ children, ...props }: React.ComponentPropsWithoutRef<'pre'>) => {
     const language = extractLanguageFromPre(props);
     if (language !== null) {
       return <CodeBlock language={language}>{children}</CodeBlock>;
@@ -167,7 +168,7 @@ const MDXComponents = {
    * code component handles ONLY inline code (`backtick`).
    * Fenced blocks (``` ... ```) go through pre → CodeBlock above.
    */
-  code: ({ children, ...props }: any) => (
+  code: ({ children, ...props }: React.ComponentPropsWithoutRef<'code'>) => (
     <code
       {...props}
       className="rounded-md border border-slate-200/90 bg-slate-100/90 px-[5px] py-0.5 font-[family-name:var(--font-jetbrains-mono),_ui-monospace,_monospace] text-[0.86em] font-medium text-secondary/90 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.7)]"

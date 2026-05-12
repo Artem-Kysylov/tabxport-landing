@@ -116,21 +116,6 @@ function parseBoxDrawingTables(text: string): TableData[] {
   return tables;
 }
 
-function parseDelimitedTables(text: string): TableData[] {
-  const blocks = text
-    .trim()
-    .split(/\r?\n\s*\r?\n+/)
-    .map((b) => b.trim())
-    .filter(Boolean);
-
-  const tables: TableData[] = [];
-  for (const block of blocks) {
-    const parsed = parseDelimitedText(block);
-    if (parsed) tables.push(parsed);
-  }
-  return tables;
-}
-
 /**
  * Парсит HTML таблицу
  */
