@@ -2,16 +2,33 @@
 
 import React from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { AnimatedSection, StaggerContainer, FadeInUp } from '@/components/animations';
 
-interface ExtensionCardProps {
+const CHROME_WEB_STORE_URL =
+  'https://chromewebstore.google.com/detail/tablexport-ai-table-extra/bcbjkpalaglbclfhidoknmngpmdmafgm' as const;
+const FIREFOX_AMO_URL =
+  'https://addons.mozilla.org/en-US/firefox/addon/tablexport-ai-table-extractor/' as const;
+
+interface ExtensionItem {
   name: string;
   subtitle: string;
   description: string;
   iconSrc: string;
+  storeUrl?: string;
+  ctaLabel?: string;
 }
 
-const ExtensionCard: React.FC<ExtensionCardProps> = ({ name, subtitle, description, iconSrc }) => {
+interface ExtensionCardProps extends ExtensionItem {}
+
+const ExtensionCard: React.FC<ExtensionCardProps> = ({
+  name,
+  subtitle,
+  description,
+  iconSrc,
+  storeUrl,
+  ctaLabel = 'Get extension',
+}) => {
   return (
     <FadeInUp className="h-full">
       <div className="flex h-full flex-col items-center text-center bg-white rounded-[10px] py-[30px] px-[30px] md:px-[25px] shadow-none hover:scale-105 transition-transform duration-300">
@@ -32,13 +49,24 @@ const ExtensionCard: React.FC<ExtensionCardProps> = ({ name, subtitle, descripti
             {description}
           </p>
 
-          <button
-            type="button"
-            disabled
-            className="mt-auto shrink-0 px-4 py-2 border border-slate-300 text-slate-500 text-sm font-medium rounded-lg bg-transparent cursor-not-allowed hover:border-slate-400 transition-colors"
-          >
-            Coming Soon
-          </button>
+          {storeUrl ? (
+            <Link
+              href={storeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-auto shrink-0 inline-flex items-center justify-center rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            >
+              {ctaLabel}
+            </Link>
+          ) : (
+            <button
+              type="button"
+              disabled
+              className="mt-auto shrink-0 px-4 py-2 border border-slate-300 text-slate-500 text-sm font-medium rounded-lg bg-transparent cursor-not-allowed hover:border-slate-400 transition-colors"
+            >
+              Coming Soon
+            </button>
+          )}
         </div>
       </div>
     </FadeInUp>
@@ -46,13 +74,15 @@ const ExtensionCard: React.FC<ExtensionCardProps> = ({ name, subtitle, descripti
 };
 
 const Extensions = () => {
-  const extensions = [
+  const extensions: ExtensionItem[] = [
     {
       name: 'Chrome Web Store',
       subtitle: 'Your primary data tool',
       description:
         'Export tables directly from ChatGPT, Claude, and the web without broken formatting or manual cleanup.',
       iconSrc: '/icons/chrome-modern-.svg',
+      storeUrl: CHROME_WEB_STORE_URL,
+      ctaLabel: 'Add to Chrome',
     },
     {
       name: 'Firefox Add-ons',
@@ -60,7 +90,10 @@ const Extensions = () => {
       description:
         'Powerful table parsing for those who value security and a clean browsing experience.',
       iconSrc: '/icons/firefox-6.svg',
+      storeUrl: FIREFOX_AMO_URL,
+      ctaLabel: 'Add to Firefox',
     },
+    /*
     {
       name: 'Microsoft Edge',
       subtitle: 'The Business standard',
@@ -75,6 +108,7 @@ const Extensions = () => {
         'The fastest way to transform text into clean CSV files without leaving your keyboard.',
       iconSrc: '/icons/raycast.svg',
     },
+    */
   ];
 
   return (
@@ -96,7 +130,7 @@ const Extensions = () => {
             </FadeInUp>
 
             <StaggerContainer
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-[30px] w-full max-w-6xl items-stretch"
+              className="grid grid-cols-1 md:grid-cols-2 gap-[30px] w-full max-w-3xl items-stretch mx-auto"
               itemClassName="h-full"
             >
               {extensions.map((extension) => (
@@ -106,6 +140,8 @@ const Extensions = () => {
                   subtitle={extension.subtitle}
                   description={extension.description}
                   iconSrc={extension.iconSrc}
+                  storeUrl={extension.storeUrl}
+                  ctaLabel={extension.ctaLabel}
                 />
               ))}
             </StaggerContainer>
