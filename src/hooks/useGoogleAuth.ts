@@ -133,8 +133,7 @@ export function useGoogleAuth() {
             access_type: 'offline',
             prompt: 'consent',
           },
-          scopes:
-            'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets',
+          scopes: 'https://www.googleapis.com/auth/drive.file',
         },
       });
 
