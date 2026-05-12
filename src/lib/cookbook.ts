@@ -103,20 +103,29 @@ function calculateReadingTime(content: string): string {
 export function generateTableOfContents(content: string): CookbookTableOfContents[] {
   const headings: CookbookTableOfContents[] = [];
   const lines = content.split('\n');
-  
+
   for (const line of lines) {
-    const match = line.match(/^(#{2,6})\s+(.+)$/);
-    if (match) {
-      const level = match[1].length;
-      const title = match[2].trim();
+    // Standard markdown heading: ## Title
+    const mdMatch = line.match(/^(#{2,6})\s+(.+)$/);
+    if (mdMatch) {
+      const level = mdMatch[1].length;
+      const title = mdMatch[2].trim();
       const id = title
         .toLowerCase()
         .replace(/[^a-z0-9\s]/g, '')
         .replace(/\s+/g, '-');
-      
       headings.push({ id, title, level });
+      continue;
+    }
+
+    // JSX <Step step="N" title="..." /> (quoted step — reliable in MDXRemote)
+    const stepMatch = line.match(/<Step\s+step="(\d+)"\s+title="([^"]+)"/);
+    if (stepMatch) {
+      const stepNum = parseInt(stepMatch[1], 10);
+      const title = stepMatch[2];
+      headings.push({ id: `step-${stepNum}`, title, level: 2 });
     }
   }
-  
+
   return headings;
 }

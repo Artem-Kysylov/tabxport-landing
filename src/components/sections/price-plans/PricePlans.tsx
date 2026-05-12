@@ -120,7 +120,7 @@ const PricePlans = () => {
         <div className='container-custom'>
           <FadeInUp>
             <h2 className='text-[40px] md:text-[55px] font-semibold text-center mb-[30px]'>
-              Unlock <span className='text-primary'>Productivity</span>
+              Pay Once. <span className='text-primary'>Clean Tables Forever.</span>
             </h2>
           </FadeInUp>
           

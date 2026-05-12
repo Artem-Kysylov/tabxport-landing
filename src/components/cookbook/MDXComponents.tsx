@@ -1,9 +1,10 @@
-'use client';
-
 import React from 'react';
 import Link from 'next/link';
 import { CodeBlock } from './CodeBlock';
 import { ChatGptBlock } from './ChatGptBlock';
+import { MdxCta } from './MdxCta';
+import { MdxStep } from './MdxStep';
+import { MdxCallout } from './MdxCallout';
 
 /**
  * Extracts the language from a rehype-pretty-code <pre> element.
@@ -56,7 +57,7 @@ const MDXComponents = {
     <h2
       {...props}
       id={id}
-      className="mb-4 mt-12 scroll-mt-20 text-2xl font-bold tracking-tight text-secondary first:mt-0 sm:text-3xl"
+      className="mb-5 mt-14 scroll-mt-20 text-2xl font-bold tracking-tight text-secondary first:mt-0 sm:text-[1.75rem]"
     >
       {children}
     </h2>
@@ -65,23 +66,23 @@ const MDXComponents = {
     <h3
       {...props}
       id={id}
-      className="mb-3 mt-10 scroll-mt-20 text-xl font-semibold tracking-tight text-secondary sm:text-2xl"
+      className="mb-3 mt-10 scroll-mt-20 text-lg font-semibold tracking-tight text-secondary sm:text-xl"
     >
       {children}
     </h3>
   ),
   h4: ({ children, id, ...props }: React.HTMLProps<HTMLHeadingElement>) => (
-    <h4 {...props} id={id} className="mb-3 mt-8 scroll-mt-20 text-lg font-semibold text-secondary">
+    <h4 {...props} id={id} className="mb-3 mt-8 scroll-mt-20 text-base font-semibold text-secondary">
       {children}
     </h4>
   ),
   h5: ({ children, id, ...props }: React.HTMLProps<HTMLHeadingElement>) => (
-    <h5 {...props} id={id} className="mb-2 mt-6 scroll-mt-20 text-base font-semibold text-secondary">
+    <h5 {...props} id={id} className="mb-2 mt-6 scroll-mt-20 text-sm font-semibold text-secondary">
       {children}
     </h5>
   ),
   h6: ({ children, id, ...props }: React.HTMLProps<HTMLHeadingElement>) => (
-    <h6 {...props} id={id} className="mb-2 mt-6 scroll-mt-20 text-sm font-semibold text-secondary">
+    <h6 {...props} id={id} className="mb-2 mt-6 scroll-mt-20 text-sm font-semibold text-secondary/70">
       {children}
     </h6>
   ),
@@ -89,7 +90,7 @@ const MDXComponents = {
   // ── Body text ─────────────────────────────────────────────────────────────
 
   p: ({ children, ...props }: React.HTMLProps<HTMLParagraphElement>) => (
-    <p {...props} className="mb-7 text-[17px] leading-[1.78] text-secondary/[0.88] last:mb-0">
+    <p {...props} className="mb-6 text-[17px] leading-relaxed text-secondary/[0.88] last:mb-0">
       {children}
     </p>
   ),
@@ -135,7 +136,7 @@ const MDXComponents = {
   ul: ({ children, ...props }: React.ComponentPropsWithoutRef<'ul'>) => (
     <ul
       {...props}
-      className="mb-7 ml-1 list-disc space-y-2.5 pl-6 text-[17px] leading-[1.78] text-secondary/[0.88] marker:text-primary/60"
+      className="mb-6 ml-1 list-disc space-y-3 pl-6 text-[17px] leading-relaxed text-secondary/[0.88] marker:text-primary/60"
     >
       {children}
     </ul>
@@ -143,13 +144,13 @@ const MDXComponents = {
   ol: ({ children, ...props }: React.ComponentPropsWithoutRef<'ol'>) => (
     <ol
       {...props}
-      className="mb-7 ml-1 list-decimal space-y-2.5 pl-6 text-[17px] leading-[1.78] text-secondary/[0.88] marker:font-medium marker:text-secondary/70"
+      className="mb-6 ml-1 list-decimal space-y-3 pl-6 text-[17px] leading-relaxed text-secondary/[0.88] marker:font-medium marker:text-secondary/70"
     >
       {children}
     </ol>
   ),
   li: ({ children, ...props }: React.HTMLProps<HTMLLIElement>) => (
-    <li {...props} className="pl-1 leading-[1.78] [&>p]:mb-3 [&>p:last-child]:mb-0">
+    <li {...props} className="pl-1.5 leading-relaxed [&>p]:mb-3 [&>p:last-child]:mb-0">
       {children}
     </li>
   ),
@@ -206,9 +207,21 @@ const MDXComponents = {
       {children}
     </td>
   ),
-  hr: (props: React.HTMLProps<HTMLHRElement>) => (
-    <hr {...props} className="my-12 border-0 border-t border-slate-200/80" />
+  hr: () => (
+    <div
+      role="separator"
+      aria-hidden="true"
+      className="my-14 h-px"
+      style={{
+        background:
+          'linear-gradient(to right, transparent, rgb(203 213 225 / 0.7) 20%, rgb(203 213 225 / 0.7) 80%, transparent)',
+      }}
+    />
   ),
+
+  CTA: MdxCta,
+  Step: MdxStep,
+  Callout: MdxCallout,
 };
 
 export default MDXComponents;

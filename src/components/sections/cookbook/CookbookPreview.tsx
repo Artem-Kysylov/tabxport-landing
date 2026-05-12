@@ -22,7 +22,7 @@ export default function CookbookPreview({ recipes }: CookbookPreviewProps) {
           className="text-center mb-12"
         >
           <h2 className="text-3xl sm:text-4xl font-bold text-secondary mb-4">
-            Data Workflow Cookbook
+            Data Workflow Recipes
           </h2>
           <p className="text-lg text-secondary/70 max-w-2xl mx-auto">
             Step-by-step recipes to solve common data problems and streamline your workflow

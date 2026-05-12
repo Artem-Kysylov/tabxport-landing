@@ -215,17 +215,30 @@
   -webkit-line-clamp: 3;
 }
 
-/* Mobile h1 and h2 styling */
+/* Mobile h1 and h2 styling — excluded from cookbook content */
 @media (max-width: 767px) {
-  h1 {
+  h1:not(.cookbook-mdx h1):not(.cookbook-mdx *) {
     font-size: 52px !important;
     line-height: 1.1 !important;
   }
-  h2 {
+  h2:not(.cookbook-mdx h2):not(.cookbook-mdx *) {
     font-size: 40px !important;
     line-height: 1.1 !important;
   }
- }
+
+  .cookbook-mdx h1 {
+    font-size: 1.875rem !important;
+    line-height: 1.25 !important;
+  }
+  .cookbook-mdx h2 {
+    font-size: 1.375rem !important;
+    line-height: 1.3 !important;
+  }
+  .cookbook-mdx h3 {
+    font-size: 1.125rem !important;
+    line-height: 1.4 !important;
+  }
+}
 
  @media (display-mode: standalone) {
    html,
@@ -343,10 +356,8 @@
 }
 
 /*
- * rehype-pretty-code / shiki token colors.
- * shiki emits inline `color` styles on <span> elements; these rules
- * ensure the JetBrains Mono font applies throughout and remove any
- * background the theme might set on <code> (CodeBlock provides it).
+ * rehype-pretty-code / Shiki (github-light): mono stack + strip nested bg on spans.
+ * Token foreground stays inline from Shiki — tuned for light panel (#f8fafc).
  */
 .cookbook-code-figure code,
 .cookbook-code-figure code span {
@@ -360,19 +371,18 @@
   margin-bottom: 2rem;
 }
 
-/* Line highlight from rehype-pretty-code [!code highlight] */
+/* Line highlight — light surfaces */
 .cookbook-code-figure [data-highlighted-line] {
-  background-color: rgba(255, 255, 255, 0.07);
-  border-left: 2px solid rgba(255, 255, 255, 0.3);
+  background-color: rgba(27, 147, 88, 0.06);
+  border-left: 2px solid rgba(27, 147, 88, 0.35);
   padding-left: calc(1.25rem - 2px);
   margin-left: -1.25rem;
   margin-right: -1.25rem;
   padding-right: 1.25rem;
 }
 
-/* Word highlight */
 .cookbook-code-figure [data-highlighted-chars] {
-  background-color: rgba(255, 255, 255, 0.12);
+  background-color: rgba(27, 147, 88, 0.12);
   border-radius: 3px;
   padding: 0 2px;
 }

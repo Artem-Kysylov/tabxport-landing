@@ -76,7 +76,7 @@ const FreePlan = () => {
                   Simple Pricing. <span className="text-primary">Lifetime Access.</span>
                 </h2>
                 <p className='text-secondary/75'>
-                  Pay once, use forever. $12 Early Bird deal ends soon.
+                  Pay once, use forever. Launch Special for Early Users.
                 </p>
               </div>
             </FadeInUp>

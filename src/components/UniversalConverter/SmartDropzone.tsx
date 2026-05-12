@@ -209,15 +209,15 @@ export const SmartDropzone: React.FC<SmartDropzoneProps> = ({
                   ? 'Drop your table here!'
                   : mode === 'append'
                   ? 'Add another table'
-                  : 'Smart Table Dropzone'}
+                  : 'Paste Raw Table Data'}
               </h3>
               <p className="text-base text-secondary/70">
                 {mode === 'append'
                   ? 'Paste or drop another table to add it to the list'
-                  : 'Paste, drag & drop, or type your table data'}
+                  : 'Paste messy AI output, Markdown, or web tables — TableXport cleans and structures it automatically'}
               </p>
               <p className="text-sm text-secondary/50 mt-1">
-                Supports: HTML, Markdown, CSV, TSV
+                Works with ChatGPT, Claude, Gemini, DeepSeek, Markdown, CSV, HTML, and more.
               </p>
               {mode !== 'append' && !value.trim() && (
                 <button
@@ -240,7 +240,7 @@ export const SmartDropzone: React.FC<SmartDropzoneProps> = ({
             placeholder={
               mode === 'append'
                 ? 'Paste another table here to add it...'
-                : 'Paste your table here or drag & drop a file...'
+                : 'Paste messy AI output, Markdown, or web tables here... TableXport will clean and structure it automatically.'
             }
             onPaste={handlePaste}
             onChange={handleTextChange}

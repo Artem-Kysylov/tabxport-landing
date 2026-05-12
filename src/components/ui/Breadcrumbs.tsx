@@ -34,29 +34,36 @@ export function Breadcrumbs({ items, className = '' }: BreadcrumbsProps) {
       />
       <nav
         aria-label="Breadcrumb"
-        className={`flex items-center space-x-1 text-sm text-secondary/70 ${className}`}
+        className={`w-full max-w-full text-sm text-secondary/70 ${className}`}
       >
-        <ol className="flex items-center space-x-1">
+        <ol className="flex w-full flex-col gap-0 md:flex-row md:flex-wrap md:items-center md:gap-0">
           {items.map((item, index) => (
-            <li key={index} className="flex items-center">
+            <li
+              key={index}
+              className={`flex min-w-0 items-center ${
+                index > 0
+                  ? 'border-t border-slate-200/70 pt-2.5 mt-2.5 md:border-0 md:pt-0 md:mt-0'
+                  : ''
+              }`}
+            >
               {index > 0 && (
                 <ChevronRight
                   size={14}
-                  className="mx-2 text-secondary/40"
+                  className="mx-2 hidden shrink-0 text-secondary/40 md:inline"
                   aria-hidden="true"
                 />
               )}
               {item.href ? (
                 <Link
                   href={item.href}
-                  className="hover:text-primary transition-colors duration-200 hover:underline"
+                  className="break-words hover:text-primary transition-colors duration-200 hover:underline"
                   itemProp="item"
                 >
                   <span itemProp="name">{item.label}</span>
                 </Link>
               ) : (
                 <span
-                  className="text-secondary font-medium"
+                  className="break-words font-medium text-secondary"
                   itemProp="name"
                   aria-current="page"
                 >

@@ -17,7 +17,9 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ title, description, icon }) =
       <div className="w-[52px] h-[52px] aspect-square rounded-full bg-[#D2F2E2] flex items-center justify-center flex-shrink-0">
         {icon}
       </div>
-      <h3 className="text-[25px] font-semibold text-center">{title}</h3>
+      <h3 className="text-[22px] md:text-[25px] font-semibold text-center whitespace-pre-line leading-snug max-w-[280px] mx-auto">
+        {title}
+      </h3>
       <p className="text-center leading-relaxed">{description}</p>
     </div>
   )
@@ -27,18 +29,18 @@ const Features = () => {
   const featureCards = [
     {
       icon: <HiRocketLaunch size={28} className="text-primary" />,
-      title: "Live Edit & Preview",
-      description: "See exactly what you get. Edit cell values, fix AI typos, and switch between Excel, JSON, or PDF views instantly before downloading."
+      title: "Preview Before You\nExport",
+      description: "Catch formatting issues, fix mistakes, and see exactly how your spreadsheet or PDF will look before downloading."
     },
     {
       icon: <HiSparkles size={28} className="text-primary" />,
-      title: "Custom PDF Branding (Pro)",
-      description: "Deliver professional reports. Add your company logo, customize header colors, and generate client-ready PDFs with one click."
+      title: "Send It Straight to\nGoogle Sheets",
+      description: "Skip downloads completely. Export clean tables directly into your Google Drive in one click."
     },
     {
       icon: <HiDocumentCheck size={28} className="text-primary" />,
-      title: "Google Cloud Sync (Pro)",
-      description: "Skip the downloads folder. Export your tables directly to your Google Drive or open them as native Google Sheets immediately."
+      title: "Client-Ready PDF\nReports",
+      description: "Turn raw data into branded PDF reports with your logo, colors, and polished layouts."
     }
   ];
 

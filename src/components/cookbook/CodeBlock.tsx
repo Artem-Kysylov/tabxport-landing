@@ -61,17 +61,15 @@ export function CodeBlock({ language = '', children }: CodeBlockProps) {
   };
 
   return (
-    <figure className="cookbook-code-figure not-prose my-8 overflow-hidden rounded-xl border border-white/[0.09] bg-[#0d1117] shadow-[0_2px_8px_rgba(0,0,0,0.22),0_8px_32px_rgba(0,0,0,0.2)]">
-      {/* Header bar */}
-      <div className="flex items-center justify-between gap-3 border-b border-white/[0.08] bg-[#161b22] px-4 py-2.5">
+    <figure className="cookbook-code-figure not-prose my-8 overflow-hidden rounded-xl border border-slate-200/95 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06),0_4px_14px_rgba(6,32,19,0.06)] ring-1 ring-black/[0.04]">
+      <div className="flex items-center justify-between gap-3 border-b border-slate-200/90 bg-[#f4f4f5] px-4 py-2.5">
         <div className="flex items-center gap-2">
-          {/* Traffic lights - subtle dots */}
           <span className="flex gap-1.5" aria-hidden="true">
-            <span className="inline-block h-[10px] w-[10px] rounded-full bg-[#ff5f57]/70" />
-            <span className="inline-block h-[10px] w-[10px] rounded-full bg-[#febc2e]/70" />
-            <span className="inline-block h-[10px] w-[10px] rounded-full bg-[#28c840]/70" />
+            <span className="inline-block h-[9px] w-[9px] rounded-full bg-slate-300/90" />
+            <span className="inline-block h-[9px] w-[9px] rounded-full bg-slate-300/90" />
+            <span className="inline-block h-[9px] w-[9px] rounded-full bg-slate-300/90" />
           </span>
-          <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.09em] text-slate-400/80 select-none">
+          <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.09em] text-slate-600 select-none">
             {label}
           </span>
         </div>
@@ -80,12 +78,12 @@ export function CodeBlock({ language = '', children }: CodeBlockProps) {
           type="button"
           onClick={handleCopy}
           aria-label={copied ? 'Copied!' : 'Copy code'}
-          className="flex items-center gap-1.5 rounded-md border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-slate-400 transition-all duration-150 hover:border-white/[0.15] hover:bg-white/[0.08] hover:text-slate-200 active:scale-95"
+          className="flex cursor-pointer items-center gap-1.5 rounded-md border border-slate-300/90 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 shadow-[inset_0_1px_0_0_rgba(255,255,255,1)] transition-colors hover:border-slate-400 hover:bg-slate-50 active:scale-[0.98]"
         >
           {copied ? (
             <>
-              <Check size={11} strokeWidth={2.5} className="text-green-400" />
-              <span className="text-green-400">Copied!</span>
+              <Check size={11} strokeWidth={2.5} className="text-green-600" />
+              <span className="text-green-700">Copied!</span>
             </>
           ) : (
             <>
@@ -96,12 +94,11 @@ export function CodeBlock({ language = '', children }: CodeBlockProps) {
         </button>
       </div>
 
-      {/* Code area */}
-      <div className="cookbook-code-scroll overflow-x-auto [scrollbar-width:thin] [&::-webkit-scrollbar]:h-[5px] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/20 [&::-webkit-scrollbar-track]:bg-transparent">
+      <div className="cookbook-code-scroll overflow-x-auto border-t border-transparent bg-[#f8fafc] [scrollbar-width:thin] [&::-webkit-scrollbar]:h-[5px] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-track]:bg-transparent">
         <pre
           ref={preRef}
           data-language={language}
-          className="m-0 min-w-0 bg-transparent p-5 text-[13px] leading-[1.72] [&>code]:block [&>code]:font-[family-name:var(--font-jetbrains-mono),_'JetBrains_Mono',_ui-monospace,_monospace] [&>code]:text-[13px]"
+          className="m-0 min-w-0 bg-transparent p-5 text-[13px] leading-[1.72] text-slate-900 [&>code]:block [&>code]:font-[family-name:var(--font-jetbrains-mono),_'JetBrains_Mono',_ui-monospace,_monospace] [&>code]:text-[13px] [&>code]:text-slate-900"
         >
           {children}
         </pre>

@@ -151,14 +151,14 @@ const Hero = () => {
           <div className='standalone-hero flex flex-col items-center justify-center gap-4 pt-[48px] pb-[24px] md:pt-[60px] md:pb-[32px]'>
             <FadeInUp delay={0.2} className='standalone-hero-copy' instant={heroAnimInstant}>
               <h1 className='text-center text-4xl md:text-5xl font-semibold leading-tight max-w-4xl'>
-              From AI to <span className='text-primary'>Google Sheets in 1 Second.</span>
+              Stop Cleaning <span className='text-primary'>Messy Tables</span> by Hand.
               </h1>
             </FadeInUp>
             
             <FadeInUp delay={0.4} className='standalone-hero-copy' instant={heroAnimInstant}>
               <div className='flex flex-col items-center gap-3'>
                 <p className='text-center font-normal max-w-3xl'>
-                Don&apos;t wrestle with AI formatting. Paste your table here, edit it live, and export directly to Excel or Google Drive without the cleanup work.
+                TableXport turns raw AI output, Markdown, and broken web tables into structured exports ready for Excel, Google Sheets, PDFs, and databases.
                 </p>
               </div>
             </FadeInUp>

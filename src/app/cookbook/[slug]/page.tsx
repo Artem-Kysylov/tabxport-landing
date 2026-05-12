@@ -164,7 +164,7 @@ export default async function RecipePage({ params }: RecipePageProps) {
                           [
                             rehypePrettyCode,
                             {
-                              theme: 'github-dark',
+                              theme: 'github-light',
                               keepBackground: false,
                               defaultLang: 'text',
                             } satisfies PrettyCodeOptions,

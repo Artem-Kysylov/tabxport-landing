@@ -13,28 +13,29 @@ interface ExtensionCardProps {
 
 const ExtensionCard: React.FC<ExtensionCardProps> = ({ name, subtitle, description, iconSrc }) => {
   return (
-    <FadeInUp>
-      <div className="flex flex-col items-center text-center bg-white rounded-[10px] py-[30px] px-[30px] md:px-[25px] shadow-none hover:scale-105 transition-transform duration-300">
+    <FadeInUp className="h-full">
+      <div className="flex h-full flex-col items-center text-center bg-white rounded-[10px] py-[30px] px-[30px] md:px-[25px] shadow-none hover:scale-105 transition-transform duration-300">
         <Image
           src={iconSrc}
           alt={`${name} icon`}
           width={48}
           height={48}
-          className="mb-4 h-12 w-12 object-contain"
+          className="mb-4 h-12 w-12 shrink-0 object-contain"
         />
-        
-        {/* Content */}
-        <div className="flex flex-col gap-3 items-center">
-          <div className="text-center">
+
+        <div className="flex min-h-0 flex-1 flex-col items-center gap-3 w-full">
+          <div className="text-center shrink-0">
             <h3 className="text-xl md:text-[22px] font-semibold text-slate-900 mb-1">{name}</h3>
             <p className="text-sm font-medium text-slate-500">{subtitle}</p>
           </div>
-          <p className="text-base md:text-[1.0625rem] text-slate-600 leading-relaxed">{description}</p>
-          
-          {/* Coming Soon Button - Ghost/Outline style with gray */}
+          <p className="text-base md:text-[1.0625rem] text-slate-600 leading-relaxed flex-1 w-full">
+            {description}
+          </p>
+
           <button
+            type="button"
             disabled
-            className="mt-2 px-4 py-2 border border-slate-300 text-slate-500 text-sm font-medium rounded-lg bg-transparent cursor-not-allowed hover:border-slate-400 transition-colors"
+            className="mt-auto shrink-0 px-4 py-2 border border-slate-300 text-slate-500 text-sm font-medium rounded-lg bg-transparent cursor-not-allowed hover:border-slate-400 transition-colors"
           >
             Coming Soon
           </button>
@@ -50,7 +51,7 @@ const Extensions = () => {
       name: 'Chrome Web Store',
       subtitle: 'Your primary data tool',
       description:
-        'Export tables from ChatGPT and Claude directly into your workspace without missing a beat.',
+        'Export tables directly from ChatGPT, Claude, and the web without broken formatting or manual cleanup.',
       iconSrc: '/icons/chrome-modern-.svg',
     },
     {
@@ -83,8 +84,8 @@ const Extensions = () => {
           <div className="flex flex-col items-center">
             <FadeInUp>
               <h2 className="text-[42px] md:text-[56px] font-semibold text-center mb-[30px] leading-tight">
-                Available for your{' '}
-                <span className="text-primary">workflow</span>
+                Built Around Your{' '}
+                <span className="text-primary">Workflow</span>
               </h2>
             </FadeInUp>
 
@@ -94,7 +95,10 @@ const Extensions = () => {
               </p>
             </FadeInUp>
 
-            <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-[30px] w-full max-w-6xl">
+            <StaggerContainer
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-[30px] w-full max-w-6xl items-stretch"
+              itemClassName="h-full"
+            >
               {extensions.map((extension) => (
                 <ExtensionCard
                   key={extension.iconSrc}

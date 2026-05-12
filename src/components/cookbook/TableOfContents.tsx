@@ -40,11 +40,8 @@ export function TableOfContents({ headings }: TableOfContentsProps) {
   }
 
   return (
-    <aside
-      aria-label="On this page"
-      className="lg:sticky lg:top-32 lg:z-10"
-    >
-      <div className="rounded-xl border border-primary-light/50 bg-white/60 p-6 backdrop-blur-sm lg:max-h-[calc(100vh-9rem)] lg:overflow-y-auto lg:overscroll-y-contain [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-primary/25">
+    <aside aria-label="On this page">
+      <div className="rounded-xl border border-primary-light/50 bg-white/60 p-6 backdrop-blur-sm">
         <h3 id="cookbook-toc-heading" className="mb-4 text-lg font-semibold text-secondary">Table of Contents</h3>
         <nav aria-labelledby="cookbook-toc-heading">
           <ul className="space-y-2">
