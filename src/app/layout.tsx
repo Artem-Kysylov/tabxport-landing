@@ -11,6 +11,7 @@ import { ProLifetimeBadge } from "@/components/ui/ProLifetimeBadge";
 import NavbarWrapper from "@/components/layout/navbar/NavbarWrapper";
 import GlobalAnnouncementBar from "@/components/layout/announcement/GlobalAnnouncementBar";
 import FooterWrapper from "@/components/layout/footer/FooterWrapper";
+import { CookieConsent } from "@/components/CookieConsent";
 
 export const metadata: Metadata = {
   title: "TableXport: Export tables from ChatGPT to Excel in 1 click",
@@ -118,6 +119,7 @@ export default function RootLayout({
           </GoogleAuthUiProvider>
           <FooterWrapper />
           <ProLifetimeBadge />
+          <CookieConsent />
           <Toaster 
             position="bottom-center" 
             richColors 
