@@ -1,3 +1,4 @@
+import { Analytics } from '@vercel/analytics/react';
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { inter, jetbrainsMono } from "./fonts";
@@ -116,6 +117,7 @@ export default function RootLayout({
             <GlobalAnnouncementBar />
             <NavbarWrapper />
             {children}
+            <Analytics />
           </GoogleAuthUiProvider>
           <FooterWrapper />
           <ProLifetimeBadge />
