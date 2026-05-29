@@ -9,6 +9,8 @@ const CHROME_WEB_STORE_URL =
   'https://chromewebstore.google.com/detail/tablexport-ai-table-extra/bcbjkpalaglbclfhidoknmngpmdmafgm' as const;
 const FIREFOX_AMO_URL =
   'https://addons.mozilla.org/en-US/firefox/addon/tablexport-ai-table-extractor/' as const;
+const EDGE_ADDONS_URL =
+  'https://microsoftedge.microsoft.com/addons/detail/tablexport-ai-table-extr/gdmkghijjnbhdkbjjlffgbmflpjdjahe' as const;
 
 interface ExtensionItem {
   name: string;
@@ -91,14 +93,16 @@ const Extensions = () => {
       storeUrl: FIREFOX_AMO_URL,
       ctaLabel: 'Add to Firefox',
     },
-    /*
     {
       name: 'Microsoft Edge',
       subtitle: 'The Business standard',
       description:
         'Seamless integration for professional PDF reports and deep data analysis in Edge.',
       iconSrc: '/icons/microsoft-edge-1.svg',
+      storeUrl: EDGE_ADDONS_URL,
+      ctaLabel: 'Add to Edge',
     },
+    /*
     {
       name: 'Raycast Store',
       subtitle: 'For Power Users',
@@ -128,7 +132,7 @@ const Extensions = () => {
             </FadeInUp>
 
             <StaggerContainer
-              className="grid grid-cols-1 md:grid-cols-2 gap-[30px] w-full max-w-3xl items-stretch mx-auto"
+              className="grid grid-cols-1 md:grid-cols-3 gap-[30px] w-full max-w-6xl items-stretch mx-auto"
               itemClassName="h-full"
             >
               {extensions.map((extension) => (
