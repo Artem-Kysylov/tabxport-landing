@@ -7,6 +7,7 @@ import { motion } from 'framer-motion'
 import { HiCheck } from 'react-icons/hi'
 import { useUpgradeAction, PADDLE_PRICE_ID_YEARLY, PADDLE_PRICE_ID_LIFETIME } from '@/hooks/useUpgradeAction'
 import { useUpgradeAutoResume } from '@/hooks/useUpgradeAutoResume'
+import { useGoogleAuthUi } from '@/contexts/GoogleAuthUiContext'
 
 const yearlyFeatures: string[] = [
   'Unlimited exports for 12 months',
@@ -27,6 +28,7 @@ const lifetimeFeatures: string[] = [
 const FreePlan = () => {
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
   const { ctaState, isOpeningCheckout, isCompletingCheckout, startUpgrade } = useUpgradeAction()
+  const { openGoogleAuthPopup } = useGoogleAuthUi()
   const shouldShowCheckoutError = !!checkoutError && !isOpeningCheckout && !isCompletingCheckout && ctaState !== 'logged_out'
 
   const handleResumeUpgrade = useCallback(() => {
@@ -72,6 +74,19 @@ const FreePlan = () => {
             : ctaState === 'pro'
               ? '✅ Pro Active'
               : baseLabel
+
+  const alreadyProSignInLink = ctaState !== 'pro' ? (
+    <p className="text-xs text-secondary/60 mt-1">
+      Already Pro?{' '}
+      <button
+        type="button"
+        onClick={openGoogleAuthPopup}
+        className="text-primary font-medium hover:underline cursor-pointer transition-colors"
+      >
+        Sign in
+      </button>
+    </p>
+  ) : null
 
   return (
     <>
@@ -133,9 +148,7 @@ const FreePlan = () => {
                   >
                     {getButtonLabel('Get 1-Year Pass — $19')}
                   </Button>
-                  <span className="text-sm text-secondary/60">
-                    {ctaState === 'logged_out' ? 'Sign in to continue' : 'One-time payment via Paddle'}
-                  </span>
+                  {alreadyProSignInLink}
                 </div>
               </motion.div>
 
@@ -198,9 +211,7 @@ const FreePlan = () => {
                       {checkoutError}
                     </span>
                   )}
-                  <span className="text-sm text-secondary/60">
-                    {ctaState === 'logged_out' ? 'Sign in to continue with secure checkout' : 'One-time payment via Paddle'}
-                  </span>
+                  {alreadyProSignInLink}
                 </div>
               </motion.div>
             </div>

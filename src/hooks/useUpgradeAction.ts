@@ -5,9 +5,8 @@ import { initializePaddle, type PaddleEventData, type Environments } from '@padd
 import { usePro } from '@/contexts/ProContext';
 import { useGoogleAuth } from '@/hooks/useGoogleAuth';
 
-const PADDLE_PRICE_ID = process.env.NEXT_PUBLIC_PADDLE_PRICE_ID ?? '';
 const PADDLE_PRICE_ID_YEARLY = process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_YEARLY ?? '';
-const PADDLE_PRICE_ID_LIFETIME = process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_LIFETIME ?? PADDLE_PRICE_ID;
+const PADDLE_PRICE_ID_LIFETIME = process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_LIFETIME ?? '';
 const PADDLE_CLIENT_TOKEN = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN ?? '';
 const rawPaddleEnvironment = process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT;
 const PADDLE_ENVIRONMENT: Environments = rawPaddleEnvironment === 'live' || rawPaddleEnvironment === 'production'
@@ -68,8 +67,9 @@ export function useUpgradeAction() {
         throw new Error('Missing Paddle client token. Add NEXT_PUBLIC_PADDLE_CLIENT_TOKEN.');
       }
 
-      if (!PADDLE_PRICE_ID) {
-        throw new Error('Missing Paddle price ID. Add NEXT_PUBLIC_PADDLE_PRICE_ID.');
+      const resolvedPriceId = options?.priceId || PADDLE_PRICE_ID_LIFETIME;
+      if (!resolvedPriceId) {
+        throw new Error('Missing Paddle price ID. Add NEXT_PUBLIC_PADDLE_PRICE_ID_LIFETIME.');
       }
 
       if (!user?.id) {
@@ -131,7 +131,7 @@ export function useUpgradeAction() {
       paddle.Checkout.open({
         items: [
           {
-            priceId: options?.priceId || PADDLE_PRICE_ID_LIFETIME,
+            priceId: resolvedPriceId,
             quantity: 1,
           },
         ],
