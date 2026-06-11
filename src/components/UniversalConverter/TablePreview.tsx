@@ -24,7 +24,7 @@ import { getOrCreateTableXportFolder, uploadFileToDrive, getFolderLink } from '@
 import { saveExport } from '@/services/exportHistoryService';
 import { usePro } from '@/contexts/ProContext';
 import { ProBadge } from '@/components/ui/ProBadge';
-import { UpgradeModal } from '@/components/modals/UpgradeModal';
+import { PaywallModal } from '@/components/modals/PaywallModal';
 import { useUpgradeAutoResume } from '@/hooks/useUpgradeAutoResume';
 import { useUpgradeAction } from '@/hooks/useUpgradeAction';
 
@@ -59,8 +59,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
   const [pdfBranding, setPdfBranding] = useState<PDFBrandingSettings>({});
   const [showPdfSettings, setShowPdfSettings] = useState(false);
   const [showPwaPrompt, setShowPwaPrompt] = useState(false);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [upgradeFeature, setUpgradeFeature] = useState<string>('');
+  const [showPaywallModal, setShowPaywallModal] = useState(false);
   const [postAuthIntent, setPostAuthIntent] = useState<PostAuthIntent>(null);
   const [showConfidencePopover, setShowConfidencePopover] = useState(false);
   const confidencePopoverRef = useRef<HTMLDivElement>(null);
@@ -266,9 +265,8 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
     }
   };
 
-  const showUpgradePrompt = useCallback((feature: string) => {
-    setUpgradeFeature(feature);
-    setShowUpgradeModal(true);
+  const showUpgradePrompt = useCallback((_feature?: string) => {
+    setShowPaywallModal(true);
   }, []);
 
   const openAuthPopup = useCallback((intent: PostAuthIntent = 'signin') => {
@@ -484,11 +482,9 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
       return;
     }
 
-    if ((format === 'pdf' || format === 'google_sheets') && isProLocked) {
+    if (!isAuthenticated || !isPro) {
       persistTablesSnapshot();
-      showUpgradePrompt(format === 'pdf'
-        ? 'Upgrade to Pro to export branded PDF files.'
-        : 'Upgrade to Pro to export directly to Google Sheets.');
+      setShowPaywallModal(true);
       return;
     }
 
@@ -585,13 +581,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
 
       if (result.success && result.blob) {
         if (exportDestination === 'google_drive') {
-          if (isProLocked) {
-            persistTablesSnapshot();
-            showUpgradePrompt('Upgrade to Pro to export files to Google Drive.');
-            return;
-          }
-
-          if (!isAuthenticated || !hasRequiredScopes) {
+          if (!hasRequiredScopes) {
             persistTablesSnapshot();
             openAuthPopup('signin');
             return;
@@ -734,11 +724,9 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
       return;
     }
 
-    if (isProLocked && (batchFormat === 'pdf' || exportDestination === 'google_drive')) {
+    if (!isAuthenticated || !isPro) {
       persistTablesSnapshot();
-      showUpgradePrompt(batchFormat === 'pdf'
-        ? 'Upgrade to Pro to batch export PDF files.'
-        : 'Upgrade to Pro to batch export to Google Drive.');
+      setShowPaywallModal(true);
       return;
     }
 
@@ -954,6 +942,11 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
 
   const handleCopyCleanText = useCallback(async () => {
     if (!activeTable) return;
+    if (isProLoading) return;
+    if (!isAuthenticated || !isPro) {
+      setShowPaywallModal(true);
+      return;
+    }
     const text = tableToCopyText(activeTable.data.headers, activeTable.data.rows);
     try {
       await navigator.clipboard.writeText(text);
@@ -961,7 +954,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
     } catch {
       toast.error('Failed to copy to clipboard');
     }
-  }, [activeTable]);
+  }, [activeTable, isAuthenticated, isPro, isProLoading]);
 
   const handleToggleAutoSum = () => {
     setAutoSumEnabled((prev) => {
@@ -1873,11 +1866,9 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
         onClose={() => setShowPwaPrompt(false)}
       />
 
-      {/* Upgrade Modal */}
-      <UpgradeModal
-        isOpen={showUpgradeModal}
-        onClose={() => setShowUpgradeModal(false)}
-        feature={upgradeFeature}
+      <PaywallModal
+        isOpen={showPaywallModal}
+        onClose={() => setShowPaywallModal(false)}
       />
     </motion.div>
   );

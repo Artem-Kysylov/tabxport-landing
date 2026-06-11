@@ -6,6 +6,8 @@ import { usePro } from '@/contexts/ProContext';
 import { useGoogleAuth } from '@/hooks/useGoogleAuth';
 
 const PADDLE_PRICE_ID = process.env.NEXT_PUBLIC_PADDLE_PRICE_ID ?? '';
+const PADDLE_PRICE_ID_YEARLY = process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_YEARLY ?? '';
+const PADDLE_PRICE_ID_LIFETIME = process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_LIFETIME ?? PADDLE_PRICE_ID;
 const PADDLE_CLIENT_TOKEN = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN ?? '';
 const rawPaddleEnvironment = process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT;
 const PADDLE_ENVIRONMENT: Environments = rawPaddleEnvironment === 'live' || rawPaddleEnvironment === 'production'
@@ -14,10 +16,13 @@ const PADDLE_ENVIRONMENT: Environments = rawPaddleEnvironment === 'live' || rawP
 const REFETCH_ATTEMPTS = 6;
 
 interface StartUpgradeOptions {
+  priceId?: string;
   onSuccess?: () => void;
   onCancelled?: () => void;
   onError?: (message: string) => void;
 }
+
+export { PADDLE_PRICE_ID_YEARLY, PADDLE_PRICE_ID_LIFETIME };
 
 export type UpgradeCtaState = 'loading' | 'logged_out' | 'free' | 'pro';
 
@@ -126,7 +131,7 @@ export function useUpgradeAction() {
       paddle.Checkout.open({
         items: [
           {
-            priceId: PADDLE_PRICE_ID,
+            priceId: options?.priceId || PADDLE_PRICE_ID_LIFETIME,
             quantity: 1,
           },
         ],
