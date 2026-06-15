@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { useGoogleAuth } from '@/hooks/useGoogleAuth';
 import { useGoogleAuthUi } from '@/contexts/GoogleAuthUiContext';
 import { PWAInstallPrompt } from '@/components/pwa/PWAInstallPrompt';
+import { TableMaskPromo } from '@/components/promo/TableMaskPromo';
 import { exportTableToGoogleSheets } from '@/services/googleSheetsService';
 import { getOrCreateTableXportFolder, uploadFileToDrive, getFolderLink } from '@/services/googleDriveService';
 import { saveExport } from '@/services/exportHistoryService';
@@ -59,6 +60,9 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
   const [pdfBranding, setPdfBranding] = useState<PDFBrandingSettings>({});
   const [showPdfSettings, setShowPdfSettings] = useState(false);
   const [showPwaPrompt, setShowPwaPrompt] = useState(false);
+  const [showTableMaskPromo, setShowTableMaskPromo] = useState(false);
+  const tableMaskPromoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tableMaskPromoScheduledRef = useRef(false);
   const [showPaywallModal, setShowPaywallModal] = useState(false);
   const [postAuthIntent, setPostAuthIntent] = useState<PostAuthIntent>(null);
   const [showConfidencePopover, setShowConfidencePopover] = useState(false);
@@ -107,6 +111,32 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
       // ignore
     }
   };
+
+  const scheduleTableMaskPromo = useCallback(() => {
+    try {
+      if (sessionStorage.getItem('tx_tablemask_promo_shown') === 'true') return;
+      if (tableMaskPromoScheduledRef.current) return;
+      tableMaskPromoScheduledRef.current = true;
+
+      tableMaskPromoTimerRef.current = setTimeout(() => {
+        sessionStorage.setItem('tx_tablemask_promo_shown', 'true');
+        setShowTableMaskPromo(true);
+      }, 1500);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const onExportCompleted = useCallback(() => {
+    trackFirstExport();
+    scheduleTableMaskPromo();
+  }, [scheduleTableMaskPromo]);
+
+  useEffect(() => () => {
+    if (tableMaskPromoTimerRef.current) {
+      clearTimeout(tableMaskPromoTimerRef.current);
+    }
+  }, []);
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (isProLoading) {
@@ -519,7 +549,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
         const result = await exportTableToGoogleSheets(accessToken, tableWithCustomName, folderId);
 
         if (result.success && result.spreadsheetUrl) {
-          trackFirstExport();
+          onExportCompleted();
           
           // Save to export history
           if (sanitizationResult && isAuthenticated) {
@@ -615,7 +645,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
           });
 
           if (uploadResult.success && uploadResult.fileUrl) {
-            trackFirstExport();
+            onExportCompleted();
             
             // Save to export history
             if (sanitizationResult && isAuthenticated) {
@@ -663,7 +693,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
         } else {
           const finalTableName = localTableName?.trim() || activeTable.name;
           downloadBlob(result.blob, `${finalTableName.replace(/\s+/g, '_').toLowerCase()}`, format);
-          trackFirstExport();
+          onExportCompleted();
           
           // Save to export history
           if (sanitizationResult && isAuthenticated) {
@@ -757,7 +787,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
           const result = await createMultiSheetSpreadsheet(accessToken, selectedTables, title, folderId);
 
           if (result.success && result.spreadsheetUrl) {
-            trackFirstExport();
+            onExportCompleted();
             toast.success(
               <div>
                 <span>Exported to Google Sheets ✨</span>
@@ -827,7 +857,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
 
         const folderUrl = await getFolderLink(accessToken, batchFolderId);
         if (successCount > 0) {
-          trackFirstExport();
+          onExportCompleted();
         }
         toast.success(
           <div>
@@ -875,7 +905,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
           }
           await new Promise((r) => setTimeout(r, 200));
         }
-        trackFirstExport();
+        onExportCompleted();
         toast.success(`Exported ${selectedTables.length} tables ✨`, { duration: 2500 });
         return;
       }
@@ -892,7 +922,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
           { autoSum: autoSumEnabled }
         );
         downloadBlob(blob, `tables_${selectedTables.length}_combined`, 'xlsx');
-        trackFirstExport();
+        onExportCompleted();
         toast.success('Combined XLSX exported ✨', { duration: 2500 });
         return;
       }
@@ -904,7 +934,7 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
         batchFormat === 'xlsx' ? { autoSum: autoSumEnabled } : undefined
       );
       downloadZipBlob(zipBlob, `tables_${selectedTables.length}`);
-      trackFirstExport();
+      onExportCompleted();
       toast.success('ZIP archive exported ✨', { duration: 2500 });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Batch export failed';
@@ -1864,6 +1894,11 @@ export const TablePreview: React.FC<TablePreviewProps> = ({ tables, onClear, onA
       <PWAInstallPrompt
         trigger={showPwaPrompt}
         onClose={() => setShowPwaPrompt(false)}
+      />
+
+      <TableMaskPromo
+        isVisible={showTableMaskPromo}
+        onClose={() => setShowTableMaskPromo(false)}
       />
 
       <PaywallModal
