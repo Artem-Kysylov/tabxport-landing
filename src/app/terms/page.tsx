@@ -35,7 +35,10 @@ const TermsOfService = () => {
             <h2>3. License & Usage</h2>
             <ul>
               <li>
-                <strong>Lifetime Access:</strong> A one-time payment grants you a non-transferable license to use TableXport Pro features for the lifetime of the product.
+                <strong>1-Year Pass ($19):</strong> A one-time payment grants you a non-transferable license to use TableXport Pro features for 12 months from the date of purchase.
+              </li>
+              <li>
+                <strong>Pro Lifetime ($29):</strong> A one-time payment grants you a non-transferable license to use TableXport Pro features for the lifetime of the product, with no expiration date.
               </li>
               <li>
                 <strong>AI Platforms:</strong> TableXport is an independent tool and is not affiliated with OpenAI, Anthropic, or Google. You are responsible for complying with the terms of the platforms you copy data from.

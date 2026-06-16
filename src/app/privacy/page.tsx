@@ -35,7 +35,7 @@ const PrivacyPolicy = () => {
                 <strong>Payment Data:</strong> We do not collect or store credit card details. All payments are processed securely by Paddle.
               </li>
               <li>
-                <strong>Account Data:</strong> If you sign in via Google, we collect your email address and name to manage your Pro subscription via Supabase.
+                <strong>Account Data:</strong> If you sign in via Google, we collect your email address and name to manage your Pro access (1-Year Pass or Pro Lifetime plan) via Supabase.
               </li>
             </ul>
 
